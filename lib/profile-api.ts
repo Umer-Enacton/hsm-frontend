@@ -48,6 +48,8 @@ export const updateProfile = async (data: ProfileUpdateData): Promise<User> => {
 export const uploadAvatar = async (
   file: File,
 ): Promise<{ url: string; publicId: string }> => {
+  console.log("⚠️⚠️⚠️ [API] uploadAvatar CALLED - This should ONLY happen on submit!", file.name);
+
   try {
     const formData = new FormData();
     formData.append("avatar", file);
@@ -69,6 +71,7 @@ export const uploadAvatar = async (
 
     // Handle backend response format: { success: true, message: "...", data: { url, publicId, ... } }
     if (data.success && data.data) {
+      console.log("✅ [API] uploadAvatar SUCCESS", data.data.url);
       return {
         url: data.data.url,
         publicId: data.data.publicId,
@@ -77,6 +80,7 @@ export const uploadAvatar = async (
 
     throw new Error(data.message || "Invalid response from server");
   } catch (error: any) {
+    console.error("❌ [API] uploadAvatar FAILED", error);
     throw new Error(error.message || "Failed to upload avatar");
   }
 };

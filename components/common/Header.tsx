@@ -171,9 +171,9 @@ function UserMenu({
     .slice(0, 2);
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex h-9 items-center gap-2 px-2">
-          <Avatar className="h-7 w-7">
+      <DropdownMenuTrigger asChild className="py-5">
+        <Button variant="ghost" className="flex h-9 items-center gap-3 px-2">
+          <Avatar className="h-8 w-8">
             <AvatarImage src={user.avatarUrl} alt={user.name} />
             <AvatarFallback className="text-xs">{initials}</AvatarFallback>
           </Avatar>

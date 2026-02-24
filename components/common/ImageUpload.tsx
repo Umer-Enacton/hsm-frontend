@@ -12,6 +12,7 @@ interface ImageUploadProps {
   className?: string;
   disabled?: boolean;
   isLoading?: boolean;
+  isPending?: boolean; // Shows that the image is selected but not yet uploaded
   accept?: string;
   maxSize?: number; // in bytes (default: 5MB)
 }
@@ -23,6 +24,7 @@ export function ImageUpload({
   className,
   disabled = false,
   isLoading = false,
+  isPending = false,
   accept = "image/jpeg,image/jpg,image/png,image/gif,image/webp",
   maxSize = 5 * 1024 * 1024, // 5MB
 }: ImageUploadProps) {
@@ -93,15 +95,23 @@ export function ImageUpload({
             )}
           </div>
           {!disabled && !isLoading && (
-            <Button
-              type="button"
-              variant="destructive"
-              size="icon"
-              onClick={handleRemove}
-              className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="absolute top-2 right-2 flex gap-2">
+              {isPending && (
+                <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
+                  <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
+                  Pending
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                onClick={handleRemove}
+                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           )}
         </div>
       ) : (

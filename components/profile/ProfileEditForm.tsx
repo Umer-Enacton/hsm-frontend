@@ -37,6 +37,7 @@ export function ProfileEditForm({
   const [errors, setErrors] = useState<ProfileFormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const validateField = (name: string, value: string) => {
@@ -74,7 +75,9 @@ export function ProfileEditForm({
   };
 
   const handleAvatarSelect = async (file: File | null) => {
+    console.log("🔍 [Profile] handleAvatarSelect called", file?.name || "null");
     if (!file) {
+      setPendingAvatarFile(null);
       setFormData((prev) => ({ ...prev, avatar: null }));
       return;
     }
@@ -86,25 +89,16 @@ export function ProfileEditForm({
     }
 
     setErrors((prev) => ({ ...prev, avatar: undefined }));
-    setIsUploadingAvatar(true);
-
-    try {
-      const result = await uploadAvatar(file);
-      setFormData((prev) => ({ ...prev, avatar: result.url }));
-      toast.success("Avatar uploaded successfully");
-    } catch (error: any) {
-      setErrors((prev) => ({
-        ...prev,
-        avatar: error.message || "Failed to upload avatar",
-      }));
-      toast.error(error.message || "Failed to upload avatar");
-    } finally {
-      setIsUploadingAvatar(false);
-    }
+    // Store the file locally - don't upload yet
+    console.log("✅ [Profile] File stored locally in pendingAvatarFile state - NO API CALL");
+    setPendingAvatarFile(file);
+    // The ImageUpload component will show the preview via FileReader
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    console.log("🚀 [Profile] handleSubmit - Save Changes clicked");
 
     setTouched({ name: true, email: true, phone: true });
 
@@ -117,15 +111,46 @@ export function ProfileEditForm({
     }
 
     setIsSubmitting(true);
+    setIsUploadingAvatar(true);
 
     try {
-      const updatedUser = await updateProfile(formData);
+      // Step 1: Upload avatar if there's a pending file
+      let avatarUrl = formData.avatar;
+      if (pendingAvatarFile) {
+        console.log("⬆️ [Profile] Pending file found - Uploading to Cloudinary NOW:", pendingAvatarFile.name);
+        try {
+          const result = await uploadAvatar(pendingAvatarFile);
+          avatarUrl = result.url;
+          console.log("✅ [Profile] Upload successful, URL:", avatarUrl);
+        } catch (error: any) {
+          console.error("❌ [Profile] Upload failed:", error);
+          setErrors((prev) => ({
+            ...prev,
+            avatar: error.message || "Failed to upload avatar",
+          }));
+          toast.error(error.message || "Failed to upload avatar");
+          setIsUploadingAvatar(false);
+          setIsSubmitting(false);
+          return;
+        }
+      } else {
+        console.log("ℹ️ [Profile] No pending file - skipping upload");
+      }
+
+      // Step 2: Update profile with the avatar URL
+      console.log("📤 [Profile] Submitting profile data with avatar URL");
+      const updatedUser = await updateProfile({
+        ...formData,
+        avatar: avatarUrl,
+      });
       toast.success("Profile updated successfully");
       onUpdate(updatedUser);
     } catch (error: any) {
       toast.error(error.message || "Failed to update profile");
     } finally {
       setIsSubmitting(false);
+      setIsUploadingAvatar(false);
+      setPendingAvatarFile(null);
     }
   };
 
@@ -141,6 +166,7 @@ export function ProfileEditForm({
               onImageSelect={handleAvatarSelect}
               disabled={isSubmitting}
               isLoading={isUploadingAvatar}
+              isPending={pendingAvatarFile !== null}
               className="w-full max-w-xs"
             />
           </div>

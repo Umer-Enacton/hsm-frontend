@@ -28,7 +28,7 @@ const PROTECTED_ROUTES = {
   },
   // Provider routes - require PROVIDER role
   provider: {
-    paths: ["/provider/dashboard"],
+    paths: ["/provider"],
     allowedRoles: [UserRole.PROVIDER],
   },
   // Customer routes - require CUSTOMER role

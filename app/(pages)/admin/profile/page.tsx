@@ -59,6 +59,8 @@ export default function ProfilePage() {
   const handleProfileUpdate = (updatedUser: User) => {
     setUser(updatedUser);
     setActiveTab("overview");
+    // Emit custom event to notify layout to refresh user data
+    window.dispatchEvent(new CustomEvent('profile-updated'));
   };
 
   if (isLoading) {

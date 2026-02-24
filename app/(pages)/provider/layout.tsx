@@ -1,9 +1,9 @@
 "use client";
 
-// app/(pages)/admin/layout.tsx
+// app/(pages)/provider/layout.tsx
 import { DashboardLayout } from "@/components/common";
-import { LayoutDashboard, LayoutTemplate, Users } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { LayoutDashboard, Briefcase, Clock, Calendar, MessageSquare, Star, Settings } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import {
@@ -13,21 +13,26 @@ import {
 } from "@/lib/auth-utils";
 import { getCurrentProfile } from "@/lib/profile-api";
 import { UserRole, type User } from "@/types/auth";
+import { getProviderBusiness } from "@/lib/provider/api";
 
-// Navigation items for the admin sidebar
+// Navigation items for the provider sidebar
 const navItems = [
-  { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Categories", href: "/admin/categories", icon: LayoutTemplate },
-  { label: "Users", href: "/admin/users", icon: Users },
-  // Profile removed from sidebar - accessible via Header user menu
+  { label: "Dashboard", href: "/provider/dashboard", icon: LayoutDashboard },
+  { label: "Business", href: "/provider/business", icon: Briefcase },
+  { label: "Services", href: "/provider/services", icon: Settings },
+  { label: "Availability", href: "/provider/availability", icon: Calendar },
+  { label: "Bookings", href: "/provider/bookings", icon: Clock },
+  { label: "Reviews", href: "/provider/reviews", icon: MessageSquare },
+  { label: "Profile", href: "/provider/profile", icon: Star },
 ];
 
-export default function AdminLayout({
+export default function ProviderLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,10 +57,10 @@ export default function AdminLayout({
           return;
         }
 
-        // Check if user has admin role
-        if (userData.roleId !== UserRole.ADMIN) {
-          console.log("Not an admin user, roleId:", userData.roleId);
-          setError("Access denied: Admin access required");
+        // Check if user has provider role
+        if (userData.roleId !== UserRole.PROVIDER) {
+          console.log("Not a provider user, roleId:", userData.roleId);
+          setError("Access denied: Provider access required");
           setTimeout(() => {
             router.push("/unauthorized");
           }, 2000);
@@ -72,17 +77,40 @@ export default function AdminLayout({
           // Fallback to token data if profile fetch fails
           setUser({
             id: userData.id,
-            name: userData.name || userData.email?.split("@")[0] || "Admin User",
-            email: userData.email || "admin@hsm.com",
+            name: userData.name || userData.email?.split("@")[0] || "Provider User",
+            email: userData.email || "provider@hsm.com",
             phone: "",
             roleId: userData.roleId,
             avatar: null,
           });
         }
 
+        // Check if provider has completed onboarding
+        // Skip onboarding check if already on onboarding page
+        if (!pathname?.includes("/onboarding")) {
+          try {
+            const business = await getProviderBusiness(userData.id);
+
+            // If no business exists, redirect to onboarding
+            if (!business) {
+              console.log("No business profile found, redirecting to onboarding");
+              router.push("/onboarding");
+              return;
+            }
+
+            // Business exists - continue to dashboard
+            console.log("Business profile found, continuing to dashboard");
+          } catch (businessError) {
+            console.error("Error checking business profile:", businessError);
+            // If error fetching business (404), redirect to onboarding
+            router.push("/onboarding");
+            return;
+          }
+        }
+
         setIsLoading(false);
       } catch (err) {
-        console.error("Error in admin layout:", err);
+        console.error("Error in provider layout:", err);
         setError("Authentication error");
         setTimeout(() => {
           router.push("/login");
@@ -103,7 +131,7 @@ export default function AdminLayout({
     return () => {
       window.removeEventListener('profile-updated', handleProfileUpdate);
     };
-  }, [router]);
+  }, [router, pathname]);
 
   const onLogout = async () => {
     try {
@@ -116,7 +144,7 @@ export default function AdminLayout({
   };
 
   const onProfileClick = () => {
-    router.push("/admin/profile");
+    router.push("/provider/profile");
   };
 
   // Show loading state while checking auth
@@ -145,19 +173,19 @@ export default function AdminLayout({
     <DashboardLayout
       sidebar={{
         navItems,
-        appName: "HSM Admin",
+        appName: "HSM Provider",
       }}
       header={{
         user: user ? {
           name: user.name,
           email: user.email,
           avatarUrl: user.avatar || undefined,
-          role: "Administrator",
+          role: "Service Provider",
         } : undefined,
         onProfileClick,
         onLogout,
         showSearch: true,
-        searchPlaceholder: "Search admin...",
+        searchPlaceholder: "Search provider...",
       }}
     >
       {children}
