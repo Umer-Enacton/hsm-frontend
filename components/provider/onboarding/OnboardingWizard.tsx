@@ -1,29 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { OnboardingStage, type OnboardingData, DayOfWeek, SlotMode } from "@/types/provider";
-import { Stage1BusinessProfile } from "./stages/Stage1BusinessProfile";
+import { OnboardingStage, type OnboardingData, WorkingHours, BreakTime } from "@/types/provider";
+import { Stage1BusinessDetails } from "./stages/Stage1BusinessDetails";
 import { Stage2WorkingHours } from "./stages/Stage2WorkingHours";
-import { Stage3BreakTimes } from "./stages/Stage3BreakTimes";
-import { Stage4Availability } from "./stages/Stage4Availability";
+import { Stage3SlotGeneration } from "./stages/Stage3SlotGeneration";
 import { toast } from "sonner";
 
 interface OnboardingWizardProps {
   initialStage?: OnboardingStage;
   existingData?: Partial<OnboardingData>;
-  onComplete: (data: OnboardingData) => void;
+  onComplete: (data: OnboardingData) => Promise<void>;
   onCancel: () => void;
 }
 
 const STAGES = [
   {
-    id: OnboardingStage.BUSINESS_PROFILE,
-    title: "Business Profile",
+    id: OnboardingStage.BUSINESS_DETAILS,
+    title: "Business Details",
     description: "Tell us about your business",
     isRequired: true,
   },
@@ -34,67 +33,59 @@ const STAGES = [
     isRequired: true,
   },
   {
-    id: OnboardingStage.BREAK_TIMES,
-    title: "Break Times",
-    description: "Add your breaks (optional)",
-    isRequired: false,
-  },
-  {
-    id: OnboardingStage.AVAILABILITY,
-    title: "Availability Slots",
+    id: OnboardingStage.SLOT_GENERATION,
+    title: "Slot Generation",
     description: "Configure your booking slots",
     isRequired: true,
   },
 ];
 
 export function OnboardingWizard({
-  initialStage = OnboardingStage.BUSINESS_PROFILE,
+  initialStage = OnboardingStage.BUSINESS_DETAILS,
   existingData,
   onComplete,
   onCancel,
 }: OnboardingWizardProps) {
   const [currentStage, setCurrentStage] = useState<OnboardingStage>(initialStage);
+  const [isCompleting, setIsCompleting] = useState(false);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
-    businessProfile: existingData?.businessProfile || {
+    businessDetails: existingData?.businessDetails || {
       name: "",
       description: "",
       categoryId: 0,
       category: "",
-      phone: "",
-      email: "",
-      address: "",
+      businessPhone: "",
+      state: "",
+      city: "",
       website: "",
+      logo: null,
+      coverImage: null,
     },
-    workingHours: existingData?.workingHours || [],
-    breakTimes: existingData?.breakTimes || [],
-    availabilitySlots: existingData?.availabilitySlots || {
-      mode: SlotMode.MANUAL,
-      slots: [],
-    },
+    workingHours: existingData?.workingHours || { startTime: "09:00", endTime: "18:00" },
+    breakTime: existingData?.breakTime,
+    slotInterval: existingData?.slotInterval || 30,
   });
 
   const currentStageIndex = STAGES.findIndex((s) => s.id === currentStage);
   const progress = ((currentStageIndex + 1) / STAGES.length) * 100;
 
-  const handleStageData = (stageData: any) => {
+  const handleStageData = useCallback((stageData: any) => {
     setOnboardingData((prev) => {
       switch (currentStage) {
-        case OnboardingStage.BUSINESS_PROFILE:
-          return { ...prev, businessProfile: stageData };
+        case OnboardingStage.BUSINESS_DETAILS:
+          return { ...prev, businessDetails: stageData };
         case OnboardingStage.WORKING_HOURS:
-          return { ...prev, workingHours: stageData };
-        case OnboardingStage.BREAK_TIMES:
-          return { ...prev, breakTimes: stageData };
-        case OnboardingStage.AVAILABILITY:
-          return { ...prev, availabilitySlots: stageData };
+          return { ...prev, ...stageData };
+        case OnboardingStage.SLOT_GENERATION:
+          return { ...prev, slotInterval: stageData };
         default:
           return prev;
       }
     });
-  };
+  }, [currentStage]);
 
   const handleNext = () => {
-    if (currentStage < OnboardingStage.AVAILABILITY) {
+    if (currentStage < OnboardingStage.SLOT_GENERATION) {
       setCurrentStage((prev) => prev + 1);
     } else {
       handleComplete();
@@ -102,68 +93,92 @@ export function OnboardingWizard({
   };
 
   const handleBack = () => {
-    if (currentStage > OnboardingStage.BUSINESS_PROFILE) {
+    if (currentStage > OnboardingStage.BUSINESS_DETAILS) {
       setCurrentStage((prev) => prev - 1);
     }
   };
 
-  const handleSkip = () => {
-    // Skip break times (optional stage)
-    if (currentStage === OnboardingStage.BREAK_TIMES) {
-      setCurrentStage((prev) => prev + 1);
-    }
-  };
-
-  const handleComplete = () => {
+  const handleComplete = async () => {
     // Validate required stages
-    if (!onboardingData.businessProfile.name) {
+    if (!onboardingData.businessDetails.name) {
       toast.error("Business name is required");
-      setCurrentStage(OnboardingStage.BUSINESS_PROFILE);
+      setCurrentStage(OnboardingStage.BUSINESS_DETAILS);
       return;
     }
 
-    if (onboardingData.workingHours.length === 0) {
-      toast.error("Please set at least one working day");
+    if (onboardingData.businessDetails.categoryId === 0) {
+      toast.error("Please select a category");
+      setCurrentStage(OnboardingStage.BUSINESS_DETAILS);
+      return;
+    }
+
+    if (!onboardingData.businessDetails.state || !onboardingData.businessDetails.city) {
+      toast.error("Business location is required");
+      setCurrentStage(OnboardingStage.BUSINESS_DETAILS);
+      return;
+    }
+
+    if (!onboardingData.workingHours.startTime || !onboardingData.workingHours.endTime) {
+      toast.error("Working hours are required");
       setCurrentStage(OnboardingStage.WORKING_HOURS);
       return;
     }
 
-    // Validate availability slots
-    if (onboardingData.availabilitySlots.slots.length === 0) {
-      toast.error("Please create at least one availability slot");
-      setCurrentStage(OnboardingStage.AVAILABILITY);
+    if (!onboardingData.slotInterval || onboardingData.slotInterval <= 0) {
+      toast.error("Please select a slot interval");
+      setCurrentStage(OnboardingStage.SLOT_GENERATION);
       return;
     }
 
-    onComplete(onboardingData);
+    setIsCompleting(true);
+    try {
+      await onComplete(onboardingData);
+    } catch (error) {
+      setIsCompleting(false);
+    }
+    // Note: Don't set setIsCompleting(false) on success because page will redirect
   };
 
   const canGoNext = () => {
     switch (currentStage) {
-      case OnboardingStage.BUSINESS_PROFILE:
+      case OnboardingStage.BUSINESS_DETAILS:
         return (
-          onboardingData.businessProfile.name &&
-          onboardingData.businessProfile.category &&
-          onboardingData.businessProfile.phone &&
-          onboardingData.businessProfile.email &&
-          onboardingData.businessProfile.address
+          onboardingData.businessDetails.name &&
+          onboardingData.businessDetails.categoryId > 0 &&
+          onboardingData.businessDetails.state &&
+          onboardingData.businessDetails.city
         );
       case OnboardingStage.WORKING_HOURS:
-        return onboardingData.workingHours.some((wh) => wh.isOpen);
-      case OnboardingStage.BREAK_TIMES:
-        return true; // Optional stage
-      case OnboardingStage.AVAILABILITY:
-        return onboardingData.availabilitySlots.slots.length > 0;
+        return (
+          onboardingData.workingHours.startTime &&
+          onboardingData.workingHours.endTime
+        );
+      case OnboardingStage.SLOT_GENERATION:
+        return onboardingData.slotInterval > 0;
       default:
         return false;
     }
   };
 
-  const isLastStage = currentStage === OnboardingStage.AVAILABILITY;
-  const isOptionalStage = currentStage === OnboardingStage.BREAK_TIMES;
+  const isLastStage = currentStage === OnboardingStage.SLOT_GENERATION;
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-4xl relative">
+      {/* Loading Overlay */}
+      {isCompleting && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+          <div className="flex flex-col items-center gap-4 p-8">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <div className="text-center space-y-2">
+              <p className="text-lg font-semibold">Setting up your business...</p>
+              <p className="text-sm text-muted-foreground">
+                This may take a moment as we upload your images and create your profile
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Progress Header */}
       <div className="mb-8">
         <div className="mb-4 flex items-center justify-between">
@@ -223,36 +238,27 @@ export function OnboardingWizard({
 
       {/* Stage Content */}
       <Card className="p-6">
-        {currentStage === OnboardingStage.BUSINESS_PROFILE && (
-          <Stage1BusinessProfile
-            initialData={onboardingData.businessProfile}
+        {currentStage === OnboardingStage.BUSINESS_DETAILS && (
+          <Stage1BusinessDetails
+            initialData={onboardingData.businessDetails}
             onNext={handleStageData}
-            autoFocus
           />
         )}
 
         {currentStage === OnboardingStage.WORKING_HOURS && (
           <Stage2WorkingHours
-            initialData={onboardingData.workingHours}
+            initialWorkingHours={onboardingData.workingHours}
+            initialBreakTime={onboardingData.breakTime}
             onNext={handleStageData}
           />
         )}
 
-        {currentStage === OnboardingStage.BREAK_TIMES && (
-          <Stage3BreakTimes
-            initialData={onboardingData.breakTimes}
+        {currentStage === OnboardingStage.SLOT_GENERATION && (
+          <Stage3SlotGeneration
             workingHours={onboardingData.workingHours}
+            breakTime={onboardingData.breakTime}
+            initialSlotInterval={onboardingData.slotInterval}
             onNext={handleStageData}
-          />
-        )}
-
-        {currentStage === OnboardingStage.AVAILABILITY && (
-          <Stage4Availability
-            initialData={onboardingData.availabilitySlots}
-            workingHours={onboardingData.workingHours}
-            breakTimes={onboardingData.breakTimes}
-            onNext={handleStageData}
-            preSelectedWorkingHours={onboardingData.workingHours}
           />
         )}
       </Card>
@@ -260,7 +266,7 @@ export function OnboardingWizard({
       {/* Navigation Buttons */}
       <div className="mt-6 flex items-center justify-between">
         <div className="flex gap-2">
-          {currentStage > OnboardingStage.BUSINESS_PROFILE && (
+          {currentStage > OnboardingStage.BUSINESS_DETAILS && (
             <Button
               variant="outline"
               onClick={handleBack}
@@ -273,18 +279,17 @@ export function OnboardingWizard({
         </div>
 
         <div className="flex gap-2">
-          {isOptionalStage && (
-            <Button variant="ghost" onClick={handleSkip}>
-              Skip for now
-            </Button>
-          )}
-
           <Button
             onClick={handleNext}
-            disabled={!canGoNext()}
+            disabled={!canGoNext() || isCompleting}
             className="gap-2"
           >
-            {isLastStage ? (
+            {isCompleting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Creating Your Business...
+              </>
+            ) : isLastStage ? (
               "Complete Setup"
             ) : (
               <>

@@ -23,7 +23,7 @@ const navItems = [
   { label: "Availability", href: "/provider/availability", icon: Calendar },
   { label: "Bookings", href: "/provider/bookings", icon: Clock },
   { label: "Reviews", href: "/provider/reviews", icon: MessageSquare },
-  { label: "Profile", href: "/provider/profile", icon: Star },
+  // Profile removed from sidebar - accessible via Header user menu (same as admin)
 ];
 
 export default function ProviderLayout({
@@ -36,6 +36,7 @@ export default function ProviderLayout({
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [business, setBusiness] = useState<any>(null);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -89,14 +90,17 @@ export default function ProviderLayout({
         // Skip onboarding check if already on onboarding page
         if (!pathname?.includes("/onboarding")) {
           try {
-            const business = await getProviderBusiness(userData.id);
+            const businessData = await getProviderBusiness(userData.id);
 
             // If no business exists, redirect to onboarding
-            if (!business) {
+            if (!businessData) {
               console.log("No business profile found, redirecting to onboarding");
               router.push("/onboarding");
               return;
             }
+
+            // Store business data for verification status
+            setBusiness(businessData);
 
             // Business exists - continue to dashboard
             console.log("Business profile found, continuing to dashboard");
@@ -186,6 +190,7 @@ export default function ProviderLayout({
         onLogout,
         showSearch: true,
         searchPlaceholder: "Search provider...",
+        businessVerification: business?.isVerified ?? false,
       }}
     >
       {children}

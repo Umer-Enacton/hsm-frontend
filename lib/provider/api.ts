@@ -68,24 +68,35 @@ export async function updateBusiness(
  * Upload business logo via backend
  */
 export async function uploadBusinessLogo(file: File): Promise<{ url: string }> {
-  const formData = new FormData();
-  formData.append("file", file);
+  console.log("Starting logo upload for file:", file.name, file.size, file.type);
 
-  const response = await fetch(`${API_BASE_URL}/upload/logo`, {
+  const formData = new FormData();
+  formData.append("logo", file);
+
+  // Backend upload routes are mounted at root level: /logo and /cover-image
+  const uploadUrl = `${API_BASE_URL}/logo`;
+  console.log("Sending request to:", uploadUrl);
+
+  const response = await fetch(uploadUrl, {
     method: "POST",
     body: formData,
     credentials: "include",
-    headers: {}, // Don't set Content-Type, let browser do it for FormData
+    mode: "cors",
   });
 
+  console.log("Response status:", response.status, response.statusText);
+
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Upload failed" }));
-    throw new Error(error.message || "Failed to upload logo");
+    const errorText = await response.text();
+    console.error("Logo upload failed:", response.status, errorText);
+    throw new Error(errorText || "Failed to upload logo");
   }
 
   const data = await response.json();
+  console.log("Upload response data:", data);
+
   if (data.success && data.data) {
-    console.log("Logo uploaded via backend:", data.data.url);
+    console.log("Logo uploaded successfully:", data.data.url);
     return { url: data.data.url };
   }
 
@@ -98,98 +109,39 @@ export async function uploadBusinessLogo(file: File): Promise<{ url: string }> {
 export async function uploadBusinessCoverImage(
   file: File
 ): Promise<{ url: string }> {
-  const formData = new FormData();
-  formData.append("file", file);
+  console.log("Starting cover image upload for file:", file.name, file.size, file.type);
 
-  const response = await fetch(`${API_BASE_URL}/upload/cover-image`, {
+  const formData = new FormData();
+  formData.append("coverImage", file);
+
+  // Backend upload routes are mounted at root level: /logo and /cover-image
+  const uploadUrl = `${API_BASE_URL}/cover-image`;
+  console.log("Sending request to:", uploadUrl);
+
+  const response = await fetch(uploadUrl, {
     method: "POST",
     body: formData,
     credentials: "include",
-    headers: {}, // Don't set Content-Type, let browser do it for FormData
+    mode: "cors",
   });
 
+  console.log("Response status:", response.status, response.statusText);
+
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Upload failed" }));
-    throw new Error(error.message || "Failed to upload cover image");
+    const errorText = await response.text();
+    console.error("Cover image upload failed:", response.status, errorText);
+    throw new Error(errorText || "Failed to upload cover image");
   }
 
   const data = await response.json();
+  console.log("Upload response data:", data);
+
   if (data.success && data.data) {
-    console.log("Cover image uploaded via backend:", data.data.url);
+    console.log("Cover image uploaded successfully:", data.data.url);
     return { url: data.data.url };
   }
 
   throw new Error(data.message || "Failed to upload cover image");
-}
-
-// ============================================================================
-// WORKING HOURS API
-// ============================================================================
-
-/**
- * Get working hours for a business
- */
-export async function getWorkingHours(
-  businessId: number
-): Promise<WorkingHours[]> {
-  try {
-    const response = await api.get<{ working_hours: WorkingHours[] }>(
-      `/businesses/${businessId}/working-hours`
-    );
-    return response.working_hours || [];
-  } catch (error) {
-    console.error("Error fetching working hours:", error);
-    return [];
-  }
-}
-
-/**
- * Save working hours for a business
- */
-export async function saveWorkingHours(
-  businessId: number,
-  workingHours: WorkingHours[]
-): Promise<WorkingHours[]> {
-  const response = await api.post<{ working_hours: WorkingHours[] }>(
-    `/businesses/${businessId}/working-hours`,
-    { working_hours: workingHours }
-  );
-  return response.working_hours;
-}
-
-// ============================================================================
-// BREAK TIMES API
-// ============================================================================
-
-/**
- * Get break times for a business
- */
-export async function getBreakTimes(
-  businessId: number
-): Promise<BreakTime[]> {
-  try {
-    const response = await api.get<{ break_times: BreakTime[] }>(
-      `/businesses/${businessId}/break-times`
-    );
-    return response.break_times || [];
-  } catch (error) {
-    console.error("Error fetching break times:", error);
-    return [];
-  }
-}
-
-/**
- * Save break times for a business
- */
-export async function saveBreakTimes(
-  businessId: number,
-  breakTimes: BreakTime[]
-): Promise<BreakTime[]> {
-  const response = await api.post<{ break_times: BreakTime[] }>(
-    `/businesses/${businessId}/break-times`,
-    { break_times: breakTimes }
-  );
-  return response.break_times;
 }
 
 // ============================================================================
@@ -222,11 +174,11 @@ export async function getAvailabilitySlots(
 /**
  * Create availability slot
  * Backend endpoint: POST /slots/:businessId
- * Expects: { startTime, endTime } (times should include date)
+ * Expects: { startTime } (only start time now, "HH:mm:ss" format)
  */
 export async function createSlot(
   businessId: number,
-  slot: { startTime: string; endTime: string }
+  slot: { startTime: string }
 ): Promise<any> {
   const response = await api.post<{ slot: any; message: string }>(
     `/slots/${businessId}`,
@@ -438,10 +390,10 @@ export async function completeOnboarding(
     let logoUrl: string | undefined;
     let coverImageUrl: string | undefined;
 
-    if (onboardingData.businessProfile.logo) {
+    if (onboardingData.businessDetails.logo) {
       console.log("Uploading logo...");
       try {
-        const logoResult = await uploadBusinessLogo(onboardingData.businessProfile.logo);
+        const logoResult = await uploadBusinessLogo(onboardingData.businessDetails.logo);
         logoUrl = logoResult.url;
         console.log("Logo uploaded:", logoUrl);
       } catch (error) {
@@ -450,10 +402,10 @@ export async function completeOnboarding(
       }
     }
 
-    if (onboardingData.businessProfile.coverImage) {
+    if (onboardingData.businessDetails.coverImage) {
       console.log("Uploading cover image...");
       try {
-        const coverResult = await uploadBusinessCoverImage(onboardingData.businessProfile.coverImage);
+        const coverResult = await uploadBusinessCoverImage(onboardingData.businessDetails.coverImage);
         coverImageUrl = coverResult.url;
         console.log("Cover uploaded:", coverImageUrl);
       } catch (error) {
@@ -465,75 +417,40 @@ export async function completeOnboarding(
     // Step 2: Create business profile
     console.log("Creating business profile...");
     const businessData = {
-      name: onboardingData.businessProfile.name,
-      description: onboardingData.businessProfile.description,
-      categoryId: onboardingData.businessProfile.categoryId,
+      name: onboardingData.businessDetails.name,
+      description: onboardingData.businessDetails.description,
+      categoryId: onboardingData.businessDetails.categoryId,
+      phone: onboardingData.businessDetails.businessPhone, // Send business phone
+      state: onboardingData.businessDetails.state, // State/Province
+      city: onboardingData.businessDetails.city, // City
       logo: logoUrl,
       coverImage: coverImageUrl,
-      website: onboardingData.businessProfile.website,
-      // Note: phone is pulled from user profile by backend
-      // Note: email is pulled from user profile by backend
-      // Note: address is not in the current schema, skipping
+      website: onboardingData.businessDetails.website,
     };
 
+    console.log("Sending business data:", businessData);
     const business = await createBusiness(businessData);
     console.log("Business created:", business);
 
-    // Step 3: Save working hours (if endpoint exists, otherwise skip with warning)
-    const openWorkingHours = onboardingData.workingHours.filter(wh => wh.isOpen);
-    if (openWorkingHours.length > 0) {
-      console.log("Working hours configured (backend endpoint pending):", openWorkingHours);
-      // TODO: Uncomment when backend endpoint is ready
-      // await saveWorkingHours(business.id, openWorkingHours);
-    }
+    // Step 3: Generate slots from working hours (frontend-only data)
+    // Get slot interval (default 30 minutes)
+    const slotInterval = onboardingData.slotInterval || 30;
+    console.log("Requesting slot generation with interval:", slotInterval, "minutes");
 
-    // Step 4: Save break times (if endpoint exists, otherwise skip with warning)
-    if (onboardingData.breakTimes.length > 0) {
-      console.log("Break times configured (backend endpoint pending):", onboardingData.breakTimes);
-      // TODO: Uncomment when backend endpoint is ready
-      // await saveBreakTimes(business.id, onboardingData.breakTimes);
-    }
-
-    // Step 5: Create availability slots
-    const slots = onboardingData.availabilitySlots.slots;
-    if (slots.length > 0) {
-      console.log(`Creating ${slots.length} availability slots...`);
-
-      let createdCount = 0;
-      let failedCount = 0;
-
-      // Create slots one by one
-      // NOTE: Backend slots only store TIME, not date
-      // We need to group by time and create unique time slots
-      const uniqueTimeSlots = new Map<string, { startTime: string; endTime: string }>();
-
-      for (const slot of slots) {
-        try {
-          // Format: "09:00" -> "09:00:00"
-          const startTime = slot.startTime + ":00";
-          const endTime = slot.endTime + ":00";
-
-          const key = `${startTime}-${endTime}`;
-
-          // Only create unique time slots
-          if (!uniqueTimeSlots.has(key)) {
-            uniqueTimeSlots.set(key, { startTime, endTime });
-
-            const slotData = {
-              startTime,
-              endTime,
-            };
-
-            await createSlot(business.id, slotData);
-            createdCount++;
-          }
-        } catch (slotError) {
-          console.error("Failed to create slot:", slotError);
-          failedCount++;
+    // Call backend to generate slots from working hours and break time (provided in request body)
+    try {
+      await api.post<{ message: string }>(
+        `/slots/${business.id}/generate`,
+        {
+          workingHours: onboardingData.workingHours,
+          breakTime: onboardingData.breakTime,
+          slotInterval
         }
-      }
-
-      console.log(`Unique time slots created: ${createdCount}, failed: ${failedCount}`);
+      );
+      console.log("Slots generated successfully by backend");
+    } catch (error) {
+      console.error("Failed to auto-generate slots:", error);
+      // Continue anyway - business was created
     }
 
     console.log("Onboarding completed successfully!");

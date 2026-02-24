@@ -1,7 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { VerificationAlert } from "@/components/provider/shared/VerificationAlert";
 import {
   Calendar,
   Clock,
@@ -9,9 +11,44 @@ import {
   Star,
   TrendingUp,
   Users,
+  Loader2,
 } from "lucide-react";
+import { getUserData } from "@/lib/auth-utils";
+import { getProviderBusiness } from "@/lib/provider/api";
 
 export default function ProviderDashboardPage() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [business, setBusiness] = useState<any>(null);
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        const userData = getUserData();
+        if (userData) {
+          const businessData = await getProviderBusiness(userData.id);
+          setBusiness(businessData);
+        }
+      } catch (error) {
+        console.error("Error loading dashboard:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -21,6 +58,14 @@ export default function ProviderDashboardPage() {
           Welcome back! Here's what's happening with your business.
         </p>
       </div>
+
+      {/* Verification Alert */}
+      {business && (
+        <VerificationAlert
+          isVerified={business.isVerified}
+          businessName={business.name}
+        />
+      )}
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -62,7 +107,9 @@ export default function ProviderDashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">PKR 78,500</div>
+            <div className="flex items-center gap-2">
+              <div className="text-2xl font-bold">RS 78,500</div>
+            </div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-600">+8%</span> from last month
             </p>

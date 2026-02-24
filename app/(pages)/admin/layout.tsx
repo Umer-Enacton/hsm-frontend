@@ -2,7 +2,7 @@
 
 // app/(pages)/admin/layout.tsx
 import { DashboardLayout } from "@/components/common";
-import { LayoutDashboard, LayoutTemplate, Users } from "lucide-react";
+import { LayoutDashboard, LayoutTemplate, Users, Briefcase } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -17,6 +17,7 @@ import { UserRole, type User } from "@/types/auth";
 // Navigation items for the admin sidebar
 const navItems = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { label: "Businesses", href: "/admin/business", icon: Briefcase },
   { label: "Categories", href: "/admin/categories", icon: LayoutTemplate },
   { label: "Users", href: "/admin/users", icon: Users },
   // Profile removed from sidebar - accessible via Header user menu

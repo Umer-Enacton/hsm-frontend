@@ -13,4 +13,5 @@ export type { DashboardLayoutProps } from "./DashboardLayout";
 
 // Common form components
 export { ImageUpload } from "./ImageUpload";
+export { StateCityPicker } from "./StateCityPicker";
 

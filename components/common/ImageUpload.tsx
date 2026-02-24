@@ -115,7 +115,7 @@ export function ImageUpload({
           )}
         </div>
       ) : (
-        // Upload Area
+        // Upload Area - same size as preview
         <div className="relative">
           <input
             type="file"
@@ -128,7 +128,7 @@ export function ImageUpload({
           <label
             htmlFor="image-upload"
             className={cn(
-              "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 p-8 transition-colors cursor-pointer hover:border-muted-foreground/50 hover:bg-muted/50",
+              "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 aspect-video cursor-pointer hover:border-muted-foreground/50 hover:bg-muted/50 transition-colors",
               (disabled || isLoading) && "cursor-not-allowed opacity-50"
             )}
           >
@@ -137,15 +137,11 @@ export function ImageUpload({
             ) : (
               <>
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted-foreground/10">
-                  {currentImage ? (
-                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                  ) : (
-                    <Upload className="h-6 w-6 text-muted-foreground" />
-                  )}
+                  <Upload className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <div className="text-center">
+                <div className="text-center px-4">
                   <p className="text-sm font-medium text-foreground">
-                    {currentImage ? "Change image" : "Upload an image"}
+                    Upload an image
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     JPG, PNG, GIF, or WEBP (max {Math.round(maxSize / 1024 / 1024)}MB)

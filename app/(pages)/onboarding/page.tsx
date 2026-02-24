@@ -31,15 +31,17 @@ export default function OnboardingPage() {
         if (business) {
           // Pre-fill with existing data
           setExistingData({
-            businessProfile: {
+            businessDetails: {
               name: business.name || "",
               description: business.description || "",
-              categoryId: 0, // Will need to be mapped from category name
+              categoryId: business.categoryId || 0,
               category: business.category || "",
-              phone: business.phone || "",
-              email: business.email || business.email || "",
-              address: business.address || "",
+              businessPhone: business.phone || "",
+              state: business.state || "",
+              city: business.city || "",
               website: business.website || "",
+              logo: null,
+              coverImage: null,
             },
           });
         }
@@ -57,8 +59,15 @@ export default function OnboardingPage() {
   const handleOnboardingComplete = async (data: OnboardingData) => {
     try {
       console.log("Completing onboarding with data:", data);
+
+      // Show uploading toast if images are present
+      if (data.businessDetails.logo || data.businessDetails.coverImage) {
+        toast.loading("Uploading images...", { id: "upload-progress" });
+      }
+
       const result = await completeOnboarding(data);
 
+      toast.dismiss("upload-progress");
       toast.success("Setup completed successfully!", {
         description: "Your business profile is now active.",
       });
@@ -69,9 +78,11 @@ export default function OnboardingPage() {
       }, 1500);
     } catch (error: any) {
       console.error("Error completing onboarding:", error);
+      toast.dismiss("upload-progress");
       toast.error("Failed to complete setup", {
         description: error.message || "Please try again.",
       });
+      throw error; // Re-throw so wizard can handle the error state
     }
   };
 
@@ -101,7 +112,7 @@ export default function OnboardingPage() {
 
         {/* Onboarding Wizard */}
         <OnboardingWizard
-          initialStage={OnboardingStage.BUSINESS_PROFILE}
+          initialStage={OnboardingStage.BUSINESS_DETAILS}
           existingData={existingData}
           onComplete={handleOnboardingComplete}
           onCancel={() => router.push("/login")}

@@ -15,18 +15,25 @@ export enum BusinessStatus {
 
 /**
  * Business profile interface
+ * Note: Business and Provider are separate entities
+ * - Business has its own phone (business contact number)
+ * - Provider (user) has their own phone/email (personal contact)
  */
 export interface Business {
   id: number;
-  userId: number;
-  name: string;
+  userId: number; // Provider ID (same as providerId)
+  providerId: number; // Owner of the business
+  name: string; // Business name
+  businessName?: string; // Business name (backend field)
   description?: string;
   category?: string;
+  categoryId?: number;
   logo?: string | null;
   coverImage?: string | null;
-  address?: string;
-  phone?: string;
-  email?: string;
+  phone?: string; // Business phone (can be different from provider's phone)
+  state?: string; // State/UT where business is located
+  city?: string; // City where business is located
+  email?: string; // Provider's email (for contact purposes)
   website?: string;
   status: BusinessStatus;
   isVerified: boolean;
@@ -34,55 +41,52 @@ export interface Business {
   totalReviews?: number;
   createdAt?: string;
   updatedAt?: string;
+  // Provider info (for reference)
+  providerName?: string; // Provider's personal name
+  providerEmail?: string; // Provider's personal email
+  providerPhone?: string; // Provider's personal phone
 }
 
 /**
- * Day of week enum
- */
-export enum DayOfWeek {
-  MONDAY = "monday",
-  TUESDAY = "tuesday",
-  WEDNESDAY = "wednesday",
-  THURSDAY = "thursday",
-  FRIDAY = "friday",
-  SATURDAY = "saturday",
-  SUNDAY = "sunday",
-}
-
-/**
- * Working hours interface
+ * Simplified working hours - applies to all days
  */
 export interface WorkingHours {
-  id?: number;
-  businessId: number;
-  day: DayOfWeek;
-  isOpen: boolean;
-  startTime?: string; // Format: "HH:mm"
-  endTime?: string; // Format: "HH:mm"
-}
-
-/**
- * Break time interface
- */
-export interface BreakTime {
-  id?: number;
-  businessId: number;
-  day?: DayOfWeek; // If null, applies to all days
   startTime: string; // Format: "HH:mm"
   endTime: string; // Format: "HH:mm"
 }
 
 /**
- * Availability slot interface
+ * Simplified break time - applies to all days (optional)
+ */
+export interface BreakTime {
+  startTime: string; // Format: "HH:mm"
+  endTime: string; // Format: "HH:mm"
+}
+
+/**
+ * Availability slot interface (for onboarding)
+ * Used for generating date-specific slots during onboarding
+ * Converted to unique start times in backend
  */
 export interface AvailabilitySlot {
   id?: number;
   businessId: number;
   date: string; // Format: "YYYY-MM-DD"
-  startTime: string; // Format: "HH:mm"
-  endTime: string; // Format: "HH:mm"
+  startTime: string; // Format: "HH:mm" - only start time now
+  endTime?: string; // Format: "HH:mm" - optional, for display only
   isBooked: boolean;
   bookingId?: number;
+}
+
+/**
+ * Slot interface (backend stored slots)
+ * Backend stores only start times (recurring daily)
+ */
+export interface Slot {
+  id: number;
+  businessId: number;
+  startTime: string; // Format: "HH:mm:ss" - only start time
+  createdAt?: string;
 }
 
 /**
@@ -94,52 +98,38 @@ export enum SlotMode {
 }
 
 /**
- * Onboarding data - accumulates through stages
+ * Onboarding data - simplified 3-stage flow
  */
 export interface OnboardingData {
-  // Stage 1: Business Profile
-  businessProfile: {
+  // Stage 1: Business Details
+  businessDetails: {
     name: string;
     description: string;
-    categoryId: number; // Changed from category to categoryId for backend
+    categoryId: number;
     category?: string; // Display name only
     logo?: File | null;
     coverImage?: File | null;
-    phone?: string; // Pulled from user profile by backend
-    email?: string; // Pulled from user profile by backend
-    address?: string; // Not currently in backend schema
+    businessPhone?: string;
+    state?: string; // State/UT
+    city?: string; // City within state
     website?: string;
   };
 
-  // Stage 2: Working Hours
-  workingHours: WorkingHours[];
+  // Stage 2: Working Hours Configuration
+  workingHours: WorkingHours;
+  breakTime?: BreakTime; // Optional
 
-  // Stage 3: Break Times (optional)
-  breakTimes: BreakTime[];
-
-  // Stage 4: Availability Slots
-  availabilitySlots: {
-    mode: SlotMode;
-    slots: AvailabilitySlot[];
-    autoGenerateConfig?: {
-      startDate: string;
-      endDate: string;
-      slotDuration: number; // in minutes
-      startTime: string;
-      endTime: string;
-      excludeDays: DayOfWeek[];
-    };
-  };
+  // Stage 3: Slot Generation Settings
+  slotInterval: number; // in minutes (15, 30, 60, etc.)
 }
 
 /**
- * Onboarding stage
+ * Onboarding stage - simplified to 3 stages
  */
 export enum OnboardingStage {
-  BUSINESS_PROFILE = 1,
+  BUSINESS_DETAILS = 1,
   WORKING_HOURS = 2,
-  BREAK_TIMES = 3,
-  AVAILABILITY = 4,
+  SLOT_GENERATION = 3,
 }
 
 /**
@@ -151,7 +141,8 @@ export interface Service {
   name: string;
   description?: string;
   price: number;
-  duration: number; // in minutes
+  duration?: number; // in minutes (optional for safety)
+  EstimateDuration?: number; // Backend field name (for compatibility)
   image?: string | null;
   isActive: boolean;
   createdAt?: string;

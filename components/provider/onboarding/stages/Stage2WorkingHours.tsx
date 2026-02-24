@@ -1,257 +1,206 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { Clock, Copy } from "lucide-react";
-import { WorkingHours, DayOfWeek } from "@/types/provider";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-
-const DAYS: { label: string; value: DayOfWeek }[] = [
-  { label: "Monday", value: DayOfWeek.MONDAY },
-  { label: "Tuesday", value: DayOfWeek.TUESDAY },
-  { label: "Wednesday", value: DayOfWeek.WEDNESDAY },
-  { label: "Thursday", value: DayOfWeek.THURSDAY },
-  { label: "Friday", value: DayOfWeek.FRIDAY },
-  { label: "Saturday", value: DayOfWeek.SATURDAY },
-  { label: "Sunday", value: DayOfWeek.SUNDAY },
-];
-
-interface DayWorkingHours {
-  day: DayOfWeek;
-  isOpen: boolean;
-  startTime: string;
-  endTime: string;
-}
+import { Switch } from "@/components/ui/switch";
+import { Card } from "@/components/ui/card";
+import { Clock, Coffee, Info } from "lucide-react";
+import { WorkingHours, BreakTime } from "@/types/provider";
 
 interface Stage2WorkingHoursProps {
-  initialData?: WorkingHours[];
-  onNext: (data: WorkingHours[]) => void;
+  initialWorkingHours?: WorkingHours;
+  initialBreakTime?: BreakTime;
+  onNext: (data: {
+    workingHours: WorkingHours;
+    breakTime?: BreakTime;
+  }) => void;
 }
 
 export function Stage2WorkingHours({
-  initialData = [],
+  initialWorkingHours = { startTime: "09:00", endTime: "18:00" },
+  initialBreakTime,
   onNext,
 }: Stage2WorkingHoursProps) {
-  // Initialize with default 9-5 for all days if no data
-  const [weekHours, setWeekHours] = useState<DayWorkingHours[]>(() => {
-    if (initialData.length > 0) {
-      return DAYS.map((day) => {
-        const existing = initialData.find((wh) => wh.day === day.value);
-        return {
-          day: day.value,
-          isOpen: existing?.isOpen ?? day.value !== DayOfWeek.SUNDAY,
-          startTime: existing?.startTime || "09:00",
-          endTime: existing?.endTime || "17:00",
-        };
-      });
+  const [workingHours, setWorkingHours] = useState<WorkingHours>(initialWorkingHours);
+  const [breakTime, setBreakTime] = useState<BreakTime | undefined>(initialBreakTime);
+  const [hasBreak, setHasBreak] = useState(!!initialBreakTime);
+
+  // Default break time if enabled
+  const defaultBreakTime: BreakTime = { startTime: "14:00", endTime: "15:00" };
+
+  // Track last notified data to prevent duplicate calls
+  const lastNotifiedDataRef = useRef<string>("");
+
+  useEffect(() => {
+    const data = {
+      workingHours,
+      breakTime: hasBreak ? (breakTime || defaultBreakTime) : undefined,
+    };
+    const dataString = JSON.stringify(data);
+
+    // Only notify if data has actually changed
+    if (dataString !== lastNotifiedDataRef.current) {
+      lastNotifiedDataRef.current = dataString;
+      onNext(data);
+    }
+  }, [workingHours, breakTime, hasBreak, onNext]);
+
+  // Helper: Convert "HH:mm" to minutes
+  const timeToMinutes = (timeStr: string) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Format minutes to "Xh Ym"
+  const formatMinutes = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
+  // Calculate working hours
+  const calculateWorkTime = () => {
+    const startMins = timeToMinutes(workingHours.startTime);
+    const endMins = timeToMinutes(workingHours.endTime);
+    const totalMinutes = endMins - startMins;
+
+    let breakMinutes = 0;
+    if (hasBreak && breakTime) {
+      breakMinutes = timeToMinutes(breakTime.endTime) - timeToMinutes(breakTime.startTime);
     }
 
-    // Default: Mon-Fri 9-5, Sat-Sun closed
-    return DAYS.map((day) => ({
-      day: day.value,
-      isOpen: day.value !== DayOfWeek.SATURDAY && day.value !== DayOfWeek.SUNDAY,
-      startTime: "09:00",
-      endTime: "17:00",
-    }));
-  });
+    const effectiveMinutes = Math.max(0, totalMinutes - breakMinutes);
 
-  const [copiedFromDay, setCopiedFromDay] = useState<DayOfWeek | null>(null);
-
-  // Notify parent of changes
-  useEffect(() => {
-    const workingHours: WorkingHours[] = weekHours.map((wh) => ({
-      businessId: 0, // Will be set by backend
-      day: wh.day,
-      isOpen: wh.isOpen,
-      startTime: wh.isOpen ? wh.startTime : undefined,
-      endTime: wh.isOpen ? wh.endTime : undefined,
-    }));
-    onNext(workingHours);
-  }, [weekHours]);
-
-  const handleToggleDay = (dayIndex: number) => {
-    setWeekHours((prev) =>
-      prev.map((wh, idx) =>
-        idx === dayIndex ? { ...wh, isOpen: !wh.isOpen } : wh
-      )
-    );
+    return {
+      totalWorkTime: formatMinutes(totalMinutes),
+      breakTime: hasBreak ? formatMinutes(breakMinutes) : null,
+      effectiveWorkTime: formatMinutes(effectiveMinutes),
+    };
   };
 
-  const handleTimeChange = (
-    dayIndex: number,
-    field: "startTime" | "endTime",
-    value: string
-  ) => {
-    setWeekHours((prev) =>
-      prev.map((wh, idx) =>
-        idx === dayIndex ? { ...wh, [field]: value } : wh
-      )
-    );
+  const workTime = calculateWorkTime();
+
+  const handleToggleBreak = (enabled: boolean) => {
+    setHasBreak(enabled);
+    if (enabled && !breakTime) {
+      setBreakTime(defaultBreakTime);
+    }
   };
-
-  const copyToAllDays = (sourceDay: DayOfWeek) => {
-    const sourceHours = weekHours.find((wh) => wh.day === sourceDay);
-    if (!sourceHours) return;
-
-    setWeekHours((prev) =>
-      prev.map((wh) => ({
-        ...wh,
-        isOpen: sourceHours.isOpen,
-        startTime: sourceHours.startTime,
-        endTime: sourceHours.endTime,
-      }))
-    );
-
-    setCopiedFromDay(sourceDay);
-    toast.success("Working hours copied to all days");
-
-    setTimeout(() => setCopiedFromDay(null), 2000);
-  };
-
-  const setWeekdays = () => {
-    setWeekHours((prev) =>
-      prev.map((wh) => {
-        const isWeekend = wh.day === DayOfWeek.SATURDAY || wh.day === DayOfWeek.SUNDAY;
-        return {
-          ...wh,
-          isOpen: !isWeekend,
-          startTime: "09:00",
-          endTime: "17:00",
-        };
-      })
-    );
-    toast.success("Weekday hours set (Mon-Fri: 9AM - 5PM)");
-  };
-
-  const setAllDays = () => {
-    setWeekHours((prev) =>
-      prev.map((wh) => ({
-        ...wh,
-        isOpen: true,
-        startTime: "09:00",
-        endTime: "17:00",
-      }))
-    );
-    toast.success("All days set to 9AM - 5PM");
-  };
-
-  const hasAtLeastOneOpenDay = weekHours.some((wh) => wh.isOpen);
 
   return (
     <div className="space-y-6">
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={setWeekdays}>
-          Set Weekdays (Mon-Fri)
-        </Button>
-        <Button variant="outline" size="sm" onClick={setAllDays}>
-          Set All Days
-        </Button>
-      </div>
-
-      {/* Working Hours Grid */}
-      <div className="space-y-3">
-        <Label className="text-base font-semibold">
-          Set your working hours for each day
-        </Label>
-
-        {weekHours.map((dayHours, index) => {
-          const dayLabel = DAYS.find((d) => d.value === dayHours.day)?.label;
-          const isWeekend =
-            dayHours.day === DayOfWeek.SATURDAY || dayHours.day === DayOfWeek.SUNDAY;
-
-          return (
-            <div
-              key={dayHours.day}
-              className={cn(
-                "flex items-center gap-4 rounded-lg border p-4 transition-colors",
-                !dayHours.isOpen && "bg-muted/30 opacity-60",
-                dayHours.isOpen && "bg-background"
-              )}
-            >
-              {/* Day Label */}
-              <div className="w-32 font-medium">{dayLabel}</div>
-
-              {/* Open/Close Toggle */}
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={dayHours.isOpen}
-                  onCheckedChange={() => handleToggleDay(index)}
-                />
-                <span className="text-sm text-muted-foreground">
-                  {dayHours.isOpen ? "Open" : "Closed"}
-                </span>
-              </div>
-
-              {/* Time Inputs */}
-              {dayHours.isOpen && (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="time"
-                    value={dayHours.startTime}
-                    onChange={(e) =>
-                      handleTimeChange(index, "startTime", e.target.value)
-                    }
-                    className="w-32"
-                  />
-                  <span className="text-muted-foreground">to</span>
-                  <Input
-                    type="time"
-                    value={dayHours.endTime}
-                    onChange={(e) =>
-                      handleTimeChange(index, "endTime", e.target.value)
-                    }
-                    className="w-32"
-                  />
-
-                  {/* Copy Button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => copyToAllDays(dayHours.day)}
-                    title="Copy to all days"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Validation */}
-      {!hasAtLeastOneOpenDay && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-          <span className="text-sm text-destructive">
-            Please set at least one day as open
-          </span>
+      {/* Info Card */}
+      <Card className="p-4 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+        <div className="flex items-start gap-3">
+          <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="font-medium text-sm text-blue-900 dark:text-blue-100">
+              Working Hours Configuration
+            </h4>
+            <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+              Set your general working hours that apply to all days. Optionally add a break time.
+              These hours will be used to generate availability slots in the next step.
+            </p>
+          </div>
         </div>
-      )}
+      </Card>
 
-      {hasAtLeastOneOpenDay && (
-        <div className="flex items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 p-4">
-          <Clock className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">
-            {weekHours.filter((wh) => wh.isOpen).length} days configured
-          </span>
+      {/* Working Hours */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">Working Hours</Label>
+        <p className="text-sm text-muted-foreground">
+          These hours apply to all days
+        </p>
+
+        <div className="flex items-center gap-3">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm">Start time:</span>
+          <Input
+            type="time"
+            value={workingHours.startTime}
+            onChange={(e) => setWorkingHours({ ...workingHours, startTime: e.target.value })}
+            className="w-32"
+          />
+          <span className="text-muted-foreground">to</span>
+          <span className="text-sm">End time:</span>
+          <Input
+            type="time"
+            value={workingHours.endTime}
+            onChange={(e) => setWorkingHours({ ...workingHours, endTime: e.target.value })}
+            className="w-32"
+          />
+        </div>
+
+        <div className="text-sm text-muted-foreground">
+          Total working time: {workTime.totalWorkTime} per day
+        </div>
+      </div>
+
+      {/* Break Time */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <Label className="text-base font-medium">Add Break Time (Optional)</Label>
+            <p className="text-sm text-muted-foreground">
+              Add a break period when you're not available for bookings
+            </p>
+          </div>
+          <Switch
+            checked={hasBreak}
+            onCheckedChange={handleToggleBreak}
+          />
+        </div>
+
+        {hasBreak && (
+          <div className="flex items-center gap-3 p-4 rounded-lg border bg-muted/30">
+            <Coffee className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">Break time:</span>
+            <Input
+              type="time"
+              value={breakTime?.startTime || defaultBreakTime.startTime}
+              onChange={(e) =>
+                setBreakTime({ ...(breakTime || defaultBreakTime), startTime: e.target.value })
+              }
+              className="w-32"
+            />
+            <span>to</span>
+            <Input
+              type="time"
+              value={breakTime?.endTime || defaultBreakTime.endTime}
+              onChange={(e) =>
+                setBreakTime({ ...(breakTime || defaultBreakTime), endTime: e.target.value })
+              }
+              className="w-32"
+            />
+            <span className="text-sm text-muted-foreground ml-2">
+              ({workTime.breakTime})
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Summary */}
+      {hasBreak && (
+        <div className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900 p-4">
+          <div className="text-sm">
+            <span className="font-medium">Effective working time: </span>
+            <span className="font-semibold text-green-600 dark:text-green-400">
+              {workTime.effectiveWorkTime} per day
+            </span>
+            <span className="text-muted-foreground"> (excluding break time)</span>
+          </div>
         </div>
       )}
 
       {/* Tips */}
       <div className="rounded-lg border bg-muted/30 p-4">
-        <h4 className="mb-2 font-medium">Tips</h4>
+        <h4 className="mb-2 font-medium text-sm">Tips</h4>
         <ul className="space-y-1 text-sm text-muted-foreground">
           <li>• Set realistic hours that you can commit to</li>
-          <li>• You can always adjust these later in your settings</li>
-          <li>• Use the copy button to apply the same hours to all days</li>
-          <li>• Break times can be configured in the next step (optional)</li>
+          <li>• These hours will apply to all working days</li>
+          <li>• In the next step, you'll select the slot interval for bookings</li>
+          <li>• Break times will be excluded from available booking slots</li>
         </ul>
       </div>
     </div>

@@ -23,6 +23,8 @@ import {
   Moon,
   Sun,
   ChevronDown,
+  ShieldCheck,
+  Clock,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -56,6 +58,7 @@ export interface HeaderProps {
   onLogout?: () => void;
   actions?: React.ReactNode;
   className?: string;
+  businessVerification?: boolean; // Business verification status
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────────
@@ -217,6 +220,34 @@ function UserMenu({
   );
 }
 
+// ─── Verification Badge ───────────────────────────────────────────────────────────
+
+function VerificationBadge({ isVerified }: { isVerified: boolean }) {
+  return (
+    <Badge
+      variant={isVerified ? "default" : "secondary"}
+      className={cn(
+        "gap-1.5",
+        isVerified
+          ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-400"
+          : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400"
+      )}
+    >
+      {isVerified ? (
+        <>
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Verified
+        </>
+      ) : (
+        <>
+          <Clock className="h-3.5 w-3.5" />
+          Pending
+        </>
+      )}
+    </Badge>
+  );
+}
+
 // ─── Header ──────────────────────────────────────────────────────────────────
 
 export function Header({
@@ -232,6 +263,7 @@ export function Header({
   onLogout,
   actions,
   className,
+  businessVerification,
 }: HeaderProps) {
   return (
     <header
@@ -256,7 +288,10 @@ export function Header({
         </div>
       )}
       <div className="flex-1" />
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-3">
+        {businessVerification !== undefined && (
+          <VerificationBadge isVerified={businessVerification} />
+        )}
         {actions}
         <ThemeToggle />
         <NotificationsMenu

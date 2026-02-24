@@ -33,7 +33,7 @@ const PROTECTED_ROUTES = {
   },
   // Customer routes - require CUSTOMER role
   customer: {
-    paths: ["/customer/home", "/customer/bookings"],
+    paths: ["/customer"],
     allowedRoles: [UserRole.CUSTOMER],
   },
 };

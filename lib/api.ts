@@ -7,6 +7,15 @@
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
+// Log API_BASE_URL for debugging
+if (typeof window !== 'undefined') {
+  console.log("=== API CONFIG ===");
+  console.log("API_BASE_URL:", API_BASE_URL);
+  console.log("NEXT_PUBLIC_API_BASE_URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
+  console.log("Window location:", window.location.href);
+  console.log("================");
+}
+
 /**
  * API endpoints - all relative to BASE_URL
  * Note: API routes are mounted at root level (no /api prefix based on updated docs)
