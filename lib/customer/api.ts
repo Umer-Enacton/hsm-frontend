@@ -168,8 +168,22 @@ export async function getAvailableSlots(
   date?: string
 ): Promise<Slot[]> {
   const params = date ? `?date=${date}` : "";
-  const response = await api.get<Slot[]>(`${API_ENDPOINTS.SLOTS_PUBLIC(businessId)}${params}`);
-  return response;
+  const response = await api.get<{ slots: Slot[] }>(`${API_ENDPOINTS.SLOTS_PUBLIC(businessId)}${params}`);
+
+  console.log("📡 Slots API response:", response);
+
+  // Extract slots array from response
+  if (response && response.slots && Array.isArray(response.slots)) {
+    return response.slots;
+  }
+
+  // Fallback: if response is directly an array (backward compatibility)
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  console.warn("⚠️ Unexpected slots response format:", response);
+  return [];
 }
 
 // ============================================================================
@@ -185,10 +199,12 @@ export async function createBooking(bookingData: {
   addressId: number;
   bookingDate?: string;
 }): Promise<{ booking: CustomerBooking; message: string }> {
+  console.log("📡 Creating booking with data:", bookingData);
   const response = await api.post<{ booking: CustomerBooking; message: string }>(
-    API_ENDPOINTS.BOOKING,
+    API_ENDPOINTS.ADD_BOOKING,
     bookingData
   );
+  console.log("📦 Booking response:", response);
   return response;
 }
 
@@ -218,8 +234,8 @@ export async function getCustomerBookings(params?: {
  * Get booking details
  */
 export async function getBookingById(bookingId: number): Promise<CustomerBooking> {
-  const response = await api.get<CustomerBooking>(API_ENDPOINTS.BOOKING_BY_ID(bookingId));
-  return response;
+  const response = await api.get<{ booking: CustomerBooking }>(API_ENDPOINTS.BOOKING_BY_ID(bookingId));
+  return response.booking;
 }
 
 /**

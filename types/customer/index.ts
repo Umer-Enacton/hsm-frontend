@@ -23,6 +23,8 @@ export interface CustomerService {
   estimateDuration: number;
   image: string | null;
   isActive: boolean;
+  rating: number;
+  totalReviews: number;
   provider: {
     id: number;
     businessName: string;
@@ -30,8 +32,6 @@ export interface CustomerService {
     phone: string;
     state: string;
     city: string;
-    rating: number;
-    totalReviews: number;
     logo: string | null;
     isVerified: boolean;
   };
@@ -51,40 +51,56 @@ export interface ServiceDetails extends CustomerService {
 
 /**
  * Booking interface (customer view)
+ * NOTE: Backend returns only IDs, nested data must be fetched separately
  */
 export interface CustomerBooking {
   id: number;
+  customerId: number;
+  businessProfileId: number;
+  serviceId: number;
+  slotId: number;
+  addressId: number;
   status: "pending" | "confirmed" | "completed" | "cancelled";
   totalPrice: number;
   bookingDate: string;
-  service: {
+  createdAt: string;
+
+  // These are NOT included in backend response - must be fetched separately
+  service?: {
     id: number;
     name: string;
     price: number;
     image: string | null;
     estimateDuration: number;
-  };
-  provider: {
-    id: number;
-    businessName: string;
-    phone: string;
     rating: number;
-    state: string;
-    city: string;
+    totalReviews: number;
+    provider?: {
+      id: number;
+      businessName: string;
+      phone: string;
+      state: string;
+      city: string;
+      logo: string | null;
+      isVerified: boolean;
+    };
   };
-  slot: {
+
+  slot?: {
     id: number;
     startTime: string;
   };
-  address: {
+
+  address?: {
     id: number;
     street: string;
     city: string;
     state: string;
     zipCode: string;
+    addressType: string;
   };
-  canCancel: boolean;
-  canReschedule: boolean;
+
+  canCancel?: boolean;
+  canReschedule?: boolean;
 }
 
 /**

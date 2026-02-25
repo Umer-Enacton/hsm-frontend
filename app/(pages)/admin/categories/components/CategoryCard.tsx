@@ -33,8 +33,8 @@ export function CategoryCard({
     <Card
       className={cn(
         "group relative overflow-hidden transition-all duration-200 hover:shadow-lg",
-        "border-2 hover:border-primary/50",
-        className
+        "border-2 hover:border-primary/50 p-0",
+        className,
       )}
     >
       {/* Image or Icon Header */}

@@ -23,7 +23,15 @@ export enum UserRole {
 const PROTECTED_ROUTES = {
   // Admin routes - require ADMIN role
   admin: {
-    paths: ["/admin/dashboard", "/admin/categories", "/admin/users", "/admin/profile"],
+    paths: [
+      "/admin/dashboard",
+      "/admin/categories",
+      "/admin/users",
+      "/admin/profile",
+      "/admin/business",
+      "/admin/services",
+      "/admin/bookings",
+    ],
     allowedRoles: [UserRole.ADMIN],
   },
   // Provider routes - require PROVIDER role

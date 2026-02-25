@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, RefreshCw, Plus, List, Grid3x3 } from "lucide-react";
+import { Loader2, RefreshCw, Plus, List, Grid3x3, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -23,6 +23,7 @@ import {
   ServiceList,
   ServiceStats as ServiceStatsComponent,
   ServiceDialog,
+  ServiceReviews,
 } from "@/components/provider/services";
 
 type ViewMode = "grid" | "list";
@@ -42,6 +43,18 @@ export default function ProviderServicesPage() {
   // Dialog states
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [reviewsService, setReviewsService] = useState<Service | null>(null);
+  const [isReviewsDialogOpen, setIsReviewsDialogOpen] = useState(false);
+
+  const handleViewReviews = (service: Service) => {
+    setReviewsService(service);
+    setIsReviewsDialogOpen(true);
+  };
+
+  const handleCloseReviewsDialog = () => {
+    setIsReviewsDialogOpen(false);
+    setReviewsService(null);
+  };
 
   // Filter states
   const [search, setSearch] = useState("");
@@ -325,16 +338,27 @@ export default function ProviderServicesPage() {
             variant="outline"
             size="icon"
             disabled={isRefreshing}
+            title="Refresh"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
           </Button>
           <Button
-            onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-            variant="outline"
-            size="icon"
-            title={viewMode === "grid" ? "Switch to list view" : "Switch to grid view"}
+            variant={viewMode === "grid" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("grid")}
+            className="h-8 w-8 p-0"
+            title="Grid view"
           >
-            {viewMode === "grid" ? <List className="h-4 w-4" /> : <Grid3x3 className="h-4 w-4" />}
+            <Grid3x3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("list")}
+            className="h-8 w-8 p-0"
+            title="List view"
+          >
+            <List className="h-4 w-4" />
           </Button>
           <Button onClick={handleOpenCreateDialog} disabled={!isVerified}>
             <Plus className="h-4 w-4 mr-2" />
@@ -364,6 +388,7 @@ export default function ProviderServicesPage() {
         onEdit={handleOpenEditDialog}
         onDelete={handleDeleteService}
         onToggleStatus={handleToggleStatus}
+        onViewReviews={handleViewReviews}
       />
 
       {/* Create/Edit Dialog */}
@@ -372,6 +397,16 @@ export default function ProviderServicesPage() {
         onOpenChange={handleCloseDialog}
         service={editingService}
         onSubmit={editingService ? handleEditService : handleCreateService}
+      />
+
+      {/* Reviews Dialog */}
+      <ServiceReviews
+        serviceId={reviewsService?.id || 0}
+        serviceName={reviewsService?.name || ""}
+        serviceRating={Number(reviewsService?.rating || 0)}
+        totalReviews={reviewsService?.totalReviews || 0}
+        open={isReviewsDialogOpen}
+        onOpenChange={setIsReviewsDialogOpen}
       />
     </div>
   );

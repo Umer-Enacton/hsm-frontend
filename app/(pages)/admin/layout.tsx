@@ -2,15 +2,18 @@
 
 // app/(pages)/admin/layout.tsx
 import { DashboardLayout } from "@/components/common";
-import { LayoutDashboard, LayoutTemplate, Users, Briefcase } from "lucide-react";
+import {
+  LayoutDashboard,
+  LayoutTemplate,
+  Users,
+  Briefcase,
+  Wrench,
+  Calendar,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import {
-  getUserData,
-  isAuthenticated,
-  handleLogout,
-} from "@/lib/auth-utils";
+import { getUserData, isAuthenticated, handleLogout } from "@/lib/auth-utils";
 import { getCurrentProfile } from "@/lib/profile-api";
 import { UserRole, type User } from "@/types/auth";
 
@@ -18,6 +21,7 @@ import { UserRole, type User } from "@/types/auth";
 const navItems = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Businesses", href: "/admin/business", icon: Briefcase },
+  { label: "Services", href: "/admin/services", icon: Wrench },
   { label: "Categories", href: "/admin/categories", icon: LayoutTemplate },
   { label: "Users", href: "/admin/users", icon: Users },
   // Profile removed from sidebar - accessible via Header user menu
@@ -69,11 +73,15 @@ export default function AdminLayout({
           console.log("Fetched user profile:", userProfile);
           setUser(userProfile);
         } catch (profileError) {
-          console.error("Failed to fetch profile, using token data:", profileError);
+          console.error(
+            "Failed to fetch profile, using token data:",
+            profileError,
+          );
           // Fallback to token data if profile fetch fails
           setUser({
             id: userData.id,
-            name: userData.name || userData.email?.split("@")[0] || "Admin User",
+            name:
+              userData.name || userData.email?.split("@")[0] || "Admin User",
             email: userData.email || "admin@hsm.com",
             phone: "",
             roleId: userData.roleId,
@@ -99,10 +107,10 @@ export default function AdminLayout({
       loadUserData();
     };
 
-    window.addEventListener('profile-updated', handleProfileUpdate);
+    window.addEventListener("profile-updated", handleProfileUpdate);
 
     return () => {
-      window.removeEventListener('profile-updated', handleProfileUpdate);
+      window.removeEventListener("profile-updated", handleProfileUpdate);
     };
   }, [router]);
 
@@ -149,12 +157,14 @@ export default function AdminLayout({
         appName: "HSM Admin",
       }}
       header={{
-        user: user ? {
-          name: user.name,
-          email: user.email,
-          avatarUrl: user.avatar || undefined,
-          role: "Administrator",
-        } : undefined,
+        user: user
+          ? {
+              name: user.name,
+              email: user.email,
+              avatarUrl: user.avatar || undefined,
+              role: "Administrator",
+            }
+          : undefined,
         onProfileClick,
         onLogout,
         showSearch: true,

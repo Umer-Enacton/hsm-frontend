@@ -50,7 +50,6 @@ export function CustomerHeader({
   const navItems = [
     { label: "Browse Services", href: "/customer/services", icon: Home },
     { label: "My Bookings", href: "/customer/bookings", icon: Calendar },
-    { label: "Reviews", href: "/customer/reviews", icon: Star },
   ];
 
   const isActive = (href: string) => {
@@ -64,7 +63,9 @@ export function CustomerHeader({
         {/* Logo */}
         <Link href="/customer" className="flex items-center space-x-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <span className="text-sm font-bold text-primary-foreground">HSM</span>
+            <span className="text-sm font-bold text-primary-foreground">
+              HSM
+            </span>
           </div>
           <span className="hidden font-bold sm:inline-block">Home Service</span>
         </Link>
@@ -79,7 +80,7 @@ export function CustomerHeader({
                 "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
                 isActive(item.href)
                   ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               <item.icon className="h-4 w-4" />
@@ -125,9 +126,15 @@ export function CustomerHeader({
               <DropdownMenuSeparator />
               <div className="max-h-80 overflow-y-auto">
                 <div className="px-2 py-3 text-sm text-muted-foreground">
-                  <p className="font-medium text-foreground">Booking Confirmed</p>
-                  <p className="text-xs mt-1">Your AC service has been confirmed for tomorrow at 10:00 AM</p>
-                  <p className="text-xs mt-1 text-muted-foreground">2 hours ago</p>
+                  <p className="font-medium text-foreground">
+                    Booking Confirmed
+                  </p>
+                  <p className="text-xs mt-1">
+                    Your AC service has been confirmed for tomorrow at 10:00 AM
+                  </p>
+                  <p className="text-xs mt-1 text-muted-foreground">
+                    2 hours ago
+                  </p>
                 </div>
               </div>
             </DropdownMenuContent>
@@ -137,7 +144,10 @@ export function CustomerHeader({
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 px-2">
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-2 px-2"
+                >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.avatarUrl} alt={user.name} />
                     <AvatarFallback className="text-xs">
@@ -150,8 +160,12 @@ export function CustomerHeader({
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden flex-col items-start text-left sm:flex">
-                    <span className="text-sm font-medium leading-none">{user.name}</span>
-                    <span className="text-xs text-muted-foreground">Customer</span>
+                    <span className="text-sm font-medium leading-none">
+                      {user.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Customer
+                    </span>
                   </div>
                   <ChevronDown className="h-3 w-3 text-muted-foreground" />
                 </Button>
@@ -160,7 +174,9 @@ export function CustomerHeader({
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.email}
+                    </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -168,7 +184,9 @@ export function CustomerHeader({
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/customer/addresses")}>
+                <DropdownMenuItem
+                  onClick={() => router.push("/customer/addresses")}
+                >
                   <MapPin className="mr-2 h-4 w-4" />
                   Addresses
                 </DropdownMenuItem>
@@ -201,7 +219,7 @@ export function CustomerHeader({
                 "flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors",
                 isActive(item.href)
                   ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:border-muted-foreground/50"
+                  : "border-transparent text-muted-foreground hover:border-muted-foreground/50",
               )}
             >
               <item.icon className="h-4 w-4" />

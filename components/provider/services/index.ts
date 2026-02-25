@@ -7,3 +7,4 @@ export { ServiceFilters } from "./ServiceFilters";
 export { ServiceList } from "./ServiceList";
 export { ServiceCard } from "./ServiceCard";
 export { ServiceDialog } from "./ServiceDialog";
+export { ServiceReviews } from "./ServiceReviews";

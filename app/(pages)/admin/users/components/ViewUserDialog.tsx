@@ -183,15 +183,21 @@ export function ViewUserDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
-          <Button
+          {/* <Button
             variant="destructive"
             onClick={onDelete}
             disabled={!canDelete}
-            title={!canDelete ? (isAdmin ? "Cannot delete admin users" : "Cannot delete yourself") : undefined}
+            title={
+              !canDelete
+                ? isAdmin
+                  ? "Cannot delete admin users"
+                  : "Cannot delete yourself"
+                : undefined
+            }
           >
             <Trash2 className="h-4 w-4" />
             Delete User
-          </Button>
+          </Button> */}
         </DialogFooter>
       </DialogContent>
     </Dialog>

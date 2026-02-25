@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2, RefreshCw } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   getCategories,
@@ -15,6 +15,7 @@ import { AddCategoryDialog } from "./components/AddCategoryDialog";
 import { EditCategoryDialog } from "./components/EditCategoryDialog";
 import { DeleteCategoryDialog } from "./components/DeleteCategoryDialog";
 import type { Category, CategoryFormData } from "@/types/category";
+import { AdminPageHeader, LoadingState, ErrorState } from "@/components/admin/shared";
 
 // Pagination constants
 const DEFAULT_PAGE_SIZE = 12;
@@ -31,6 +32,7 @@ export default function CategoriesPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -42,8 +44,12 @@ export default function CategoriesPage() {
     fetchCategories();
   }, []);
 
-  const fetchCategories = async () => {
-    setIsLoading(true);
+  const fetchCategories = async (showRefreshLoading = false) => {
+    if (showRefreshLoading) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -54,6 +60,7 @@ export default function CategoriesPage() {
       toast.error(err.message || "Failed to load categories");
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -123,10 +130,6 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleRefresh = () => {
-    fetchCategories();
-    toast.success("Categories refreshed");
-  };
 
   // Reset to page 1 when page size changes
   useEffect(() => {
@@ -142,56 +145,31 @@ export default function CategoriesPage() {
   }, [categories, currentPage, pageSize]);
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96 gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading categories...</p>
-      </div>
-    );
+    return <LoadingState message="Loading categories..." />;
   }
 
   if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96 gap-4">
-        <div className="text-center">
-          <p className="text-lg font-semibold text-destructive mb-2">
-            Failed to load categories
-          </p>
-          <p className="text-sm text-muted-foreground mb-4">{error}</p>
-          <Button onClick={fetchCategories} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
+    return <ErrorState message={error} onRetry={() => fetchCategories()} />;
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
-          <p className="text-muted-foreground">
-            Manage service categories for your platform
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            size="icon"
-            title="Refresh"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+      <AdminPageHeader
+        title="Categories"
+        description="Manage service categories for your platform"
+        actions={
           <Button onClick={() => setIsAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Category
           </Button>
-        </div>
-      </div>
+        }
+        onRefresh={() => {
+          fetchCategories(true);
+          toast.success("Categories refreshed");
+        }}
+        isRefreshing={isRefreshing}
+      />
 
       {/* Page Size Selector - Only show when there are many categories */}
       {categories.length > DEFAULT_PAGE_SIZE && (

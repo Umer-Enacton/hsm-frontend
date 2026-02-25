@@ -77,7 +77,7 @@ export const API_ENDPOINTS = {
   // Feedback
   FEEDBACK_BUSINESS: (businessId: string | number) =>
     `/feedback/business/${businessId}`,
-  FEEDBACK_SERVICE: (serviceId: string | number) =>
+  FEEDBACK_BY_SERVICE: (serviceId: string | number) =>
     `/feedback/service/${serviceId}`,
   ADD_FEEDBACK: "/add-feedback",
 } as const;

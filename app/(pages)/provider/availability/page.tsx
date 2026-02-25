@@ -214,9 +214,9 @@ function SlotCard({
   onDelete: (slotId: number) => void;
 }) {
   return (
-    <Card className="rounded-lg">
+    <Card className="rounded-lg ">
       <div className="p-0">
-        <div className="flex items-center justify-around gap-3">
+        <div className="flex items-center justify-around gap-0">
           <span className="text-base font-semibold">
             {formatTime12Hour(slot.startTime)}
           </span>

@@ -16,6 +16,7 @@ interface ServiceListProps {
   onEdit: (service: Service) => void;
   onDelete: (serviceId: number) => void;
   onToggleStatus: (serviceId: number, isActive: boolean) => void;
+  onViewReviews?: (service: Service) => void;
 }
 
 export function ServiceList({
@@ -25,6 +26,7 @@ export function ServiceList({
   onEdit,
   onDelete,
   onToggleStatus,
+  onViewReviews,
 }: ServiceListProps) {
   if (isLoading) {
     return (
@@ -54,7 +56,7 @@ export function ServiceList({
   // Grid view - multi-column layout
   if (viewMode === "grid") {
     return (
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {services.map((service) => (
           <ServiceCard
             key={service.id}
@@ -62,6 +64,7 @@ export function ServiceList({
             onEdit={onEdit}
             onDelete={onDelete}
             onToggleStatus={onToggleStatus}
+            onViewReviews={onViewReviews}
           />
         ))}
       </div>
@@ -78,6 +81,7 @@ export function ServiceList({
           onEdit={onEdit}
           onDelete={onDelete}
           onToggleStatus={onToggleStatus}
+          onViewReviews={onViewReviews}
         />
       ))}
     </div>
