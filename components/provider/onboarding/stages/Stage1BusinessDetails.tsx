@@ -56,7 +56,7 @@ export function Stage1BusinessDetails({
   });
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<number>(
-    initialData?.categoryId || 0
+    initialData?.categoryId || 0,
   );
 
   // Fetch categories on mount
@@ -64,7 +64,7 @@ export function Stage1BusinessDetails({
     const fetchCategories = async () => {
       try {
         const response = await api.get<{ categories: Category[] }>(
-          API_ENDPOINTS.CATEGORIES
+          API_ENDPOINTS.CATEGORIES,
         );
         setCategories(response.categories || []);
       } catch (error) {
@@ -100,7 +100,14 @@ export function Stage1BusinessDetails({
       lastNotifiedDataRef.current = dataString;
       onNext(formData);
     }
-  }, [formData.name, formData.categoryId, formData.state, formData.city, formData.category, onNext]);
+  }, [
+    formData.name,
+    formData.categoryId,
+    formData.state,
+    formData.city,
+    formData.category,
+    onNext,
+  ]);
 
   const handleCategoryChange = (categoryId: number) => {
     setSelectedCategoryId(categoryId);
@@ -114,7 +121,7 @@ export function Stage1BusinessDetails({
 
   const handleChange = (
     field: keyof BusinessDetailsData,
-    value: string | File | null
+    value: string | File | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -155,30 +162,32 @@ export function Stage1BusinessDetails({
           <div className="space-y-3">
             <Label>Business Logo</Label>
             <ImageUpload
-              currentImage={formData.logo ? URL.createObjectURL(formData.logo) : null}
+              currentImage={
+                formData.logo ? URL.createObjectURL(formData.logo) : null
+              }
               onImageSelect={(file) => handleChange("logo", file)}
               className="h-32"
             />
-            <p className="text-xs text-muted-foreground">
+            {/* <p className="text-xs text-muted-foreground">
               Recommended: Square image, at least 500x500px
-            </p>
+            </p> */}
           </div>
 
           <div className="space-y-3">
             <Label>Cover Image</Label>
             <ImageUpload
-              currentImage={formData.coverImage ? URL.createObjectURL(formData.coverImage) : null}
+              currentImage={
+                formData.coverImage
+                  ? URL.createObjectURL(formData.coverImage)
+                  : null
+              }
               onImageSelect={(file) => handleChange("coverImage", file)}
               className="h-32"
             />
-            <p className="text-xs text-muted-foreground">
-              Recommended: Wide image, at least 1200x400px
-            </p>
           </div>
         </div>
       </div>
-
-      <div className="border-t pt-8"></div>
+      <div className="pt-15"></div>
 
       {/* Business Name */}
       <div className="space-y-3">
@@ -210,7 +219,9 @@ export function Stage1BusinessDetails({
             {categories.map((category) => (
               <Badge
                 key={category.id}
-                variant={selectedCategoryId === category.id ? "default" : "outline"}
+                variant={
+                  selectedCategoryId === category.id ? "default" : "outline"
+                }
                 className="cursor-pointer px-3 py-1"
                 onClick={() => handleCategoryChange(category.id)}
               >
@@ -291,7 +302,9 @@ export function Stage1BusinessDetails({
           <li>• Use a clear business name that customers can easily find</li>
           <li>• Choose the most relevant category for your services</li>
           <li>• Add a detailed description to attract more customers</li>
-          <li>• Upload a logo and cover image to make your profile stand out</li>
+          <li>
+            • Upload a logo and cover image to make your profile stand out
+          </li>
         </ul>
       </div>
     </div>

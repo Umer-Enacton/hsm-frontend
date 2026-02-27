@@ -2,9 +2,29 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Package, Calendar, Users, MapPin, Phone, Mail, Globe, FileText, Edit, CheckCircle, Clock, Star, Award, TrendingUp } from "lucide-react";
+import {
+  Loader2,
+  Package,
+  Calendar,
+  Users,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  FileText,
+  Edit,
+  CheckCircle,
+  Clock,
+  Star,
+  Award,
+  TrendingUp,
+  DollarSign,
+  IndianRupee,
+  MessageSquare,
+} from "lucide-react";
 import { getUserData } from "@/lib/auth-utils";
 import { getProviderBusiness, updateBusiness } from "@/lib/provider/api";
+import { api, API_ENDPOINTS } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,30 +34,98 @@ import { EditBusinessDialog } from "./components/EditBusinessDialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+interface BusinessStats {
+  totalServices: number;
+  activeServices: number;
+  totalBookings: number;
+  pendingBookings: number;
+  confirmedBookings: number;
+  completedBookings: number;
+  completionRate: number;
+  totalRevenue: number;
+  averageJobValue: number;
+  totalReviews: number;
+  averageRating: number;
+  recentReviews: any[];
+}
+
 export default function ProviderBusinessPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [business, setBusiness] = useState<any>(null);
+  const [stats, setStats] = useState<BusinessStats | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const loadBusiness = async () => {
+    const loadData = async () => {
       try {
         const userData = getUserData();
         if (userData) {
           const businessData = await getProviderBusiness(userData.id);
           setBusiness(businessData);
+
+          // Fetch services
+          const servicesResponse: any = await api.get(API_ENDPOINTS.SERVICES_BY_BUSINESS(businessData.id));
+          const services = Array.isArray(servicesResponse)
+            ? servicesResponse
+            : (servicesResponse?.services || servicesResponse?.data || []);
+          const activeServices = services.filter((s: any) => s.isActive || s.is_active).length;
+
+          // Fetch bookings
+          const bookingsResponse: any = await api.get(API_ENDPOINTS.PROVIDER_BOOKINGS);
+          const bookings = Array.isArray(bookingsResponse)
+            ? bookingsResponse
+            : (bookingsResponse?.bookings || []);
+
+          const pendingBookings = bookings.filter((b: any) => b.status === "pending").length;
+          const confirmedBookings = bookings.filter((b: any) => b.status === "confirmed").length;
+          const completedBookings = bookings.filter((b: any) => b.status === "completed").length;
+          const totalBookings = bookings.length;
+          const completionRate = totalBookings > 0 ? Math.round((completedBookings / totalBookings) * 100) : 0;
+
+          const totalRevenue = bookings
+            .filter((b: any) => b.status === "completed")
+            .reduce((sum: number, b: any) => sum + (b.price || b.totalPrice || 0), 0);
+
+          const averageJobValue = completedBookings > 0 ? Math.round(totalRevenue / completedBookings) : 0;
+
+          // Fetch reviews
+          let recentReviews: any[] = [];
+          try {
+            const feedbackResponse: any = await api.get(API_ENDPOINTS.FEEDBACK_BUSINESS(businessData.id));
+            const feedback = Array.isArray(feedbackResponse)
+              ? feedbackResponse
+              : (feedbackResponse?.feedback || feedbackResponse?.data || []);
+            recentReviews = feedback.slice(0, 5);
+          } catch (e) {
+            console.log("Could not fetch reviews");
+          }
+
+          setStats({
+            totalServices: services.length,
+            activeServices,
+            totalBookings,
+            pendingBookings,
+            confirmedBookings,
+            completedBookings,
+            completionRate,
+            totalRevenue,
+            averageJobValue,
+            totalReviews: businessData.totalReviews || 0,
+            averageRating: businessData.rating || 0,
+            recentReviews,
+          });
         }
       } catch (error) {
-        console.error("Error loading business:", error);
+        console.error("Error loading data:", error);
         toast.error("Failed to load business profile");
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadBusiness();
+    loadData();
   }, []);
 
   const handleEditSave = async (updatedData: any) => {
@@ -100,7 +188,7 @@ export default function ProviderBusinessPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Business Profile</h1>
           <p className="text-muted-foreground">
-            Manage your business information and settings
+            Manage your business information and view performance
           </p>
         </div>
         <Button onClick={() => setIsEditDialogOpen(true)} className="gap-2">
@@ -115,10 +203,10 @@ export default function ProviderBusinessPage() {
         businessName={business.name}
       />
 
-      {/* Main Content - Hero Card with Cover */}
+      {/* Hero Card with Cover */}
       <Card className="overflow-hidden">
         {/* Cover Image */}
-        <div className="h-48 bg-gradient-to-r from-primary/20 via-primary/10 to-background relative">
+        <div className="relative h-56 bg-gradient-to-br from-primary/20 via-primary/10 to-background">
           {business.coverImage ? (
             <img
               src={business.coverImage}
@@ -135,12 +223,27 @@ export default function ProviderBusinessPage() {
               </div>
             </div>
           )}
+
+          {/* Verification Badge - Top Right */}
+          <div className="absolute top-4 right-4">
+            {business.isVerified ? (
+              <Badge className="bg-green-600 gap-1 px-3 py-1.5">
+                <CheckCircle className="h-3 w-3" />
+                Verified
+              </Badge>
+            ) : (
+              <Badge className="bg-yellow-600 gap-1 px-3 py-1.5">
+                <Clock className="h-3 w-3" />
+                Pending
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Profile Header */}
         <CardContent className="relative">
           <div className="-mt-16 mb-6">
-            <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
+            <Avatar className="h-28 w-28 border-4 border-background shadow-xl">
               {business.logo ? (
                 <AvatarImage src={business.logo} alt={business.name} />
               ) : (
@@ -151,28 +254,31 @@ export default function ProviderBusinessPage() {
             </Avatar>
           </div>
 
-          <div className="flex items-start justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <h2 className="text-3xl font-bold">{business.name}</h2>
-                {business.isVerified && (
-                  <Badge className="bg-green-600 gap-1">
-                    <CheckCircle className="h-3 w-3" />
-                    Verified
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-3 text-muted-foreground">
                 {business.category && (
                   <Badge variant="outline" className="text-xs">
                     {business.category}
                   </Badge>
                 )}
-                <span className="text-sm">•</span>
+              </div>
+              <div className="flex items-center gap-3 text-muted-foreground">
                 <div className="flex items-center gap-1 text-sm">
                   <MapPin className="h-4 w-4" />
                   <span>{business.city}, {business.state}</span>
                 </div>
+                {business.rating > 0 && (
+                  <>
+                    <span className="text-sm">•</span>
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm font-medium">{business.rating.toFixed(1)}</span>
+                      <span className="text-xs">({business.totalReviews || 0})</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -210,9 +316,9 @@ export default function ProviderBusinessPage() {
           {business.description && (
             <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/30">
               <FileText className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-medium mb-1">About</p>
-                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {business.description}
                 </p>
               </div>
@@ -221,11 +327,82 @@ export default function ProviderBusinessPage() {
         </CardContent>
       </Card>
 
-      {/* Stats Grid & Contact Info */}
+      {/* Stats Overview */}
+      {stats && (
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                  <Package className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.activeServices}</p>
+                  <p className="text-xs text-muted-foreground">
+                    of {stats.totalServices} services
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
+                  <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.totalBookings}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {stats.pendingBookings} pending
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
+                  <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.completionRate}%</p>
+                  <p className="text-xs text-muted-foreground">
+                    Completion rate
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
+                  <Star className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {stats.averageRating > 0 ? stats.averageRating.toFixed(1) : "N/A"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {stats.totalReviews} reviews
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Two Column Layout */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left Column - Contact Info */}
+        {/* Left Column - Contact & Revenue */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Contact Information Card */}
+          {/* Contact Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -234,14 +411,14 @@ export default function ProviderBusinessPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {business.phone && (
-                  <div className="flex items-center gap-3 p-4 rounded-lg border hover:border-primary/50 transition-colors">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                  <div className="flex items-center gap-3 p-3 rounded-lg border">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
                       <Phone className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground mb-0.5">Phone</p>
+                      <p className="text-xs text-muted-foreground">Phone</p>
                       <a
                         href={`tel:${business.phone}`}
                         className="text-sm font-medium hover:text-primary truncate block"
@@ -252,40 +429,33 @@ export default function ProviderBusinessPage() {
                   </div>
                 )}
 
-                {business.email && (
-                  <div className="flex items-center gap-3 p-4 rounded-lg border hover:border-primary/50 transition-colors">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                      <Mail className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground mb-0.5">Email</p>
-                      <a
-                        href={`mailto:${business.email}`}
-                        className="text-sm font-medium hover:text-primary truncate block"
-                      >
-                        {business.email}
-                      </a>
-                    </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg border">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                    <Mail className="h-4 w-4 text-primary" />
                   </div>
-                )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">Email</p>
+                    <p className="text-sm font-medium truncate">{business.email}</p>
+                  </div>
+                </div>
 
-                <div className="flex items-center gap-3 p-4 rounded-lg border">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                <div className="flex items-center gap-3 p-3 rounded-lg border sm:col-span-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
                     <MapPin className="h-4 w-4 text-primary" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground mb-0.5">Location</p>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Location</p>
                     <p className="text-sm font-medium">{business.city}, {business.state}</p>
                   </div>
                 </div>
 
                 {business.website && (
-                  <div className="flex items-center gap-3 p-4 rounded-lg border hover:border-primary/50 transition-colors">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                  <div className="flex items-center gap-3 p-3 rounded-lg border sm:col-span-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
                       <Globe className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground mb-0.5">Website</p>
+                      <p className="text-xs text-muted-foreground">Website</p>
                       <a
                         href={business.website}
                         target="_blank"
@@ -302,30 +472,82 @@ export default function ProviderBusinessPage() {
           </Card>
 
           {/* Performance Overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Performance Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Award className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-                <p className="text-muted-foreground mb-2">Track your business performance</p>
-                <p className="text-sm text-muted-foreground">
-                  Complete bookings to see reviews and ratings from customers
-                </p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => router.push("/provider/bookings")}
-                >
-                  View Bookings
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {stats && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Performance Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="p-4 rounded-lg bg-muted/30">
+                    <p className="text-xs text-muted-foreground mb-1">Total Revenue</p>
+                    <div className="flex items-center gap-1">
+                      <IndianRupee className="h-5 w-5" />
+                      <p className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-muted/30">
+                    <p className="text-xs text-muted-foreground mb-1">Avg Job Value</p>
+                    <div className="flex items-center gap-1">
+                      <IndianRupee className="h-5 w-5" />
+                      <p className="text-2xl font-bold">{stats.averageJobValue}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-muted/30">
+                    <p className="text-xs text-muted-foreground mb-1">Jobs Completed</p>
+                    <p className="text-2xl font-bold">{stats.completedBookings}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Recent Reviews */}
+          {stats && stats.recentReviews.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    Recent Reviews
+                  </CardTitle>
+                  <Badge variant="outline">{stats.totalReviews} total</Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {stats.recentReviews.map((review: any) => (
+                    <div key={review.id} className="p-4 rounded-lg border">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-medium text-sm">{review.customerName || "Customer"}</p>
+                            <div className="flex items-center gap-1">
+                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              <span className="text-sm font-medium">{review.rating}</span>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {review.serviceName || review.service?.name}
+                          </p>
+                        </div>
+                      </div>
+                      {review.comments && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          "{review.comments}"
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right Column - Status & Quick Actions */}
@@ -333,14 +555,16 @@ export default function ProviderBusinessPage() {
           {/* Verification Status */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Verification Status</CardTitle>
+              <CardTitle className="text-base">Account Status</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/30">
-                <div className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-full",
-                  business.isVerified ? "bg-green-100" : "bg-yellow-100"
-                )}>
+                <div
+                  className={cn(
+                    "flex h-12 w-12 items-center justify-center rounded-full",
+                    business.isVerified ? "bg-green-100" : "bg-yellow-100"
+                  )}
+                >
                   {business.isVerified ? (
                     <CheckCircle className="h-6 w-6 text-green-600" />
                   ) : (
@@ -362,40 +586,42 @@ export default function ProviderBusinessPage() {
           </Card>
 
           {/* Quick Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Quick Stats</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Services</span>
+          {stats && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Quick Stats</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Active Services</span>
+                  </div>
+                  <span className="text-lg font-bold">{stats.activeServices}</span>
                 </div>
-                <span className="text-lg font-bold">0</span>
-              </div>
 
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Bookings</span>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Total Bookings</span>
+                  </div>
+                  <span className="text-lg font-bold">{stats.totalBookings}</span>
                 </div>
-                <span className="text-lg font-bold">0</span>
-              </div>
 
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <Star className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Rating</span>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <Star className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Rating</span>
+                  </div>
+                  <span className="text-sm font-bold">
+                    {stats.averageRating > 0 ? stats.averageRating.toFixed(1) : "N/A"}
+                  </span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-lg font-bold">N/A</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Action Cards */}
+          {/* Quick Actions */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Quick Actions</CardTitle>

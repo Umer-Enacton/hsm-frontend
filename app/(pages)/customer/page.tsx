@@ -174,8 +174,8 @@ export default function CustomerDashboardPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-base">{booking.service.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{booking.provider.businessName}</p>
+                      <CardTitle className="text-base">{booking.service?.name || "Unknown Service"}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{booking.service?.provider?.businessName || "Unknown Provider"}</p>
                     </div>
                     <Badge className={getStatusBadgeColor(booking.status)}>
                       {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
@@ -190,7 +190,7 @@ export default function CustomerDashboardPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="line-clamp-1">{booking.address.street}, {booking.address.city}</span>
+                      <span className="line-clamp-1">{booking.address?.street || ""}, {booking.address?.city || ""}</span>
                     </div>
                   </div>
                 </CardContent>

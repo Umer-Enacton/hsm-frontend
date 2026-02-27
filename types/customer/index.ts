@@ -51,7 +51,7 @@ export interface ServiceDetails extends CustomerService {
 
 /**
  * Booking interface (customer view)
- * NOTE: Backend returns only IDs, nested data must be fetched separately
+ * NOTE: Backend now includes nested service, provider, slot, and address data
  */
 export interface CustomerBooking {
   id: number;
@@ -65,29 +65,27 @@ export interface CustomerBooking {
   bookingDate: string;
   createdAt: string;
 
-  // These are NOT included in backend response - must be fetched separately
+  // These ARE included in backend response from updated getCustomerBookings endpoint
   service?: {
     id: number;
     name: string;
+    description: string;
     price: number;
-    image: string | null;
-    estimateDuration: number;
-    rating: number;
-    totalReviews: number;
+    duration?: number;
+    imageUrl?: string | null;
     provider?: {
       id: number;
       businessName: string;
-      phone: string;
-      state: string;
-      city: string;
-      logo: string | null;
-      isVerified: boolean;
+      rating?: number;
+      totalReviews?: number;
+      isVerified?: boolean;
     };
   };
 
   slot?: {
     id: number;
     startTime: string;
+    endTime?: string;
   };
 
   address?: {
@@ -96,7 +94,6 @@ export interface CustomerBooking {
     city: string;
     state: string;
     zipCode: string;
-    addressType: string;
   };
 
   canCancel?: boolean;

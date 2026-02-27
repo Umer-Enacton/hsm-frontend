@@ -545,6 +545,7 @@ export default function BusinessDetailsPage() {
                     <Card
                       key={service.id}
                       className="group hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
+                      onClick={() => router.push(`/admin/services/${service.id}`)}
                     >
                       <CardContent className="p-4 space-y-3">
                         {/* Service Name & Status */}
@@ -609,7 +610,14 @@ export default function BusinessDetailsPage() {
                               {service.price}
                             </span>
                           </div>
-                          <Button size="sm" className="h-8">
+                          <Button
+                            size="sm"
+                            className="h-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/admin/services/${service.id}`);
+                            }}
+                          >
                             View
                           </Button>
                         </div>
