@@ -54,6 +54,12 @@ interface Service {
   };
 }
 
+interface Feedback {
+  id: number;
+  rating: number;
+  comments?: string;
+}
+
 interface Address {
   id: number;
   addressLine1: string;
@@ -80,6 +86,7 @@ interface CustomerBooking {
   status: "pending" | "confirmed" | "completed" | "cancelled" | "rejected";
   totalPrice: number;
   createdAt: string;
+  feedback?: Feedback | null;
 }
 
 interface BookingStats {
@@ -276,6 +283,18 @@ export default function CustomerBookingsPage() {
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
+  };
+
+  // Get status-based tint color for expanded rows
+  const getStatusRowTint = (status: string) => {
+    const statusTints: Record<string, string> = {
+      pending: "bg-amber-50/50 hover:bg-amber-50/50 dark:bg-amber-950/20",
+      confirmed: "bg-blue-50/50 hover:bg-blue-50/50 dark:bg-blue-950/20",
+      completed: "bg-green-50/50 hover:bg-green-50/50 dark:bg-green-950/20",
+      cancelled: "bg-red-50/50 hover:bg-red-50/50 dark:bg-red-950/20",
+      rejected: "bg-red-50/50 hover:bg-red-50/50 dark:bg-red-950/20",
+    };
+    return statusTints[status] || statusTints.pending;
   };
 
   const formatTime = (timeStr: string | undefined | null) => {
@@ -608,8 +627,13 @@ export default function CustomerBookingsPage() {
 
                     {/* Expanded Details Row - New Two-Column Layout */}
                     {isExpanded && (
-                      <TableRow className="bg-muted/30 border-b">
-                        <TableCell colSpan={6} className="py-6 px-6">
+                      <TableRow
+                        className={cn(
+                          "border-b",
+                          getStatusRowTint(booking.status),
+                        )}
+                      >
+                        <TableCell colSpan={6} className="py-6 px-6 ">
                           <div className="grid lg:grid-cols-2 gap-8">
                             {/* LEFT COLUMN: Service Details (spans vertically) */}
                             {service && (
@@ -832,6 +856,7 @@ export default function CustomerBookingsPage() {
                               booking={booking}
                               businessId={booking.businessProfileId}
                               serviceName={service?.name}
+                              hasReviewed={!!booking.feedback}
                               onActionComplete={() => loadBookings(true)}
                               variant="expanded"
                             />

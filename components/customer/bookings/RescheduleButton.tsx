@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar, Clock, X, Loader2, CalendarDays } from "lucide-react";
+import { Calendar, Clock, X, Loader2, CalendarDays, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -51,25 +51,56 @@ export function RescheduleButton({
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
 
-  // Get next 7 days for rescheduling
-  const getNext7Days = () => {
+  // Get next 3 days (Today, Tomorrow, Overmorrow) - like service detail page
+  const getNext3Days = () => {
     const days = [];
     const today = new Date();
 
-    for (let i = 1; i <= 7; i++) {
+    for (let i = 0; i < 3; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
+
       const dateStr = date.toISOString().split("T")[0];
+
       days.push({
         value: dateStr,
-        label: date.toLocaleDateString("en-US", {
+        label: i === 0 ? "Today" : i === 1 ? "Tomorrow" : "Overmorrow",
+        displayDate: date.toLocaleDateString("en-US", {
           weekday: "short",
           month: "short",
           day: "numeric",
         }),
       });
     }
+
     return days;
+  };
+
+  // Smart slot filtering - exclude past slots for today (like service detail page)
+  const getAvailableSlotsForDate = (dateStr: string) => {
+    const today = new Date().toISOString().split("T")[0];
+
+    // If not today, show all slots (except current)
+    if (dateStr !== today) {
+      return slots.filter((slot) => slot.id !== currentSlotId);
+    }
+
+    // If today, filter out past slots and slots less than 30 min away
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const bufferMinutes = 30; // 30 minute buffer for provider arrival
+
+    return slots.filter((slot) => {
+      // Exclude current slot
+      if (slot.id === currentSlotId) return false;
+
+      const slotTime = slot.startTime; // "HH:mm:ss"
+      const [hours, minutes] = slotTime.split(":").map(Number);
+      const slotMinutes = hours * 60 + minutes;
+
+      // Only show slots at least 30 minutes in future
+      return slotMinutes > currentMinutes + bufferMinutes;
+    });
   };
 
   // Load slots when modal opens
@@ -105,22 +136,20 @@ export function RescheduleButton({
 
     try {
       setIsRescheduling(true);
-      // TODO: Backend API needs to be created for rescheduling
-      // For now, we'll show a message
-      toast.info(
-        `Reschedule to ${selectedDate} at ${formatTime(selectedSlot.startTime)} - Coming soon!`
-      );
 
-      // Future implementation:
-      // await api.patch(API_ENDPOINTS.BOOKING_BY_ID(bookingId), {
-      //   slotId: selectedSlot.id,
-      //   bookingDate: selectedDate,
-      // });
+      // Call the reschedule API
+      await api.patch(API_ENDPOINTS.BOOKING_BY_ID(bookingId), {
+        slotId: selectedSlot.id,
+        bookingDate: new Date(selectedDate).toISOString(),
+      });
 
-      // toast.success("Booking rescheduled successfully");
-      // setShowModal(false);
-      // onRescheduled?.();
+      toast.success("Booking rescheduled successfully!");
+      setShowModal(false);
+      setSelectedDate("");
+      setSelectedSlot(null);
+      onRescheduled?.();
     } catch (error: any) {
+      console.error("Reschedule error:", error);
       toast.error(error.message || "Failed to reschedule booking");
     } finally {
       setIsRescheduling(false);
@@ -135,7 +164,16 @@ export function RescheduleButton({
     return `${displayHours}:${displayMinutes} ${period}`;
   };
 
-  const availableDates = getNext7Days();
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const availableDates = getNext3Days();
 
   if (variant === "dropdown") {
     return (
@@ -155,7 +193,7 @@ export function RescheduleButton({
                 <label className="text-sm font-medium mb-3 block">
                   Select Date
                 </label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-3 gap-3">
                   {availableDates.map((day) => (
                     <button
                       key={day.value}
@@ -164,15 +202,15 @@ export function RescheduleButton({
                         setSelectedDate(day.value);
                         setSelectedSlot(null);
                       }}
-                      className={`p-2 rounded-lg border-2 text-center transition-all ${
+                      className={`p-1 rounded-sm border-2 text-center transition-all ${
                         selectedDate === day.value
                           ? "border-primary bg-primary text-primary-foreground"
                           : "border-border hover:border-primary/50 hover:bg-muted/50"
                       }`}
                     >
-                      <span className="text-xs font-medium">
-                        {day.label}
-                      </span>
+                      <div className="text-sm font-medium">
+                        {day.displayDate}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -183,9 +221,17 @@ export function RescheduleButton({
                 <label className="text-sm font-medium mb-3 block">
                   Select Time
                 </label>
+                <div className="mb-3">
+                  <p className="text-xs text-muted-foreground">
+                    {selectedDate
+                      ? formatDate(selectedDate)
+                      : "Select a date first"}
+                  </p>
+                </div>
+
                 {!selectedDate ? (
                   <div className="text-center py-8 bg-muted/50 rounded-lg">
-                    <Calendar className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
+                    <CalendarIcon className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
                     <p className="text-sm text-muted-foreground">
                       Select a date to see available times
                     </p>
@@ -194,34 +240,39 @@ export function RescheduleButton({
                   <div className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto" />
                   </div>
-                ) : slots.length === 0 ? (
-                  <div className="text-center py-8 bg-muted/50 rounded-lg">
-                    <X className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      No time slots available
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-4 gap-2">
-                    {slots
-                      .filter((slot) => slot.id !== currentSlotId) // Exclude current slot
-                      .map((slot) => (
-                        <button
-                          key={slot.id}
-                          type="button"
-                          onClick={() => setSelectedSlot(slot)}
-                          className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
-                            selectedSlot?.id === slot.id
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border hover:border-primary/50 hover:bg-muted/50"
-                          } ${slot.id === currentSlotId ? "opacity-50" : ""}`}
-                          disabled={slot.id === currentSlotId}
-                        >
-                          {formatTime(slot.startTime)}
-                        </button>
-                      ))}
-                  </div>
-                )}
+                ) : (() => {
+                    const availableSlots = getAvailableSlotsForDate(selectedDate);
+
+                    if (availableSlots.length === 0) {
+                      return (
+                        <div className="text-center py-8 bg-muted/50 rounded-lg">
+                          <X className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
+                          <p className="text-sm text-muted-foreground">
+                            No time slots available for this date
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-3 gap-2">
+                        {availableSlots.slice(0, 12).map((slot) => (
+                          <button
+                            key={slot.id}
+                            type="button"
+                            onClick={() => setSelectedSlot(slot)}
+                            className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                              selectedSlot?.id === slot.id
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border hover:border-primary/50 hover:bg-muted/50"
+                            }`}
+                          >
+                            {formatTime(slot.startTime)}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
               </div>
 
               {/* Selected Summary */}
@@ -307,7 +358,7 @@ export function RescheduleButton({
               <label className="text-sm font-medium mb-3 block">
                 Select Date
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 {availableDates.map((day) => (
                   <button
                     key={day.value}
@@ -316,15 +367,15 @@ export function RescheduleButton({
                       setSelectedDate(day.value);
                       setSelectedSlot(null);
                     }}
-                    className={`p-2 rounded-lg border-2 text-center transition-all ${
+                    className={`p-1 rounded-sm border-2 text-center transition-all ${
                       selectedDate === day.value
                         ? "border-primary bg-primary text-primary-foreground"
                         : "border-border hover:border-primary/50 hover:bg-muted/50"
                     }`}
                   >
-                    <span className="text-xs font-medium">
-                      {day.label}
-                    </span>
+                    <div className="text-sm font-medium">
+                      {day.displayDate}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -335,9 +386,17 @@ export function RescheduleButton({
               <label className="text-sm font-medium mb-3 block">
                 Select Time
               </label>
+              <div className="mb-3">
+                <p className="text-xs text-muted-foreground">
+                  {selectedDate
+                    ? formatDate(selectedDate)
+                    : "Select a date first"}
+                </p>
+              </div>
+
               {!selectedDate ? (
                 <div className="text-center py-8 bg-muted/50 rounded-lg">
-                  <Calendar className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
+                  <CalendarIcon className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
                   <p className="text-sm text-muted-foreground">
                     Select a date to see available times
                   </p>
@@ -346,34 +405,39 @@ export function RescheduleButton({
                 <div className="text-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto" />
                 </div>
-              ) : slots.length === 0 ? (
-                <div className="text-center py-8 bg-muted/50 rounded-lg">
-                  <X className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    No time slots available
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-4 gap-2">
-                  {slots
-                    .filter((slot) => slot.id !== currentSlotId) // Exclude current slot
-                    .map((slot) => (
-                      <button
-                        key={slot.id}
-                        type="button"
-                        onClick={() => setSelectedSlot(slot)}
-                        className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
-                          selectedSlot?.id === slot.id
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border hover:border-primary/50 hover:bg-muted/50"
-                        } ${slot.id === currentSlotId ? "opacity-50" : ""}`}
-                        disabled={slot.id === currentSlotId}
-                      >
-                        {formatTime(slot.startTime)}
-                      </button>
-                    ))}
-                </div>
-              )}
+              ) : (() => {
+                  const availableSlots = getAvailableSlotsForDate(selectedDate);
+
+                  if (availableSlots.length === 0) {
+                    return (
+                      <div className="text-center py-8 bg-muted/50 rounded-lg">
+                        <X className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          No time slots available for this date
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-3 gap-2">
+                      {availableSlots.slice(0, 12).map((slot) => (
+                        <button
+                          key={slot.id}
+                          type="button"
+                          onClick={() => setSelectedSlot(slot)}
+                          className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                            selectedSlot?.id === slot.id
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border hover:border-primary/50 hover:bg-muted/50"
+                          }`}
+                        >
+                          {formatTime(slot.startTime)}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
             </div>
 
             {/* Selected Summary */}

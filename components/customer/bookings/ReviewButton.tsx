@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Star, X, Loader2, MessageSquare } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Star, X, Loader2, MessageSquare, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,7 +24,16 @@ interface ReviewButtonProps {
   variant?: "dropdown" | "button";
   size?: "default" | "sm" | "icon";
   className?: string;
+  existingReview?: boolean;
 }
+
+const RATING_LABELS: Record<number, string> = {
+  1: "Poor",
+  2: "Average",
+  3: "Good",
+  4: "Very Good",
+  5: "Excellent",
+};
 
 export function ReviewButton({
   serviceId,
@@ -34,12 +43,16 @@ export function ReviewButton({
   variant = "button",
   size = "sm",
   className = "",
+  existingReview = false,
 }: ReviewButtonProps) {
   const [showModal, setShowModal] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comments, setComments] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Use existingReview prop directly - no separate state needed
+  const hasReviewed = existingReview;
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -49,22 +62,39 @@ export function ReviewButton({
 
     try {
       setIsSubmitting(true);
-      await api.post(API_ENDPOINTS.ADD_FEEDBACK, {
+
+      const result: any = await api.post(API_ENDPOINTS.ADD_FEEDBACK, {
         bookingId,
         rating,
         comments: comments.trim() || undefined,
       });
+
+      // Show success toast
       toast.success("Thank you for your review!");
+
       setShowModal(false);
       setRating(0);
       setComments("");
-      onReviewSubmitted?.();
+
+      // Call callback to refresh bookings (this will update existingReview prop from backend)
+      await onReviewSubmitted?.();
     } catch (error: any) {
-      toast.error(error.message || "Failed to submit review");
+      // Check if error is about duplicate review
+      if (error.message?.includes("already exists") || error.message?.includes("Feedback already")) {
+        toast.error("You have already reviewed this booking");
+      } else {
+        toast.error(error.message || "Failed to submit review");
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const getDisplayRating = () => {
+    return hoveredRating > 0 ? hoveredRating : rating;
+  };
+
+  const ratingLabel = RATING_LABELS[getDisplayRating()];
 
   if (variant === "dropdown") {
     return (
@@ -106,8 +136,8 @@ export function ReviewButton({
                   ))}
                 </div>
                 {rating > 0 && (
-                  <p className="text-sm font-medium mt-2">
-                    {rating} star{rating > 1 ? "s" : ""}
+                  <p className="text-sm font-semibold mt-3 text-primary">
+                    {RATING_LABELS[rating]}
                   </p>
                 )}
               </div>
@@ -157,11 +187,20 @@ export function ReviewButton({
 
         <button
           onClick={() => setShowModal(true)}
-          disabled={isSubmitting}
+          disabled={isSubmitting || hasReviewed}
           className={className}
         >
-          <MessageSquare className="h-4 w-4 mr-2" />
-          Leave Review
+          {hasReviewed ? (
+            <>
+              <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+              Reviewed
+            </>
+          ) : (
+            <>
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Leave Review
+            </>
+          )}
         </button>
       </>
     );
@@ -206,8 +245,8 @@ export function ReviewButton({
                 ))}
               </div>
               {rating > 0 && (
-                <p className="text-sm font-medium mt-2">
-                  {rating} star{rating > 1 ? "s" : ""}
+                <p className="text-sm font-semibold mt-3 text-primary">
+                  {RATING_LABELS[rating]}
                 </p>
               )}
             </div>
@@ -257,13 +296,22 @@ export function ReviewButton({
 
       <Button
         size={size}
-        variant="outline"
+        variant={hasReviewed ? "secondary" : "outline"}
         onClick={() => setShowModal(true)}
-        disabled={isSubmitting}
+        disabled={isSubmitting || hasReviewed}
         className={className}
       >
-        <MessageSquare className="h-3.5 w-3.5" />
-        Leave Review
+        {hasReviewed ? (
+          <>
+            <CheckCircle className="h-3.5 w-3.5 mr-2 text-green-600" />
+            Reviewed
+          </>
+        ) : (
+          <>
+            <MessageSquare className="h-3.5 w-3.5" />
+            Leave Review
+          </>
+        )}
       </Button>
     </>
   );

@@ -56,15 +56,52 @@ export default function CustomerLayout({
           return;
         }
 
-        // Set user data
-        setUser({
-          id: userData.id,
-          name: userData.name || userData.email?.split("@")[0] || "Customer",
-          email: userData.email || "customer@hsm.com",
-          phone: "",
-          roleId: userData.roleId,
-          avatar: null,
-        });
+        // Fetch full user profile from backend to get avatar
+        try {
+          const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+          const response = await fetch(`${API_BASE_URL}/user/profile`, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (response.ok) {
+            const profileData = await response.json();
+            const fullUserData = profileData.user;
+
+            setUser({
+              id: fullUserData.id,
+              name: fullUserData.name || userData.email?.split("@")[0] || "Customer",
+              email: fullUserData.email || userData.email || "customer@hsm.com",
+              phone: fullUserData.phone || "",
+              roleId: fullUserData.roleId || userData.roleId,
+              avatar: fullUserData.avatar || null,
+            });
+          } else {
+            // Fallback to token data if profile fetch fails
+            setUser({
+              id: userData.id,
+              name: userData.name || userData.email?.split("@")[0] || "Customer",
+              email: userData.email || "customer@hsm.com",
+              phone: "",
+              roleId: userData.roleId,
+              avatar: null,
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          // Fallback to token data if profile fetch fails
+          setUser({
+            id: userData.id,
+            name: userData.name || userData.email?.split("@")[0] || "Customer",
+            email: userData.email || "customer@hsm.com",
+            phone: "",
+            roleId: userData.roleId,
+            avatar: null,
+          });
+        }
 
         setIsLoading(false);
       } catch (err) {

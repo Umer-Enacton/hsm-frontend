@@ -57,6 +57,7 @@ export const API_ENDPOINTS = {
   SLOTS_PUBLIC: (businessId: string | number) =>
     `/slots/public/${businessId}`,
   SLOTS: (businessId: string | number) => `/slots/${businessId}`,
+  SLOT_BY_ID: (slotId: string | number) => `/slots/slot/${slotId}`,
   DELETE_SLOT: (businessId: string | number, slotId: string | number) =>
     `/businesses/${businessId}/slots/${slotId}`,
 
@@ -80,6 +81,10 @@ export const API_ENDPOINTS = {
   FEEDBACK_BY_SERVICE: (serviceId: string | number) =>
     `/feedback/service/${serviceId}`,
   ADD_FEEDBACK: "/add-feedback",
+
+  // Invoice
+  INVOICE_BY_BOOKING_ID: (bookingId: string | number) =>
+    `/invoice/booking/${bookingId}`,
 } as const;
 
 /**

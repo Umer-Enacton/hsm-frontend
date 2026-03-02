@@ -6,6 +6,7 @@ import { ReviewButton } from "./ReviewButton";
 import { RescheduleButton } from "./RescheduleButton";
 import { RebookButton } from "./RebookButton";
 import { DownloadInvoiceButton } from "./DownloadInvoiceButton";
+import { ViewInvoiceButton } from "./ViewInvoiceButton";
 
 interface BookingActionsProps {
   booking: CustomerBooking;
@@ -14,6 +15,7 @@ interface BookingActionsProps {
   onActionComplete?: () => void;
   variant?: "expanded" | "dropdown";
   className?: string;
+  hasReviewed?: boolean;
 }
 
 export function BookingActions({
@@ -23,6 +25,7 @@ export function BookingActions({
   onActionComplete,
   variant = "expanded",
   className = "",
+  hasReviewed = false,
 }: BookingActionsProps) {
   const { id, status, serviceId } = booking;
 
@@ -75,6 +78,7 @@ export function BookingActions({
               serviceName={serviceName}
               onReviewSubmitted={onActionComplete}
               variant="dropdown"
+              existingReview={hasReviewed}
             />
           </>
         )}
@@ -88,6 +92,7 @@ export function BookingActions({
 
         {/* Common Actions */}
         <RebookButton serviceId={serviceId} variant="dropdown" />
+        <ViewInvoiceButton bookingId={id} variant="dropdown" />
         <DownloadInvoiceButton bookingId={id} variant="dropdown" />
       </div>
     );
@@ -96,18 +101,19 @@ export function BookingActions({
   // Expanded row variant - shows buttons inline
   return (
     <div className={`flex flex-wrap gap-2 ${className}`}>
-      {/* PENDING: Cancel + Invoice */}
+      {/* PENDING: Cancel + View Invoice + Download Invoice */}
       {status === "pending" && (
         <>
           <CancelBookingButton
             bookingId={id}
             onCancel={onActionComplete}
           />
+          <ViewInvoiceButton bookingId={id} />
           <DownloadInvoiceButton bookingId={id} />
         </>
       )}
 
-      {/* CONFIRMED: Reschedule + Cancel + Invoice */}
+      {/* CONFIRMED: Reschedule + Cancel + View Invoice + Download Invoice */}
       {status === "confirmed" && (
         <>
           <RescheduleButton
@@ -122,11 +128,12 @@ export function BookingActions({
             bookingId={id}
             onCancel={onActionComplete}
           />
+          <ViewInvoiceButton bookingId={id} />
           <DownloadInvoiceButton bookingId={id} />
         </>
       )}
 
-      {/* COMPLETED: Review + Invoice + Rebook */}
+      {/* COMPLETED: Review + View Invoice + Download Invoice + Rebook */}
       {status === "completed" && (
         <>
           <ReviewButton
@@ -134,16 +141,19 @@ export function BookingActions({
             bookingId={id}
             serviceName={serviceName}
             onReviewSubmitted={onActionComplete}
+            existingReview={hasReviewed}
           />
+          <ViewInvoiceButton bookingId={id} />
           <DownloadInvoiceButton bookingId={id} />
           <RebookButton serviceId={serviceId} />
         </>
       )}
 
-      {/* CANCELLED: Rebook only */}
+      {/* CANCELLED: Rebook + View Invoice + Download Invoice */}
       {status === "cancelled" && (
         <>
           <RebookButton serviceId={serviceId} />
+          <ViewInvoiceButton bookingId={id} />
           <DownloadInvoiceButton bookingId={id} />
         </>
       )}
@@ -153,6 +163,7 @@ export function BookingActions({
         status
       ) && (
         <>
+          <ViewInvoiceButton bookingId={id} />
           <DownloadInvoiceButton bookingId={id} />
           <RebookButton serviceId={serviceId} />
         </>

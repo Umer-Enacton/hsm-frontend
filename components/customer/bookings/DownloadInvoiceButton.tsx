@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface DownloadInvoiceButtonProps {
   bookingId: number;
@@ -22,18 +23,55 @@ export function DownloadInvoiceButton({
   const handleDownload = async () => {
     try {
       setIsDownloading(true);
-      // TODO: Implement actual invoice download
-      // Future: await api.get(API_ENDPOINTS.BOOKING_INVOICE(bookingId), { responseType: 'blob' })
 
-      // For now, show info message
-      setTimeout(() => {
-        setIsDownloading(false);
-        // Using toast directly since we can't import it here easily
-        alert("Invoice download feature coming soon! This will download a PDF invoice for booking #" + bookingId);
-      }, 500);
-    } catch (error) {
-      setIsDownloading(false);
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+      const response = await fetch(`${API_BASE_URL}/invoice/booking/${bookingId}`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({
+          message: "Failed to download invoice",
+        }));
+        throw new Error(errorData.message || "Failed to download invoice");
+      }
+
+      // Get filename from Content-Disposition header if available
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = `invoice-${bookingId}.pdf`;
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Get PDF blob
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Invoice downloaded successfully!");
+    } catch (error: any) {
       console.error("Error downloading invoice:", error);
+      toast.error(error.message || "Failed to download invoice");
+    } finally {
+      setIsDownloading(false);
     }
   };
 

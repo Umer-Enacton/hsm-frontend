@@ -761,7 +761,7 @@ export default function ServiceDetailsPage({
                             <button
                               key={day.value}
                               onClick={() => handleDateChange(day.value)}
-                              className={`p-3 rounded-lg border-2 text-center transition-all ${
+                              className={`p-1 rounded-sm border-2 text-center transition-all ${
                                 selectedDate === day.value
                                   ? "border-primary bg-primary text-primary-foreground"
                                   : "border-border hover:border-primary/50 hover:bg-muted/50"
@@ -818,7 +818,7 @@ export default function ServiceDetailsPage({
                           }
 
                           return (
-                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-2">
                               {availableSlots.slice(0, 12).map((slot) => (
                                 <button
                                   key={slot.id}
