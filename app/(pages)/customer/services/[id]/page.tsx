@@ -31,10 +31,14 @@ import {
   getServiceById,
   getAvailableSlots,
   getAddresses,
-  createBooking,
   getServiceFeedback,
 } from "@/lib/customer/api";
 import type { ServiceDetails, Slot, Address } from "@/types/customer";
+import type {
+  PaymentOrderRequest,
+  PaymentOrderResponse,
+} from "@/types/payment";
+import { PaymentModal } from "@/components/customer/payment";
 import Link from "next/link";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -81,6 +85,11 @@ export default function ServiceDetailsPage({
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [isBooking, setIsBooking] = useState(false);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // Payment order data (created when slot is available)
+  const [paymentOrderData, setPaymentOrderData] = useState<any>(null);
 
   // Carousel state
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
@@ -143,8 +152,11 @@ export default function ServiceDetailsPage({
 
   // Fetch initial data on mount
   useEffect(() => {
-    loadServiceDetails();
-    loadAddresses();
+    // Only load if we haven't loaded yet (prevent unnecessary reloads)
+    if (!hasLoadedOnce) {
+      loadServiceDetails();
+      loadAddresses();
+    }
   }, [id]);
 
   const loadServiceDetails = async () => {
@@ -154,9 +166,12 @@ export default function ServiceDetailsPage({
       setService(serviceData);
       setHasLoadedOnce(true);
 
-      // Load slots for this business
+      // Load slots for this business (no date initially - just get all time slots)
       if (serviceData?.provider?.id) {
-        await loadSlots(serviceData.provider.id);
+        console.log(
+          `🔄 Loading initial slots for business ${serviceData.provider.id}`,
+        );
+        await loadSlots(serviceData.provider.id, undefined); // No date = all slots available
       }
 
       // Load feedback for this service
@@ -206,10 +221,10 @@ export default function ServiceDetailsPage({
     }
   };
 
-  const loadSlots = async (businessId: number) => {
+  const loadSlots = async (businessId: number, date?: string) => {
     try {
       setIsLoadingSlots(true);
-      const slotData = await getAvailableSlots(businessId);
+      const slotData = await getAvailableSlots(businessId, date);
       setAllSlots(Array.isArray(slotData) ? slotData : []);
     } catch (error) {
       console.error("Error loading slots:", error);
@@ -270,9 +285,18 @@ export default function ServiceDetailsPage({
   };
 
   // Handlers
-  const handleDateChange = (date: string) => {
+  const handleDateChange = async (date: string) => {
+    console.log(`📅 Date changed to: ${date}`);
     setSelectedDate(date);
     setSelectedSlot(null);
+
+    // Reload slots for the new date (with availability)
+    if (service?.provider?.id) {
+      console.log(
+        `🔄 Loading slots for business ${service.provider.id} on ${date}`,
+      );
+      await loadSlots(service.provider.id, date);
+    }
   };
 
   const handleSlotSelect = (slot: Slot) => {
@@ -285,26 +309,74 @@ export default function ServiceDetailsPage({
       return;
     }
 
-    try {
-      setIsBooking(true);
+    // Check availability and create payment order BEFORE showing modal
+    setIsCheckingAvailability(true);
 
-      const result = await createBooking({
+    try {
+      const bookingData: PaymentOrderRequest = {
         serviceId: service.id,
         slotId: selectedSlot.id,
         addressId: selectedAddress.id,
         bookingDate: new Date(selectedDate).toISOString(),
+      };
+
+      console.log(
+        "🔍 Checking slot availability and creating payment order...",
+      );
+
+      // Try to create payment order (this checks slot availability)
+      const response = await api.post<PaymentOrderResponse>(
+        API_ENDPOINTS.PAYMENT.CREATE_ORDER,
+        bookingData,
+      );
+
+      console.log(
+        "✅ Slot available! Payment order created:",
+        response.paymentIntentId,
+      );
+
+      // Success! Slot is available and locked
+      setPaymentOrderData(response);
+      setShowPaymentModal(true);
+    } catch (err: any) {
+      console.error("❌ Slot availability check failed:", err);
+
+      // Extract error details from enhanced error object
+      const errorCode = err.code || err.cause?.code || err.statusCode;
+      const errorMessage = err.message || err.cause?.message || "";
+      const isRetryable = err.retryable || err.cause?.retryable;
+
+      console.log("📊 Error details:", {
+        errorCode,
+        errorMessage,
+        isRetryable,
+        statusCode: err.statusCode,
       });
 
-      toast.success(result.message || "Booking created successfully!");
-
-      setTimeout(() => {
-        router.push("/customer/bookings");
-      }, 1500);
-    } catch (error: any) {
-      console.error("Error creating booking:", error);
-      toast.error(error.message || "Failed to create booking");
+      // Handle specific error cases with human-friendly messages
+      if (
+        errorCode === "SLOT_LOCKED" ||
+        isRetryable === true ||
+        err.statusCode === 409
+      ) {
+        toast.error(
+          "Another customer is currently booking this slot. Please wait a moment or choose a different slot.",
+        );
+      } else if (errorCode === "SLOT_ALREADY_BOOKED") {
+        toast.error(
+          "This slot has already been booked. Please select a different time.",
+        );
+      } else if (errorCode === "RAZORPAY_ERROR") {
+        toast.error(
+          "Payment gateway is temporarily unavailable. Please try again.",
+        );
+      } else {
+        toast.error(
+          errorMessage || "Failed to initiate booking. Please try again.",
+        );
+      }
     } finally {
-      setIsBooking(false);
+      setIsCheckingAvailability(false);
     }
   };
 
@@ -790,6 +862,32 @@ export default function ServiceDetailsPage({
                           </p>
                         </div>
 
+                        {/* Slot Availability Legend */}
+                        {selectedDate && (
+                          <div className="mb-3 p-2 bg-muted/30 rounded-lg">
+                            <div className="flex items-center gap-4 text-xs flex-wrap">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 rounded bg-green-100 border-2 border-green-500"></div>
+                                <span className="text-muted-foreground">
+                                  Available
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 rounded bg-black"></div>
+                                <span className="text-muted-foreground">
+                                  Selected
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 rounded bg-gray-200 border-2 border-gray-300"></div>
+                                <span className="text-muted-foreground">
+                                  Booked
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {(() => {
                           const availableSlots = selectedDate
                             ? getAvailableSlotsForDate(selectedDate)
@@ -819,19 +917,36 @@ export default function ServiceDetailsPage({
 
                           return (
                             <div className="grid grid-cols-3 sm:grid-cols-3 gap-2">
-                              {availableSlots.slice(0, 12).map((slot) => (
-                                <button
-                                  key={slot.id}
-                                  onClick={() => handleSlotSelect(slot)}
-                                  className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
-                                    selectedSlot?.id === slot.id
-                                      ? "border-primary bg-primary text-primary-foreground"
-                                      : "border-border hover:border-primary/50 hover:bg-muted/50"
-                                  }`}
-                                >
-                                  {formatTime(slot.startTime)}
-                                </button>
-                              ))}
+                              {availableSlots.slice(0, 12).map((slot) => {
+                                const isBooked =
+                                  slot.status === "booked" ||
+                                  slot.isAvailable === false;
+                                const isSelected = selectedSlot?.id === slot.id;
+
+                                return (
+                                  <button
+                                    key={slot.id}
+                                    onClick={() =>
+                                      !isBooked && handleSlotSelect(slot)
+                                    }
+                                    disabled={isBooked}
+                                    className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                                      isSelected
+                                        ? "bg-black text-white border-black"
+                                        : isBooked
+                                          ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed opacity-60"
+                                          : "bg-green-100 text-green-700 border-green-500 hover:bg-green-200 hover:border-green-600"
+                                    }`}
+                                    title={
+                                      isBooked
+                                        ? "This slot is already booked"
+                                        : "Available for booking"
+                                    }
+                                  >
+                                    {formatTime(slot.startTime)}
+                                  </button>
+                                );
+                              })}
                             </div>
                           );
                         })()}
@@ -896,10 +1011,17 @@ export default function ServiceDetailsPage({
                         <Button
                           size="lg"
                           onClick={handleBookNow}
-                          disabled={!canBook || isBooking}
+                          disabled={
+                            !canBook || isBooking || isCheckingAvailability
+                          }
                           className="w-full gap-2"
                         >
-                          {isBooking ? (
+                          {isCheckingAvailability ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Checking availability...
+                            </>
+                          ) : isBooking ? (
                             <>
                               <Loader2 className="h-4 w-4 animate-spin" />
                               Processing...
@@ -952,6 +1074,47 @@ export default function ServiceDetailsPage({
           )
         )}
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal &&
+        paymentOrderData &&
+        service &&
+        selectedDate &&
+        selectedSlot &&
+        selectedAddress && (
+          <PaymentModal
+            key={paymentOrderData.paymentIntentId} // Prevent remounting
+            orderData={paymentOrderData}
+            serviceName={service.name}
+            servicePrice={service.price}
+            bookingDate={selectedDate}
+            slotTime={formatTime(selectedSlot.startTime)}
+            onSuccess={() => {
+              console.log("✅✅✅ PaymentModal onSuccess called");
+              console.log("📍 Current URL:", window.location.href);
+
+              // First close the modal
+              setShowPaymentModal(false);
+              setPaymentOrderData(null); // Clear payment order data
+
+              // Wait for modal to close, then redirect using replace to prevent back navigation
+              setTimeout(() => {
+                console.log(
+                  "🚀🚀🚀 NOW redirecting to /customer/bookings using router.replace()",
+                );
+                console.log("📍 Before redirect URL:", window.location.href);
+
+                // Use replace instead of push to prevent back button from returning here
+                router.replace("/customer/bookings");
+              }, 500);
+            }}
+            onCancel={() => {
+              console.log("❌ PaymentModal onCancel called");
+              setShowPaymentModal(false);
+              setPaymentOrderData(null); // Clear payment order data
+            }}
+          />
+        )}
     </div>
   );
 }

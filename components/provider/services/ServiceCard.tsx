@@ -1,6 +1,6 @@
 /**
  * Service Card Component
- * Displays service as a vertical card (suitable for grid view)
+ * Premium card design with medium image, clean & minimal aesthetic
  */
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import {
   PowerOff,
   Star,
   MessageSquare,
+  Image as ImageIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -27,6 +28,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import type { Service } from "@/types/provider";
+import { cn } from "@/lib/utils";
 
 interface ServiceCardProps {
   service: Service;
@@ -46,14 +48,14 @@ export function ServiceCard({
   const getStatusBadge = () => {
     if (service.isActive) {
       return (
-        <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-green-300">
+        <Badge className="bg-white/90 backdrop-blur-sm text-green-700 hover:bg-white border-green-200 shadow-sm">
           <CheckCircle className="h-3 w-3 mr-1" />
           Active
         </Badge>
       );
     }
     return (
-      <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300">
+      <Badge className="bg-white/90 backdrop-blur-sm text-gray-700 hover:bg-white border-gray-200 shadow-sm">
         <XCircle className="h-3 w-3 mr-1" />
         Inactive
       </Badge>
@@ -61,7 +63,6 @@ export function ServiceCard({
   };
 
   const formatDuration = (minutes: number | undefined) => {
-    // Handle undefined or invalid values
     if (!minutes || isNaN(minutes) || minutes <= 0) {
       return "Duration not set";
     }
@@ -86,62 +87,105 @@ export function ServiceCard({
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4 space-y-3">
-        {/* Header: Name + Status Badge */}
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-base line-clamp-1 flex-1" title={service.name}>
+    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-gray-200 p-0 gap-0">
+      {/* Image Section with Overlay */}
+      <div className="relative h-40 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+        {service.image ? (
+          <img
+            src={service.image}
+            alt={service.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="h-12 w-12 text-gray-300" />
+          </div>
+        )}
+
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+
+        {/* Floating Status Badge */}
+        <div className="absolute top-3 right-3">{getStatusBadge()}</div>
+
+        {/* Service Name Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <h3 className="text-white font-semibold text-lg line-clamp-2 drop-shadow-lg">
             {service.name}
           </h3>
-          {getStatusBadge()}
         </div>
+      </div>
 
+      {/* Content Section */}
+      <CardContent className="p-5 space-y-4">
         {/* Description */}
         {service.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
+          <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem] leading-relaxed">
             {service.description}
           </p>
         )}
 
-        {/* Details: Price, Duration, Rating */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="flex items-center gap-1 text-muted-foreground">
-              <IndianRupee className="h-3.5 w-3.5" />
-              <span className="font-medium">{service.price}</span>
-            </span>
-            <span className="flex items-center gap-1 text-muted-foreground">
-              <Clock className="h-3.5 w-3.5" />
-              <span>{formatDuration(service.duration || service.EstimateDuration)}</span>
-            </span>
+        {/* Details Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Price */}
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <IndianRupee className="h-4 w-4 text-gray-600" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Price</p>
+              <p className="font-semibold text-gray-900">{service.price}</p>
+            </div>
           </div>
 
-          {/* Rating */}
-          <div className="flex items-center gap-1.5 py-2 border-t">
-            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-            <span className="font-medium text-sm">{Number(service.rating || 0).toFixed(1)}</span>
-            <span className="text-xs text-muted-foreground">
-              ({service.totalReviews || 0})
+          {/* Duration */}
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <Clock className="h-4 w-4 text-gray-600" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Duration</p>
+              <p className="font-medium text-gray-900 text-sm">
+                {formatDuration(service.duration || service.EstimateDuration)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Rating Section */}
+        <div className="flex items-center gap-2 py-3 border-t border-gray-100">
+          <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full">
+            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+            <span className="font-semibold text-sm text-gray-900">
+              {Number(service.rating || 0).toFixed(1)}
+            </span>
+            <span className="text-xs text-gray-600">
+              ({service.totalReviews || 0} reviews)
             </span>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 pt-2 border-t">
+        <div className="flex gap-2 pt-2">
           <Button
             variant={service.isActive ? "outline" : "default"}
             size="sm"
             onClick={handleToggleStatus}
-            className="flex-1"
+            className={cn(
+              "flex-1",
+              service.isActive
+                ? "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                : "bg-gray-900 text-white hover:bg-gray-800",
+            )}
           >
             {service.isActive ? (
               <>
-                <PowerOff className="h-3.5 w-3.5 mr-1" />
+                <PowerOff className="h-4 w-4 mr-1.5" />
                 Deactivate
               </>
             ) : (
               <>
-                <Power className="h-3.5 w-3.5 mr-1" />
+                <Power className="h-4 w-4 mr-1.5" />
                 Activate
               </>
             )}
@@ -149,26 +193,41 @@ export function ServiceCard({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="px-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="px-3 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+              >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(service)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={() => onEdit(service)}
+                className="cursor-pointer"
+              >
+                <Edit className="h-4 w-4 mr-2 text-gray-600" />
+                <span>Edit Service</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onViewReviews && onViewReviews(service)}>
-                <MessageSquare className="h-4 w-4 mr-2" />
-                View Reviews ({service.totalReviews || 0})
+              <DropdownMenuItem
+                onClick={() => onViewReviews && onViewReviews(service)}
+                className="cursor-pointer"
+              >
+                <MessageSquare className="h-4 w-4 mr-2 text-gray-600" />
+                <span>View Reviews</span>
+                {service.totalReviews > 0 && (
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    {service.totalReviews}
+                  </Badge>
+                )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => onDelete(service.id)}
-                className="text-destructive"
+                className="text-red-600 cursor-pointer"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                <span>Delete</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -50,6 +50,18 @@ export interface ServiceDetails extends CustomerService {
 }
 
 /**
+ * Booking status enum
+ */
+export enum BookingStatus {
+  PENDING = "pending",
+  PAYMENT_PENDING = "payment_pending",
+  CONFIRMED = "confirmed",
+  COMPLETED = "completed",
+  CANCELLED = "cancelled",
+  REFUNDED = "refunded",
+}
+
+/**
  * Booking interface (customer view)
  * NOTE: Backend now includes nested service, provider, slot, and address data
  */
@@ -60,7 +72,8 @@ export interface CustomerBooking {
   serviceId: number;
   slotId: number;
   addressId: number;
-  status: "pending" | "confirmed" | "completed" | "cancelled";
+  status: BookingStatus | "pending" | "payment_pending" | "confirmed" | "completed" | "cancelled" | "refunded";
+  paymentStatus?: "pending" | "initiated" | "paid" | "failed" | "refunded";
   totalPrice: number;
   bookingDate: string;
   createdAt: string;
@@ -105,9 +118,11 @@ export interface CustomerBooking {
  */
 export enum BookingStatus {
   PENDING = "pending",
+  PAYMENT_PENDING = "payment_pending",
   CONFIRMED = "confirmed",
   COMPLETED = "completed",
   CANCELLED = "cancelled",
+  REFUNDED = "refunded",
 }
 
 /**
@@ -117,6 +132,8 @@ export interface Slot {
   id: number;
   startTime: string; // Format: "HH:mm:ss"
   businessProfileId: number;
+  isAvailable?: boolean; // Whether slot is available for booking
+  status?: "available" | "booked"; // Slot status
 }
 
 /**

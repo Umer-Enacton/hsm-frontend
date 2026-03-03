@@ -5,6 +5,7 @@
 
 import { Loader2, Package } from "lucide-react";
 import { ServiceCard } from "./ServiceCard";
+import { ServiceTable } from "./ServiceTable";
 import type { Service } from "@/types/provider";
 
 type ViewMode = "grid" | "list";
@@ -71,19 +72,14 @@ export function ServiceList({
     );
   }
 
-  // List view - single column layout
+  // List view - table layout
   return (
-    <div className="space-y-3">
-      {services.map((service) => (
-        <ServiceCard
-          key={service.id}
-          service={service}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onToggleStatus={onToggleStatus}
-          onViewReviews={onViewReviews}
-        />
-      ))}
-    </div>
+    <ServiceTable
+      services={services}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      onToggleStatus={onToggleStatus}
+      onViewReviews={onViewReviews}
+    />
   );
 }

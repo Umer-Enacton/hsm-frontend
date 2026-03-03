@@ -85,6 +85,22 @@ export const API_ENDPOINTS = {
   // Invoice
   INVOICE_BY_BOOKING_ID: (bookingId: string | number) =>
     `/invoice/booking/${bookingId}`,
+
+  // Payment
+  PAYMENT: {
+    CREATE_ORDER: "/payment/create-order",
+    VERIFY: "/payment/verify",
+    FAILED: "/payment/failed",
+    CANCEL_INTENT: "/payment/cancel-intent",
+    VALIDATE_INTENT: "/payment/validate-intent", // CRITICAL: Validate before opening Razorpay
+    WEBHOOK: "/payment/webhook",
+    BY_BOOKING: (bookingId: string | number) =>
+      `/payment/booking/${bookingId}`,
+    BY_ID: (paymentId: string | number) =>
+      `/payment/${paymentId}`,
+    REFUND: (paymentId: string | number) =>
+      `/payment/refund/${paymentId}`,
+  },
 } as const;
 
 /**
@@ -121,8 +137,17 @@ export const apiRequest = async <T = any>(
   if (!response.ok) {
     const error = await response.json().catch(() => ({
       message: "An error occurred",
+      code: undefined,
     }));
-    throw new Error(error.message || "Request failed");
+
+    // Create enhanced error with all response properties
+    const enhancedError = new Error(error.message || "Request failed") as any;
+    enhancedError.code = error.code;
+    enhancedError.statusCode = response.status;
+    enhancedError.retryable = error.retryable;
+    enhancedError.cause = error; // Preserve original error data
+
+    throw enhancedError;
   }
 
   return response.json();
