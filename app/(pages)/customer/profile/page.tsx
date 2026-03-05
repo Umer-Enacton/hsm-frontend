@@ -12,10 +12,11 @@ import {
   ProfileHeader,
   ProfileTabs,
   ProfileOverview,
-  ProfileEditForm,
+  EditProfileModal,
   PasswordChangeForm,
   type ProfileTab,
 } from "@/components/profile";
+import { ProfileSkeleton } from "@/components/customer/skeletons/ProfileSkeleton";
 import type { User } from "@/types/auth";
 import type { Address } from "@/types/customer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,15 +30,17 @@ import { getAllStates, getCitiesByState } from "@/lib/data/india-locations";
 
 const ADDRESS_TYPES = ["home", "work", "other"] as const;
 type ViewMode = "list" | "grid";
-type CustomerProfileTab = ProfileTab | "addresses";
+type CustomerProfileTab = ProfileTab;
 
 export default function CustomerProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<CustomerProfileTab>("overview");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Addresses state
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -81,6 +84,7 @@ export default function CustomerProfilePage() {
       toast.error(err.message || "Failed to load profile");
     } finally {
       setIsLoading(false);
+      setHasLoadedOnce(true);
     }
   };
 
@@ -105,7 +109,6 @@ export default function CustomerProfilePage() {
 
   const handleProfileUpdate = (updatedUser: User) => {
     setUser(updatedUser);
-    setActiveTab("overview");
     // Emit custom event to notify layout to refresh user data
     window.dispatchEvent(new CustomEvent('profile-updated'));
   };
@@ -183,13 +186,8 @@ export default function CustomerProfilePage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96 gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading profile...</p>
-      </div>
-    );
+  if (!hasLoadedOnce) {
+    return <ProfileSkeleton />;
   }
 
   if (error || !user) {
@@ -208,13 +206,6 @@ export default function CustomerProfilePage() {
       </div>
     );
   }
-
-  // Customer-specific stats (placeholder - can be enhanced with real data)
-  const customerStats = {
-    totalBookings: 0, // TODO: Fetch from API
-    completedBookings: 0, // TODO: Fetch from API
-    pendingBookings: 0, // TODO: Fetch from API
-  };
 
   return (
     <div className="space-y-6">
@@ -241,62 +232,48 @@ export default function CustomerProfilePage() {
 
       {/* Tabs */}
       <ProfileTabs
-        activeTab={activeTab as ProfileTab}
+        activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as CustomerProfileTab)}
-        showAddressesTab
       />
 
       {/* Tab Content */}
       <div className="mt-6">
         {activeTab === "overview" && (
-          <div className="space-y-6">
-            <ProfileOverview
-              user={user}
-              onEditClick={() => setActiveTab("edit")}
-            />
-
-            {/* Customer Statistics */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          isLoading ? (
+            // ProfileOverview Skeleton
+            <div className="space-y-6">
               <Card>
-                <CardContent className="p-6">
-                  <div className="text-2xl font-bold">{customerStats.totalBookings}</div>
-                  <div className="text-sm text-muted-foreground mt-1">Total Bookings</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-2xl font-bold">{customerStats.completedBookings}</div>
-                  <div className="text-sm text-muted-foreground mt-1">Completed</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-2xl font-bold">{customerStats.pendingBookings}</div>
-                  <div className="text-sm text-muted-foreground mt-1">Pending</div>
-                </CardContent>
+                <div className="p-6 space-y-4">
+                  <Skeleton className="h-6 w-36" />
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2 border-b">
+                      <Skeleton className="h-4 w-10" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b">
+                      <Skeleton className="h-4 w-10" />
+                      <Skeleton className="h-4 w-48" />
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b">
+                      <Skeleton className="h-4 w-10" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <Skeleton className="h-4 w-8" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-9 w-full rounded-md" />
+                </div>
               </Card>
             </div>
+          ) : (
+            <ProfileOverview user={user} onEditClick={() => setIsEditModalOpen(true)} />
+          )
+        )}
 
-            {/* Quick Info */}
-            <Card>
-              <CardContent className="p-6 space-y-2">
-                <h3 className="text-lg font-semibold">Account Information</h3>
-                <p className="text-sm text-muted-foreground">
-                  Manage your account settings and preferences. You can update your profile
-                  information, change your password, manage your addresses, and control your security settings.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-        {activeTab === "edit" && (
-          <ProfileEditForm
-            user={user}
-            onUpdate={handleProfileUpdate}
-            onCancel={() => setActiveTab("overview")}
-          />
-        )}
         {activeTab === "security" && <PasswordChangeForm />}
+
         {activeTab === "addresses" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -492,6 +469,14 @@ export default function CustomerProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        user={user}
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onUpdate={handleProfileUpdate}
+      />
 
       {/* Add/Edit Address Dialog */}
       <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>

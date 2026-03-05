@@ -3,12 +3,9 @@
  * API functions and validators for user profile management
  */
 
-import { api } from "./api";
+import { api, getApiBaseUrl, getAuthHeaders } from "./api";
 import type { ProfileUpdateData } from "@/types/profile";
 import type { User } from "@/types/auth";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 /**
  * Get current user profile
@@ -54,9 +51,18 @@ export const uploadAvatar = async (
     const formData = new FormData();
     formData.append("avatar", file);
 
-    const response = await fetch(`${API_BASE_URL}/avatar`, {
+    // Get API URL at runtime
+    const apiUrl = getApiBaseUrl();
+
+    const response = await fetch(`${apiUrl}/avatar`, {
       method: "POST",
       credentials: "include",
+      headers: {
+        // Don't set Content-Type for FormData - browser does it automatically with boundary
+        // But we need to send the Authorization header
+        ...(localStorage.getItem("token") && { Authorization: `Bearer ${localStorage.getItem("token")}` }),
+        ...(sessionStorage.getItem("token") && { Authorization: `Bearer ${sessionStorage.getItem("token")}` }),
+      },
       body: formData,
     });
 

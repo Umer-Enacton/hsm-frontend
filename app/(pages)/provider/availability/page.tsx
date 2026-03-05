@@ -10,6 +10,7 @@ import { getBusinessSlots, createSlot, deleteSlot } from "@/lib/provider/slots";
 import { getProviderBusiness } from "@/lib/provider/api";
 import type { Slot } from "@/lib/provider/slots";
 import { SlotDialog } from "@/components/provider/availability/SlotDialog";
+import { AvailabilitySkeleton } from "@/components/provider/skeletons/AvailabilitySkeleton";
 
 export default function ProviderAvailabilityPage() {
   const router = useRouter();
@@ -126,16 +127,7 @@ export default function ProviderAvailabilityPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">
-            Loading availability...
-          </p>
-        </div>
-      </div>
-    );
+    return <AvailabilitySkeleton />;
   }
 
   return (

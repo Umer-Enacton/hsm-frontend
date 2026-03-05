@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, RefreshCw, Plus, List, Grid3x3, X } from "lucide-react";
+import { RefreshCw, Plus, List, Grid3x3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { ProviderServicesSkeleton } from "@/components/provider/skeletons";
 import {
   getBusinessServices,
   getServiceStats,
@@ -314,14 +315,7 @@ export default function ProviderServicesPage() {
     });
 
   if (isLoading) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading services...</p>
-        </div>
-      </div>
-    );
+    return <ProviderServicesSkeleton />;
   }
 
   return (

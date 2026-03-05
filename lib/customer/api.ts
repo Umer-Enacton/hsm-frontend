@@ -165,12 +165,18 @@ export async function getServiceById(serviceId: number): Promise<ServiceDetails>
  */
 export async function getAvailableSlots(
   businessId: number,
-  date?: string
+  date?: string,
+  serviceId?: number
 ): Promise<Slot[]> {
-  const params = date ? `?date=${date}` : "";
+  // Build query parameters
+  const queryParams = new URLSearchParams();
+  if (date) queryParams.append("date", date);
+  if (serviceId) queryParams.append("serviceId", serviceId.toString());
+
+  const params = queryParams.toString() ? `?${queryParams}` : "";
   const response = await api.get<{ slots: Slot[] }>(`${API_ENDPOINTS.SLOTS_PUBLIC(businessId)}${params}`);
 
-  console.log("📡 Slots API response:", response);
+  console.log(`📡 Slots API response for service ${serviceId || 'all'}:`, response);
 
   // Extract slots array from response
   if (response && response.slots && Array.isArray(response.slots)) {

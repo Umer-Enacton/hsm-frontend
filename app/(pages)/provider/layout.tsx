@@ -2,15 +2,19 @@
 
 // app/(pages)/provider/layout.tsx
 import { DashboardLayout } from "@/components/common";
-import { LayoutDashboard, Briefcase, Clock, Calendar, MessageSquare, Star, Settings } from "lucide-react";
+import {
+  LayoutDashboard,
+  Briefcase,
+  Clock,
+  Calendar,
+  MessageSquare,
+  Star,
+  Settings,
+} from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import {
-  getUserData,
-  isAuthenticated,
-  handleLogout,
-} from "@/lib/auth-utils";
+import { getUserData, isAuthenticated, handleLogout } from "@/lib/auth-utils";
 import { getCurrentProfile } from "@/lib/profile-api";
 import { UserRole, type User } from "@/types/auth";
 import { getProviderBusiness } from "@/lib/provider/api";
@@ -22,7 +26,6 @@ const navItems = [
   { label: "Services", href: "/provider/services", icon: Settings },
   { label: "Availability", href: "/provider/availability", icon: Calendar },
   { label: "Bookings", href: "/provider/bookings", icon: Clock },
-  { label: "Reviews", href: "/provider/reviews", icon: MessageSquare },
   // Profile removed from sidebar - accessible via Header user menu (same as admin)
 ];
 
@@ -74,11 +77,15 @@ export default function ProviderLayout({
           console.log("Fetched user profile:", userProfile);
           setUser(userProfile);
         } catch (profileError) {
-          console.error("Failed to fetch profile, using token data:", profileError);
+          console.error(
+            "Failed to fetch profile, using token data:",
+            profileError,
+          );
           // Fallback to token data if profile fetch fails
           setUser({
             id: userData.id,
-            name: userData.name || userData.email?.split("@")[0] || "Provider User",
+            name:
+              userData.name || userData.email?.split("@")[0] || "Provider User",
             email: userData.email || "provider@hsm.com",
             phone: "",
             roleId: userData.roleId,
@@ -94,7 +101,9 @@ export default function ProviderLayout({
 
             // If no business exists, redirect to onboarding
             if (!businessData) {
-              console.log("No business profile found, redirecting to onboarding");
+              console.log(
+                "No business profile found, redirecting to onboarding",
+              );
               router.push("/onboarding");
               return;
             }
@@ -130,10 +139,10 @@ export default function ProviderLayout({
       loadUserData();
     };
 
-    window.addEventListener('profile-updated', handleProfileUpdate);
+    window.addEventListener("profile-updated", handleProfileUpdate);
 
     return () => {
-      window.removeEventListener('profile-updated', handleProfileUpdate);
+      window.removeEventListener("profile-updated", handleProfileUpdate);
     };
   }, [router, pathname]);
 
@@ -180,12 +189,14 @@ export default function ProviderLayout({
         appName: "HSM Provider",
       }}
       header={{
-        user: user ? {
-          name: user.name,
-          email: user.email,
-          avatarUrl: user.avatar || undefined,
-          role: "Service Provider",
-        } : undefined,
+        user: user
+          ? {
+              name: user.name,
+              email: user.email,
+              avatarUrl: user.avatar || undefined,
+              role: "Service Provider",
+            }
+          : undefined,
         onProfileClick,
         onLogout,
         showSearch: true,

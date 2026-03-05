@@ -29,10 +29,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { VerificationAlert } from "@/components/provider/shared/VerificationAlert";
 import { EditBusinessDialog } from "./components/EditBusinessDialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { BusinessProfileSkeleton } from "@/components/provider/skeletons/BusinessProfileSkeleton";
 
 interface BusinessStats {
   totalServices: number;
@@ -71,37 +71,60 @@ export default function ProviderBusinessPage() {
           }
 
           // Fetch services
-          const servicesResponse: any = await api.get(API_ENDPOINTS.SERVICES_BY_BUSINESS(businessData.id));
+          const servicesResponse: any = await api.get(
+            API_ENDPOINTS.SERVICES_BY_BUSINESS(businessData.id),
+          );
           const services = Array.isArray(servicesResponse)
             ? servicesResponse
-            : (servicesResponse?.services || servicesResponse?.data || []);
-          const activeServices = services.filter((s: any) => s.isActive || s.is_active).length;
+            : servicesResponse?.services || servicesResponse?.data || [];
+          const activeServices = services.filter(
+            (s: any) => s.isActive || s.is_active,
+          ).length;
 
           // Fetch bookings
-          const bookingsResponse: any = await api.get(API_ENDPOINTS.PROVIDER_BOOKINGS);
+          const bookingsResponse: any = await api.get(
+            API_ENDPOINTS.PROVIDER_BOOKINGS,
+          );
           const bookings = Array.isArray(bookingsResponse)
             ? bookingsResponse
-            : (bookingsResponse?.bookings || []);
+            : bookingsResponse?.bookings || [];
 
-          const pendingBookings = bookings.filter((b: any) => b.status === "pending").length;
-          const confirmedBookings = bookings.filter((b: any) => b.status === "confirmed").length;
-          const completedBookings = bookings.filter((b: any) => b.status === "completed").length;
+          const pendingBookings = bookings.filter(
+            (b: any) => b.status === "pending",
+          ).length;
+          const confirmedBookings = bookings.filter(
+            (b: any) => b.status === "confirmed",
+          ).length;
+          const completedBookings = bookings.filter(
+            (b: any) => b.status === "completed",
+          ).length;
           const totalBookings = bookings.length;
-          const completionRate = totalBookings > 0 ? Math.round((completedBookings / totalBookings) * 100) : 0;
+          const completionRate =
+            totalBookings > 0
+              ? Math.round((completedBookings / totalBookings) * 100)
+              : 0;
 
           const totalRevenue = bookings
             .filter((b: any) => b.status === "completed")
-            .reduce((sum: number, b: any) => sum + (b.price || b.totalPrice || 0), 0);
+            .reduce(
+              (sum: number, b: any) => sum + (b.price || b.totalPrice || 0),
+              0,
+            );
 
-          const averageJobValue = completedBookings > 0 ? Math.round(totalRevenue / completedBookings) : 0;
+          const averageJobValue =
+            completedBookings > 0
+              ? Math.round(totalRevenue / completedBookings)
+              : 0;
 
           // Fetch reviews
           let recentReviews: any[] = [];
           try {
-            const feedbackResponse: any = await api.get(API_ENDPOINTS.FEEDBACK_BUSINESS(businessData.id));
+            const feedbackResponse: any = await api.get(
+              API_ENDPOINTS.FEEDBACK_BUSINESS(businessData.id),
+            );
             const feedback = Array.isArray(feedbackResponse)
               ? feedbackResponse
-              : (feedbackResponse?.feedback || feedbackResponse?.data || []);
+              : feedbackResponse?.feedback || feedbackResponse?.data || [];
             recentReviews = feedback.slice(0, 5);
           } catch (e) {
             console.log("Could not fetch reviews");
@@ -165,14 +188,7 @@ export default function ProviderBusinessPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-[calc(100vh-8rem)] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading business profile...</p>
-        </div>
-      </div>
-    );
+    return <BusinessProfileSkeleton />;
   }
 
   if (!business) {
@@ -191,7 +207,9 @@ export default function ProviderBusinessPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Business Profile</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Business Profile
+          </h1>
           <p className="text-muted-foreground">
             Manage your business information and view performance
           </p>
@@ -203,10 +221,6 @@ export default function ProviderBusinessPage() {
       </div>
 
       {/* Verification Alert */}
-      <VerificationAlert
-        isVerified={business.isVerified}
-        businessName={business.name}
-      />
 
       {/* Hero Card with Cover */}
       <Card className="overflow-hidden">
@@ -272,15 +286,21 @@ export default function ProviderBusinessPage() {
               <div className="flex items-center gap-3 text-muted-foreground">
                 <div className="flex items-center gap-1 text-sm">
                   <MapPin className="h-4 w-4" />
-                  <span>{business.city}, {business.state}</span>
+                  <span>
+                    {business.city}, {business.state}
+                  </span>
                 </div>
                 {business.rating > 0 && (
                   <>
                     <span className="text-sm">•</span>
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">{business.rating.toFixed(1)}</span>
-                      <span className="text-xs">({business.totalReviews || 0})</span>
+                      <span className="text-sm font-medium">
+                        {business.rating.toFixed(1)}
+                      </span>
+                      <span className="text-xs">
+                        ({business.totalReviews || 0})
+                      </span>
                     </div>
                   </>
                 )}
@@ -391,7 +411,9 @@ export default function ProviderBusinessPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
-                    {stats.averageRating > 0 ? stats.averageRating.toFixed(1) : "N/A"}
+                    {stats.averageRating > 0
+                      ? stats.averageRating.toFixed(1)
+                      : "N/A"}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {stats.totalReviews} reviews
@@ -440,7 +462,9 @@ export default function ProviderBusinessPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-muted-foreground">Email</p>
-                    <p className="text-sm font-medium truncate">{business.email}</p>
+                    <p className="text-sm font-medium truncate">
+                      {business.email}
+                    </p>
                   </div>
                 </div>
 
@@ -450,7 +474,9 @@ export default function ProviderBusinessPage() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Location</p>
-                    <p className="text-sm font-medium">{business.city}, {business.state}</p>
+                    <p className="text-sm font-medium">
+                      {business.city}, {business.state}
+                    </p>
                   </div>
                 </div>
 
@@ -488,24 +514,36 @@ export default function ProviderBusinessPage() {
               <CardContent>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="p-4 rounded-lg bg-muted/30">
-                    <p className="text-xs text-muted-foreground mb-1">Total Revenue</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Total Revenue
+                    </p>
                     <div className="flex items-center gap-1">
                       <IndianRupee className="h-5 w-5" />
-                      <p className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()}</p>
+                      <p className="text-2xl font-bold">
+                        {stats.totalRevenue.toLocaleString()}
+                      </p>
                     </div>
                   </div>
 
                   <div className="p-4 rounded-lg bg-muted/30">
-                    <p className="text-xs text-muted-foreground mb-1">Avg Job Value</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Avg Job Value
+                    </p>
                     <div className="flex items-center gap-1">
                       <IndianRupee className="h-5 w-5" />
-                      <p className="text-2xl font-bold">{stats.averageJobValue}</p>
+                      <p className="text-2xl font-bold">
+                        {stats.averageJobValue}
+                      </p>
                     </div>
                   </div>
 
                   <div className="p-4 rounded-lg bg-muted/30">
-                    <p className="text-xs text-muted-foreground mb-1">Jobs Completed</p>
-                    <p className="text-2xl font-bold">{stats.completedBookings}</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Jobs Completed
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {stats.completedBookings}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -531,10 +569,14 @@ export default function ProviderBusinessPage() {
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium text-sm">{review.customerName || "Customer"}</p>
+                            <p className="font-medium text-sm">
+                              {review.customerName || "Customer"}
+                            </p>
                             <div className="flex items-center gap-1">
                               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                              <span className="text-sm font-medium">{review.rating}</span>
+                              <span className="text-sm font-medium">
+                                {review.rating}
+                              </span>
                             </div>
                           </div>
                           <p className="text-xs text-muted-foreground">
@@ -567,7 +609,7 @@ export default function ProviderBusinessPage() {
                 <div
                   className={cn(
                     "flex h-12 w-12 items-center justify-center rounded-full",
-                    business.isVerified ? "bg-green-100" : "bg-yellow-100"
+                    business.isVerified ? "bg-green-100" : "bg-yellow-100",
                   )}
                 >
                   {business.isVerified ? (
@@ -578,7 +620,9 @@ export default function ProviderBusinessPage() {
                 </div>
                 <div>
                   <p className="font-semibold">
-                    {business.isVerified ? "Verified Business" : "Pending Verification"}
+                    {business.isVerified
+                      ? "Verified Business"
+                      : "Pending Verification"}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {business.isVerified
@@ -602,7 +646,9 @@ export default function ProviderBusinessPage() {
                     <Package className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">Active Services</span>
                   </div>
-                  <span className="text-lg font-bold">{stats.activeServices}</span>
+                  <span className="text-lg font-bold">
+                    {stats.activeServices}
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
@@ -610,7 +656,9 @@ export default function ProviderBusinessPage() {
                     <Users className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">Total Bookings</span>
                   </div>
-                  <span className="text-lg font-bold">{stats.totalBookings}</span>
+                  <span className="text-lg font-bold">
+                    {stats.totalBookings}
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
@@ -619,7 +667,9 @@ export default function ProviderBusinessPage() {
                     <span className="text-sm">Rating</span>
                   </div>
                   <span className="text-sm font-bold">
-                    {stats.averageRating > 0 ? stats.averageRating.toFixed(1) : "N/A"}
+                    {stats.averageRating > 0
+                      ? stats.averageRating.toFixed(1)
+                      : "N/A"}
                   </span>
                 </div>
               </CardContent>

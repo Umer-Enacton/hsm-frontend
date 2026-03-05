@@ -33,7 +33,9 @@ import { api, API_ENDPOINTS } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { BookingActions } from "@/components/customer/bookings/BookingActions";
-
+import { CustomerBookingsSkeleton } from "@/components/customer/skeletons/CustomerBookingsSkeleton";
+import { BookingDetailsSkeleton } from "@/components/customer/skeletons/BookingDetailsSkeleton";
+import { BookingsTableSkeleton } from "@/components/customer/skeletons/BookingTableSkeleton";
 interface Service {
   id: number;
   name: string;
@@ -84,7 +86,13 @@ interface CustomerBooking {
   addressId: number;
   slotId: number;
   bookingDate: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled" | "refunded" | "payment_pending";
+  status:
+    | "pending"
+    | "confirmed"
+    | "completed"
+    | "cancelled"
+    | "refunded"
+    | "payment_pending";
   totalPrice: number;
   createdAt: string;
   feedback?: Feedback | null;
@@ -292,7 +300,8 @@ export default function CustomerBookingsPage() {
   const getStatusRowTint = (status: string) => {
     const statusTints: Record<string, string> = {
       pending: "bg-amber-50/50 hover:bg-amber-50/50 dark:bg-amber-950/20",
-      payment_pending: "bg-orange-50/50 hover:bg-orange-50/50 dark:bg-orange-950/20",
+      payment_pending:
+        "bg-orange-50/50 hover:bg-orange-50/50 dark:bg-orange-950/20",
       confirmed: "bg-blue-50/50 hover:bg-blue-50/50 dark:bg-blue-950/20",
       completed: "bg-green-50/50 hover:bg-green-50/50 dark:bg-green-950/20",
       cancelled: "bg-red-50/50 hover:bg-red-50/50 dark:bg-red-950/20",
@@ -331,14 +340,8 @@ export default function CustomerBookingsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading bookings...</p>
-        </div>
-      </div>
-    );
+    return <CustomerBookingsSkeleton />;
+    //return <BookingDetailsSkeleton />;
   }
 
   const filteredBookings = getFilteredBookings();

@@ -21,6 +21,7 @@ import type { Slot } from "@/types/customer";
 import type { Address } from "@/types/customer";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { BookingDetailsSkeleton } from "@/components/customer/skeletons/BookingDetailsSkeleton";
 
 export default function BookingDetailsPage({
   params,
@@ -235,14 +236,7 @@ export default function BookingDetailsPage({
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-[calc(100vh-8rem)] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading booking details...</p>
-        </div>
-      </div>
-    );
+    return <BookingDetailsSkeleton />;
   }
 
   if (!booking) {

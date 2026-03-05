@@ -38,6 +38,7 @@ import type {
   PaymentOrderResponse,
 } from "@/types/payment";
 import { PaymentModal } from "@/components/customer/payment";
+import { ServiceDetailSkeleton } from "@/components/customer/skeletons/ServiceDetailSkeleton";
 import Link from "next/link";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -165,12 +166,14 @@ export default function ServiceDetailsPage({
       setService(serviceData);
       setHasLoadedOnce(true);
 
-      // Load slots for this business (no date initially - just get all time slots)
+      // Load slots for this business for TODAY's date
+      // IMPORTANT: Always pass date so backend checks availability per service
+      const today = new Date().toISOString().split('T')[0];
       if (serviceData?.provider?.id) {
         console.log(
-          `🔄 Loading initial slots for business ${serviceData.provider.id}`,
+          `🔄 Loading initial slots for business ${serviceData.provider.id}, service ${serviceData.id}, date ${today}`,
         );
-        await loadSlots(serviceData.provider.id, undefined); // No date = all slots available
+        await loadSlots(serviceData.provider.id, today, serviceData.id); // Always pass today's date for availability check
       }
 
       // Load feedback for this service
@@ -220,10 +223,10 @@ export default function ServiceDetailsPage({
     }
   };
 
-  const loadSlots = async (businessId: number, date?: string) => {
+  const loadSlots = async (businessId: number, date?: string, serviceId?: number) => {
     try {
       setIsLoadingSlots(true);
-      const slotData = await getAvailableSlots(businessId, date);
+      const slotData = await getAvailableSlots(businessId, date, serviceId);
       setAllSlots(Array.isArray(slotData) ? slotData : []);
     } catch (error) {
       console.error("Error loading slots:", error);
@@ -292,9 +295,9 @@ export default function ServiceDetailsPage({
     // Reload slots for the new date (with availability)
     if (service?.provider?.id) {
       console.log(
-        `🔄 Loading slots for business ${service.provider.id} on ${date}`,
+        `🔄 Loading slots for business ${service.provider.id}, service ${service.id} on ${date}`,
       );
-      await loadSlots(service.provider.id, date);
+      await loadSlots(service.provider.id, date, service.id); // Pass serviceId for per-service filtering
     }
   };
 
@@ -444,21 +447,7 @@ export default function ServiceDetailsPage({
       </div>
 
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {showSkeleton ? (
-          // Skeleton Loading - Two Column
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <div className="w-full aspect-video bg-muted rounded-2xl animate-pulse" />
-              <div className="h-48 bg-muted rounded-2xl animate-pulse" />
-              <div className="h-64 bg-muted rounded-2xl animate-pulse" />
-            </div>
-            <div className="space-y-4">
-              <div className="h-8 bg-muted rounded w-3/4 animate-pulse" />
-              <div className="h-4 bg-muted rounded w-full animate-pulse" />
-              <div className="h-32 bg-muted rounded-2xl animate-pulse mt-6" />
-            </div>
-          </div>
-        ) : (
+        {showSkeleton ? <ServiceDetailSkeleton /> : (
           service && (
             <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
               {/* LEFT COLUMN - Service Details */}

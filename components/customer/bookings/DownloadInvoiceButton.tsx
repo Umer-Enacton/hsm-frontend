@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { getApiBaseUrl } from "@/lib/api";
 
 interface DownloadInvoiceButtonProps {
   bookingId: number;
@@ -24,12 +25,18 @@ export function DownloadInvoiceButton({
     try {
       setIsDownloading(true);
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-      const response = await fetch(`${API_BASE_URL}/invoice/booking/${bookingId}`, {
+      // Get API URL at runtime
+      const apiUrl = getApiBaseUrl();
+
+      // Get token from storage
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+      const response = await fetch(`${apiUrl}/invoice/booking/${bookingId}`, {
         method: "GET",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
 

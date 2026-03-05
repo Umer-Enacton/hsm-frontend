@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Calendar, MapPin, Star, Search, ChevronRight, Clock, CheckCircle, Home } from "lucide-react";
+import { Calendar, MapPin, Star, Search, ChevronRight, Clock, CheckCircle, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import {
   getServices,
 } from "@/lib/customer/api";
 import type { CustomerBooking, CustomerService } from "@/types/customer";
+import { CustomerDashboardSkeleton } from "@/components/customer/skeletons/CustomerDashboardSkeleton";
 
 export default function CustomerDashboardPage() {
   const router = useRouter();
@@ -81,14 +82,7 @@ export default function CustomerDashboardPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-[calc(100vh-8rem)] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    );
+    return <CustomerDashboardSkeleton />;
   }
 
   return (

@@ -43,6 +43,7 @@ import {
 } from "@/lib/provider/api";
 import { cn } from "@/lib/utils";
 import type { ProviderBooking } from "@/types/provider";
+import { ProviderBookingsSkeleton } from "@/components/provider/skeletons/ProviderBookingsSkeleton";
 
 interface BookingStats {
   total: number;
@@ -300,6 +301,11 @@ export default function ProviderBookingsPage() {
   };
 
   const filteredBookings = getFilteredBookings();
+
+  // Show skeleton on initial load
+  if (isLoading && bookings.length === 0) {
+    return <ProviderBookingsSkeleton />;
+  }
 
   return (
     <div className="space-y-6">

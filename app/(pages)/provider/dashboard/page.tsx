@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VerificationAlert } from "@/components/provider/shared/VerificationAlert";
+import { ProviderDashboardSkeleton } from "@/components/provider/skeletons/ProviderDashboardSkeleton";
 import {
   Calendar,
   Clock,
@@ -168,14 +169,7 @@ export default function ProviderDashboardPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    );
+    return <ProviderDashboardSkeleton />;
   }
 
   if (!stats) {

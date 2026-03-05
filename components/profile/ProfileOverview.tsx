@@ -50,45 +50,6 @@ export function ProfileOverview({
           </Button>
         </div>
       </Card>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <div className="p-6">
-            <div className="text-2xl font-bold">0</div>
-            <div className="text-sm text-muted-foreground mt-1">
-              {user.roleId === 1 ? "Total Bookings" : user.roleId === 2 ? "Services Listed" : "Total Users"}
-            </div>
-          </div>
-        </Card>
-        <Card>
-          <div className="p-6">
-            <div className="text-2xl font-bold">0</div>
-            <div className="text-sm text-muted-foreground mt-1">
-              {user.roleId === 1 ? "Completed" : user.roleId === 2 ? "Active Bookings" : "Total Categories"}
-            </div>
-          </div>
-        </Card>
-        <Card>
-          <div className="p-6">
-            <div className="text-2xl font-bold">0</div>
-            <div className="text-sm text-muted-foreground mt-1">
-              {user.roleId === 1 ? "Pending" : user.roleId === 2 ? "Total Reviews" : "Active Now"}
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Account Info */}
-      <Card>
-        <div className="p-6 space-y-2">
-          <h3 className="text-lg font-semibold">Account Information</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage your account settings and preferences. You can update your profile
-            information, change your password, and manage your security settings.
-          </p>
-        </div>
-      </Card>
     </div>
   );
 }
