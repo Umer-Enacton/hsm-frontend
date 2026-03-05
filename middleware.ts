@@ -138,7 +138,7 @@ export function middleware(request: NextRequest) {
           url.pathname = "/provider/dashboard";
           break;
         case UserRole.CUSTOMER:
-          url.pathname = "/customer/home";
+          url.pathname = "/customer";
           break;
         default:
           url.pathname = "/login";
