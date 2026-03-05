@@ -426,9 +426,23 @@ export function PaymentModal({
             paymentIntentId={orderData.paymentIntentId}
             onPaymentSuccess={handlePaymentSuccess}
             onPaymentFailure={handlePaymentFailure}
-            onModalClose={() => {
-              // User closed Razorpay without paying
-              console.log("ℹ️ Razorpay modal closed by user");
+            onModalClose={async () => {
+              // User closed Razorpay without paying - cancel the intent to release slot
+              console.log("ℹ️ Razorpay modal closed by user - cancelling payment intent");
+
+              if (orderData && step === "ready") {
+                try {
+                  await api.post(API_ENDPOINTS.PAYMENT.CANCEL_INTENT, {
+                    paymentIntentId: orderData.paymentIntentId,
+                  });
+                  console.log("✅ Payment intent cancelled successfully");
+                } catch (err) {
+                  console.warn("⚠️ Failed to cancel payment intent:", err);
+                }
+              }
+
+              // Close the modal
+              onCancel?.();
             }}
             className="w-full bg-black text-white py-4 rounded-xl hover:bg-gray-800 transition font-semibold text-lg shadow-lg hover:shadow-xl"
           >
