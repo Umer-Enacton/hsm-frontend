@@ -141,7 +141,6 @@ export const getAuthHeaders = () => {
   return {
     "Content-Type": "application/json",
     ...(token && { "Authorization": `Bearer ${token}` }),
-    credentials: "include" as RequestCredentials,
   };
 };
 
