@@ -138,6 +138,15 @@ export const API_ENDPOINTS = {
 export const getAuthHeaders = () => {
   const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
 
+  // Debug logging in production
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+    console.log('[getAuthHeaders]', {
+      hasToken: !!token,
+      tokenLength: token?.length,
+      hasAuthHeader: !!token,
+    });
+  }
+
   return {
     "Content-Type": "application/json",
     ...(token && { "Authorization": `Bearer ${token}` }),
@@ -154,7 +163,19 @@ export const apiRequest = async <T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> => {
-  const url = `${API_BASE_URL}${endpoint}`;
+  // Always detect API URL at runtime (not at build time)
+  const apiUrl = getApiBaseUrl();
+  const url = `${apiUrl}${endpoint}`;
+
+  // Debug logging in production
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+    console.log('[API Request]', {
+      endpoint,
+      apiUrl,
+      fullUrl: url,
+      hasToken: !!localStorage.getItem("token"),
+    });
+  }
 
   const config: RequestInit = {
     ...options,
