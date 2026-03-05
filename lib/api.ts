@@ -7,6 +7,15 @@
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
+// Log API_BASE_URL for debugging
+if (typeof window !== 'undefined') {
+  console.log("=== API CONFIG ===");
+  console.log("API_BASE_URL:", API_BASE_URL);
+  console.log("NEXT_PUBLIC_API_BASE_URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
+  console.log("Window location:", window.location.href);
+  console.log("================");
+}
+
 /**
  * API endpoints - all relative to BASE_URL
  * Note: API routes are mounted at root level (no /api prefix based on updated docs)
@@ -48,6 +57,7 @@ export const API_ENDPOINTS = {
   SLOTS_PUBLIC: (businessId: string | number) =>
     `/slots/public/${businessId}`,
   SLOTS: (businessId: string | number) => `/slots/${businessId}`,
+  SLOT_BY_ID: (slotId: string | number) => `/slots/slot/${slotId}`,
   DELETE_SLOT: (businessId: string | number, slotId: string | number) =>
     `/businesses/${businessId}/slots/${slotId}`,
 
@@ -68,9 +78,29 @@ export const API_ENDPOINTS = {
   // Feedback
   FEEDBACK_BUSINESS: (businessId: string | number) =>
     `/feedback/business/${businessId}`,
-  FEEDBACK_SERVICE: (serviceId: string | number) =>
+  FEEDBACK_BY_SERVICE: (serviceId: string | number) =>
     `/feedback/service/${serviceId}`,
   ADD_FEEDBACK: "/add-feedback",
+
+  // Invoice
+  INVOICE_BY_BOOKING_ID: (bookingId: string | number) =>
+    `/invoice/booking/${bookingId}`,
+
+  // Payment
+  PAYMENT: {
+    CREATE_ORDER: "/payment/create-order",
+    VERIFY: "/payment/verify",
+    FAILED: "/payment/failed",
+    CANCEL_INTENT: "/payment/cancel-intent",
+    VALIDATE_INTENT: "/payment/validate-intent", // CRITICAL: Validate before opening Razorpay
+    WEBHOOK: "/payment/webhook",
+    BY_BOOKING: (bookingId: string | number) =>
+      `/payment/booking/${bookingId}`,
+    BY_ID: (paymentId: string | number) =>
+      `/payment/${paymentId}`,
+    REFUND: (paymentId: string | number) =>
+      `/payment/refund/${paymentId}`,
+  },
 } as const;
 
 /**
@@ -107,8 +137,17 @@ export const apiRequest = async <T = any>(
   if (!response.ok) {
     const error = await response.json().catch(() => ({
       message: "An error occurred",
+      code: undefined,
     }));
-    throw new Error(error.message || "Request failed");
+
+    // Create enhanced error with all response properties
+    const enhancedError = new Error(error.message || "Request failed") as any;
+    enhancedError.code = error.code;
+    enhancedError.statusCode = response.status;
+    enhancedError.retryable = error.retryable;
+    enhancedError.cause = error; // Preserve original error data
+
+    throw enhancedError;
   }
 
   return response.json();

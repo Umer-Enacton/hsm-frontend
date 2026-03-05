@@ -103,7 +103,7 @@ export function UserListItem({
             <Eye className="h-4 w-4" />
             <span className="sr-only">View {user.name}</span>
           </Button>
-          <Button
+          {/* <Button
             variant="ghost"
             size="sm"
             onClick={handleDelete}
@@ -115,7 +115,7 @@ export function UserListItem({
           >
             <Trash2 className="h-4 w-4" />
             <span className="sr-only">Delete {user.name}</span>
-          </Button>
+          </Button> */}
         </div>
       </TableCell>
     </TableRow>

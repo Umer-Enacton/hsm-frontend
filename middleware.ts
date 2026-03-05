@@ -23,17 +23,25 @@ export enum UserRole {
 const PROTECTED_ROUTES = {
   // Admin routes - require ADMIN role
   admin: {
-    paths: ["/admin/dashboard", "/admin/categories", "/admin/users", "/admin/profile"],
+    paths: [
+      "/admin/dashboard",
+      "/admin/categories",
+      "/admin/users",
+      "/admin/profile",
+      "/admin/business",
+      "/admin/services",
+      "/admin/bookings",
+    ],
     allowedRoles: [UserRole.ADMIN],
   },
   // Provider routes - require PROVIDER role
   provider: {
-    paths: ["/provider/dashboard"],
+    paths: ["/provider"],
     allowedRoles: [UserRole.PROVIDER],
   },
   // Customer routes - require CUSTOMER role
   customer: {
-    paths: ["/customer/home", "/customer/bookings"],
+    paths: ["/customer"],
     allowedRoles: [UserRole.CUSTOMER],
   },
 };
@@ -114,6 +122,33 @@ export function middleware(request: NextRequest) {
 
   if (process.env.NODE_ENV === "development" && isAuthenticated) {
     console.log("[Middleware] User Role:", userRole);
+  }
+
+  // Scenario 0: Handle root path "/"
+  if (pathname === "/") {
+    const url = request.nextUrl.clone();
+
+    if (isAuthenticated && userRole) {
+      // Redirect authenticated users to their dashboard
+      switch (userRole) {
+        case UserRole.ADMIN:
+          url.pathname = "/admin/dashboard";
+          break;
+        case UserRole.PROVIDER:
+          url.pathname = "/provider/dashboard";
+          break;
+        case UserRole.CUSTOMER:
+          url.pathname = "/customer/home";
+          break;
+        default:
+          url.pathname = "/login";
+      }
+    } else {
+      // Redirect unauthenticated users to login
+      url.pathname = "/login";
+    }
+
+    return NextResponse.redirect(url);
   }
 
   // Scenario 1: User is NOT authenticated

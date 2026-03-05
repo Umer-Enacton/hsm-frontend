@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Users, Loader2, RefreshCw } from "lucide-react";
+import { Users } from "lucide-react";
 import { toast } from "sonner";
 import { getUsers, deleteUser, filterUsers } from "@/lib/user-api";
 import { getUserData } from "@/lib/auth-utils";
@@ -12,6 +12,7 @@ import { UserFilters } from "./components/UserFilters";
 import { ViewUserDialog } from "./components/ViewUserDialog";
 import { DeleteUserDialog } from "./components/DeleteUserDialog";
 import type { AppUser, UserFilters as UserFiltersType } from "@/types/user";
+import { AdminPageHeader, LoadingState, ErrorState } from "@/components/admin/shared";
 
 // Pagination constants
 const DEFAULT_PAGE_SIZE = 10;
@@ -25,6 +26,7 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<number | undefined>();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -65,8 +67,12 @@ export default function UsersPage() {
     setCurrentPage(1); // Reset to first page on filter change
   }, [allUsers, filters]);
 
-  const fetchUsers = async () => {
-    setIsLoading(true);
+  const fetchUsers = async (showRefreshLoading = false) => {
+    if (showRefreshLoading) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -77,6 +83,7 @@ export default function UsersPage() {
       toast.error(err.message || "Failed to load users");
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -119,10 +126,6 @@ export default function UsersPage() {
     }
   };
 
-  const handleRefresh = () => {
-    fetchUsers();
-    toast.success("Users refreshed");
-  };
 
   // Reset to page 1 when page size changes
   useEffect(() => {
@@ -138,52 +141,25 @@ export default function UsersPage() {
   }, [filteredUsers, currentPage, pageSize]);
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96 gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading users...</p>
-      </div>
-    );
+    return <LoadingState message="Loading users..." />;
   }
 
   if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96 gap-4">
-        <div className="text-center">
-          <p className="text-lg font-semibold text-destructive mb-2">
-            Failed to load users
-          </p>
-          <p className="text-sm text-muted-foreground mb-4">{error}</p>
-          <Button onClick={fetchUsers} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
+    return <ErrorState message={error} onRetry={() => fetchUsers()} />;
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Users</h1>
-          <p className="text-muted-foreground">
-            Manage platform users and permissions
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            size="icon"
-            title="Refresh"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Users"
+        description="Manage platform users and permissions"
+        onRefresh={() => {
+          fetchUsers(true);
+          toast.success("Users refreshed");
+        }}
+        isRefreshing={isRefreshing}
+      />
 
       {/* Filters */}
       <UserFilters

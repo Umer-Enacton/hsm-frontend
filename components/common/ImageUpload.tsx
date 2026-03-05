@@ -12,6 +12,7 @@ interface ImageUploadProps {
   className?: string;
   disabled?: boolean;
   isLoading?: boolean;
+  isPending?: boolean; // Shows that the image is selected but not yet uploaded
   accept?: string;
   maxSize?: number; // in bytes (default: 5MB)
 }
@@ -23,6 +24,7 @@ export function ImageUpload({
   className,
   disabled = false,
   isLoading = false,
+  isPending = false,
   accept = "image/jpeg,image/jpg,image/png,image/gif,image/webp",
   maxSize = 5 * 1024 * 1024, // 5MB
 }: ImageUploadProps) {
@@ -93,19 +95,27 @@ export function ImageUpload({
             )}
           </div>
           {!disabled && !isLoading && (
-            <Button
-              type="button"
-              variant="destructive"
-              size="icon"
-              onClick={handleRemove}
-              className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="absolute top-2 right-2 flex gap-2">
+              {isPending && (
+                <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
+                  <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
+                  Pending
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                onClick={handleRemove}
+                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           )}
         </div>
       ) : (
-        // Upload Area
+        // Upload Area - same size as preview
         <div className="relative">
           <input
             type="file"
@@ -118,7 +128,7 @@ export function ImageUpload({
           <label
             htmlFor="image-upload"
             className={cn(
-              "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 p-8 transition-colors cursor-pointer hover:border-muted-foreground/50 hover:bg-muted/50",
+              "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 aspect-video cursor-pointer hover:border-muted-foreground/50 hover:bg-muted/50 transition-colors",
               (disabled || isLoading) && "cursor-not-allowed opacity-50"
             )}
           >
@@ -127,15 +137,11 @@ export function ImageUpload({
             ) : (
               <>
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted-foreground/10">
-                  {currentImage ? (
-                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                  ) : (
-                    <Upload className="h-6 w-6 text-muted-foreground" />
-                  )}
+                  <Upload className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <div className="text-center">
+                <div className="text-center px-4">
                   <p className="text-sm font-medium text-foreground">
-                    {currentImage ? "Change image" : "Upload an image"}
+                    Upload an image
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     JPG, PNG, GIF, or WEBP (max {Math.round(maxSize / 1024 / 1024)}MB)

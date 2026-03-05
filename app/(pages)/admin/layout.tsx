@@ -2,23 +2,29 @@
 
 // app/(pages)/admin/layout.tsx
 import { DashboardLayout } from "@/components/common";
-import { LayoutDashboard, LayoutTemplate, Users, UserCircle } from "lucide-react";
+import {
+  LayoutDashboard,
+  LayoutTemplate,
+  Users,
+  Briefcase,
+  Wrench,
+  Calendar,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import {
-  getUserData,
-  isAuthenticated,
-  handleLogout,
-} from "@/lib/auth-utils";
-import { UserRole } from "@/types/auth";
+import { getUserData, isAuthenticated, handleLogout } from "@/lib/auth-utils";
+import { getCurrentProfile } from "@/lib/profile-api";
+import { UserRole, type User } from "@/types/auth";
 
 // Navigation items for the admin sidebar
 const navItems = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { label: "Businesses", href: "/admin/business", icon: Briefcase },
+  { label: "Services", href: "/admin/services", icon: Wrench },
   { label: "Categories", href: "/admin/categories", icon: LayoutTemplate },
   { label: "Users", href: "/admin/users", icon: Users },
-  { label: "Profile", href: "/admin/profile", icon: UserCircle },
+  // Profile removed from sidebar - accessible via Header user menu
 ];
 
 export default function AdminLayout({
@@ -28,58 +34,84 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<{
-    name: string;
-    email: string;
-    role?: string;
-  } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      // Check if user is authenticated
-      if (!isAuthenticated()) {
-        console.log("Not authenticated, redirecting to login");
-        router.push("/login");
-        return;
-      }
+    const loadUserData = async () => {
+      try {
+        // Check if user is authenticated
+        if (!isAuthenticated()) {
+          console.log("Not authenticated, redirecting to login");
+          router.push("/login");
+          return;
+        }
 
-      // Get user data from token
-      const userData = getUserData();
-      console.log("User data from token:", userData);
+        // Get user data from token
+        const userData = getUserData();
+        console.log("User data from token:", userData);
 
-      if (!userData) {
-        console.log("No user data found, redirecting to login");
-        router.push("/login");
-        return;
-      }
+        if (!userData) {
+          console.log("No user data found, redirecting to login");
+          router.push("/login");
+          return;
+        }
 
-      // Check if user has admin role
-      if (userData.roleId !== UserRole.ADMIN) {
-        console.log("Not an admin user, roleId:", userData.roleId);
-        setError("Access denied: Admin access required");
+        // Check if user has admin role
+        if (userData.roleId !== UserRole.ADMIN) {
+          console.log("Not an admin user, roleId:", userData.roleId);
+          setError("Access denied: Admin access required");
+          setTimeout(() => {
+            router.push("/unauthorized");
+          }, 2000);
+          return;
+        }
+
+        // Fetch full user profile from backend (includes avatar)
+        try {
+          const userProfile = await getCurrentProfile();
+          console.log("Fetched user profile:", userProfile);
+          setUser(userProfile);
+        } catch (profileError) {
+          console.error(
+            "Failed to fetch profile, using token data:",
+            profileError,
+          );
+          // Fallback to token data if profile fetch fails
+          setUser({
+            id: userData.id,
+            name:
+              userData.name || userData.email?.split("@")[0] || "Admin User",
+            email: userData.email || "admin@hsm.com",
+            phone: "",
+            roleId: userData.roleId,
+            avatar: null,
+          });
+        }
+
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Error in admin layout:", err);
+        setError("Authentication error");
         setTimeout(() => {
-          router.push("/unauthorized");
+          router.push("/login");
         }, 2000);
-        return;
       }
+    };
 
-      // Set user data for header
-      // Note: name might not be in the JWT token, so we use email as fallback
-      setUser({
-        name: userData.name || userData.email?.split("@")[0] || "Admin User",
-        email: userData.email || "admin@hsm.com",
-        role: "Administrator",
-      });
+    loadUserData();
 
-      setIsLoading(false);
-    } catch (err) {
-      console.error("Error in admin layout:", err);
-      setError("Authentication error");
-      setTimeout(() => {
-        router.push("/login");
-      }, 2000);
-    }
+    // Listen for profile update events
+    const handleProfileUpdate = () => {
+      console.log("Profile updated event received, refreshing user data");
+      loadUserData();
+    };
+
+    window.addEventListener("profile-updated", handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdate);
+    };
   }, [router]);
 
   const onLogout = async () => {
@@ -90,6 +122,10 @@ export default function AdminLayout({
       // Force redirect even if logout fails
       router.push("/login");
     }
+  };
+
+  const onProfileClick = () => {
+    router.push("/admin/profile");
   };
 
   // Show loading state while checking auth
@@ -121,7 +157,15 @@ export default function AdminLayout({
         appName: "HSM Admin",
       }}
       header={{
-        user: user || undefined,
+        user: user
+          ? {
+              name: user.name,
+              email: user.email,
+              avatarUrl: user.avatar || undefined,
+              role: "Administrator",
+            }
+          : undefined,
+        onProfileClick,
         onLogout,
         showSearch: true,
         searchPlaceholder: "Search admin...",

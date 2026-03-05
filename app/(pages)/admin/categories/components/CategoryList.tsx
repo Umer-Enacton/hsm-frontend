@@ -85,31 +85,26 @@ export function CategoryList({
           categories
         </div>
 
-        {/* View Toggle */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground hidden sm:inline">
-            View:
-          </span>
-          <div className="flex items-center border rounded-md p-1">
-            <Button
-              variant={viewMode === "grid" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => onViewModeChange("grid")}
-              className="h-7 px-2"
-            >
-              <LayoutGrid className="h-4 w-4" />
-              <span className="sr-only">Grid view</span>
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => onViewModeChange("list")}
-              className="h-7 px-2"
-            >
-              <List className="h-4 w-4" />
-              <span className="sr-only">List view</span>
-            </Button>
-          </div>
+        {/* View Toggle - Consistent with Customer/Provider pages */}
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant={viewMode === "grid" ? "default" : "outline"}
+            size="sm"
+            onClick={() => onViewModeChange("grid")}
+            className="h-8 w-8 p-0"
+            title="Grid view"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="sm"
+            onClick={() => onViewModeChange("list")}
+            className="h-8 w-8 p-0"
+            title="List view"
+          >
+            <List className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 

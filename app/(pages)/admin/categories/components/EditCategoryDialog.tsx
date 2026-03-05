@@ -41,7 +41,7 @@ export function EditCategoryDialog({
   });
   const [errors, setErrors] = useState<CategoryFormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [useDirectUrl, setUseDirectUrl] = useState(false);
 
@@ -55,7 +55,7 @@ export function EditCategoryDialog({
       });
       setErrors({});
       setTouched({});
-      setImageFile(null);
+      setPendingImageFile(null);
       setUseDirectUrl(false);
     }
   }, [category]);
@@ -96,9 +96,10 @@ export function EditCategoryDialog({
   };
 
   const handleImageSelect = async (file: File | null) => {
+    console.log("🔍 [EditCategory] handleImageSelect called", file?.name || "null");
     if (!file) {
-      setImageFile(null);
-      // Keep existing image if file is removed
+      setPendingImageFile(null);
+      setFormData((prev) => ({ ...prev, image: null }));
       return;
     }
 
@@ -110,26 +111,14 @@ export function EditCategoryDialog({
     }
 
     setErrors((prev) => ({ ...prev, image: undefined }));
-    setImageFile(file);
-
-    // Upload image immediately
-    setIsUploadingImage(true);
-    try {
-      const result = await uploadCategoryImage(file);
-      setFormData((prev) => ({ ...prev, image: result.url }));
-    } catch (error: any) {
-      setErrors((prev) => ({
-        ...prev,
-        image: "Upload endpoint not available. Try using a direct image URL instead.",
-      }));
-      setImageFile(null);
-    } finally {
-      setIsUploadingImage(false);
-    }
+    // Store the file locally - don't upload yet
+    console.log("✅ [EditCategory] File stored locally in pendingImageFile state - NO API CALL");
+    setPendingImageFile(file);
+    // The ImageUpload component will show the preview via FileReader
   };
 
   const handleImageRemove = () => {
-    setImageFile(null);
+    setPendingImageFile(null);
     setFormData((prev) => ({ ...prev, image: null }));
   };
 
@@ -137,6 +126,8 @@ export function EditCategoryDialog({
     e.preventDefault();
 
     if (!category) return;
+
+    console.log("🚀 [EditCategory] handleSubmit - Submit button clicked");
 
     // Mark all fields as touched
     setTouched({ name: true, description: true });
@@ -149,17 +140,40 @@ export function EditCategoryDialog({
       return;
     }
 
-    // Don't submit if image is still uploading
-    if (isUploadingImage) {
-      return;
-    }
+    setIsUploadingImage(true);
 
     try {
-      await onUpdate(category.id, formData);
+      // Step 1: Upload image if there's a pending file
+      let imageUrl = formData.image;
+      if (pendingImageFile) {
+        console.log("⬆️ [EditCategory] Pending file found - Uploading to Cloudinary NOW:", pendingImageFile.name);
+        try {
+          const result = await uploadCategoryImage(pendingImageFile);
+          imageUrl = result.url;
+          console.log("✅ [EditCategory] Upload successful, URL:", imageUrl);
+        } catch (error: any) {
+          console.error("❌ [EditCategory] Upload failed:", error);
+          setErrors((prev) => ({
+            ...prev,
+            image: error.message || "Failed to upload image",
+          }));
+          setIsUploadingImage(false);
+          return;
+        }
+      } else {
+        console.log("ℹ️ [EditCategory] No pending file - skipping upload");
+      }
+
+      // Step 2: Update category with the image URL
+      console.log("📤 [EditCategory] Submitting form data with image URL");
+      await onUpdate(category.id, { ...formData, image: imageUrl });
       onOpenChange(false);
     } catch (error) {
       // Error is handled by parent
       console.error("Failed to update category:", error);
+    } finally {
+      setIsUploadingImage(false);
+      setPendingImageFile(null);
     }
   };
 
@@ -239,6 +253,7 @@ export function EditCategoryDialog({
                   onImageRemove={handleImageRemove}
                   disabled={isLoading}
                   isLoading={isUploadingImage}
+                  isPending={pendingImageFile !== null}
                 />
                 {touched.image && errors.image && (
                   <span className="text-destructive text-sm">{errors.image}</span>

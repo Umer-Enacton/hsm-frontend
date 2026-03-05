@@ -1,138 +1,263 @@
-import React from "react";
+"use client";
 
-const AdminDashboardPage = () => {
+import { useEffect, useState } from "react";
+import { Users, Wrench, Building2, DollarSign, Calendar, CheckCircle, Clock, XCircle } from "lucide-react";
+import { api, API_ENDPOINTS } from "@/lib/api";
+import { AdminPageHeader, StatCard, LoadingState, ErrorState } from "@/components/admin/shared";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface DashboardStats {
+  totalUsers: number;
+  totalBusinesses: number;
+  verifiedBusinesses: number;
+  pendingBusinesses: number;
+  totalServices: number;
+  totalBookings: number;
+  completedBookings: number;
+  pendingBookings: number;
+  revenue: number;
+}
+
+interface Activity {
+  id: string;
+  type: "user" | "booking" | "business" | "payment";
+  message: string;
+  timestamp: string;
+}
+
+export default function AdminDashboardPage() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchDashboardData = async (showRefreshLoading = false) => {
+    try {
+      if (showRefreshLoading) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+      setError(null);
+
+      // Fetch users - handle different response formats
+      const usersResponse: any = await api.get(API_ENDPOINTS.USERS);
+      const users = Array.isArray(usersResponse) ? usersResponse : (usersResponse?.users || usersResponse?.data || []);
+
+      // Fetch businesses - handle different response formats
+      const businessesResponse: any = await api.get(API_ENDPOINTS.BUSINESSES);
+      const businesses = Array.isArray(businessesResponse) ? businessesResponse : (businessesResponse?.businesses || businessesResponse?.data || []);
+
+      // Fetch services - handle different response formats
+      const servicesResponse: any = await api.get(API_ENDPOINTS.SERVICES);
+      const services = Array.isArray(servicesResponse) ? servicesResponse : (servicesResponse?.services || servicesResponse?.data || []);
+
+      // Calculate stats
+      const totalUsers = users?.length || 0;
+      const totalBusinesses = businesses?.length || 0;
+      const verifiedBusinesses = businesses?.filter((b: any) => b.is_verified)?.length || 0;
+      const pendingBusinesses = totalBusinesses - verifiedBusinesses;
+      const totalServices = services?.length || 0;
+
+      // For bookings and revenue, we'd need a dedicated admin endpoint
+      // Using placeholder values for now
+      const totalBookings = 0;
+      const completedBookings = 0;
+      const pendingBookings = 0;
+      const revenue = 0;
+
+      setStats({
+        totalUsers,
+        totalBusinesses,
+        verifiedBusinesses,
+        pendingBusinesses,
+        totalServices,
+        totalBookings,
+        completedBookings,
+        pendingBookings,
+        revenue,
+      });
+
+      // Mock activity data - in production, this would come from an activity log endpoint
+      setActivities([
+        {
+          id: "1",
+          type: "user",
+          message: "New user registration",
+          timestamp: "2 minutes ago",
+        },
+        {
+          id: "2",
+          type: "booking",
+          message: "Service booking completed",
+          timestamp: "15 minutes ago",
+        },
+        {
+          id: "3",
+          type: "business",
+          message: "New business application submitted",
+          timestamp: "1 hour ago",
+        },
+        {
+          id: "4",
+          type: "payment",
+          message: "Payment processed successfully",
+          timestamp: "3 hours ago",
+        },
+      ]);
+    } catch (err: any) {
+      console.error("Failed to fetch dashboard data:", err);
+      setError(err.message || "Failed to load dashboard data");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const getActivityColor = (type: Activity["type"]) => {
+    switch (type) {
+      case "user":
+        return "bg-green-500";
+      case "booking":
+        return "bg-blue-500";
+      case "business":
+        return "bg-purple-500";
+      case "payment":
+        return "bg-yellow-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  if (isLoading) {
+    return <LoadingState message="Loading dashboard..." />;
+  }
+
+  if (error && !stats) {
+    return <ErrorState message={error} onRetry={() => fetchDashboardData()} />;
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome to the HSM Admin Dashboard. Manage your platform from here.
-        </p>
-      </div>
+      {/* Header */}
+      <AdminPageHeader
+        title="Dashboard"
+        description="Welcome to the HSM Admin Dashboard. Monitor your platform at a glance."
+        onRefresh={() => fetchDashboardData(true)}
+        isRefreshing={isRefreshing}
+      />
 
-      {/* Dashboard stats cards */}
+      {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border bg-card p-6 shadow-sm">
-          <div className="flex items-center justify-between space-y-0 pb-2">
-            <h3 className="text-sm font-medium tracking-tight">Total Users</h3>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-          </div>
-          <div className="text-2xl font-bold">1,234</div>
-          <p className="text-xs text-muted-foreground">
-            +20.1% from last month
-          </p>
-        </div>
-
-        <div className="rounded-lg border bg-card p-6 shadow-sm">
-          <div className="flex items-center justify-between space-y-0 pb-2">
-            <h3 className="text-sm font-medium tracking-tight">Active Services</h3>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <rect width="20" height="14" x="2" y="5" rx="2" />
-              <line x1="2" x2="22" y1="10" y2="10" />
-            </svg>
-          </div>
-          <div className="text-2xl font-bold">456</div>
-          <p className="text-xs text-muted-foreground">
-            +18.2% from last month
-          </p>
-        </div>
-
-        <div className="rounded-lg border bg-card p-6 shadow-sm">
-          <div className="flex items-center justify-between space-y-0 pb-2">
-            <h3 className="text-sm font-medium tracking-tight">Service Providers</h3>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-            </svg>
-          </div>
-          <div className="text-2xl font-bold">89</div>
-          <p className="text-xs text-muted-foreground">
-            +12 new this week
-          </p>
-        </div>
-
-        <div className="rounded-lg border bg-card p-6 shadow-sm">
-          <div className="flex items-center justify-between space-y-0 pb-2">
-            <h3 className="text-sm font-medium tracking-tight">Revenue</h3>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <line x1="12" x2="12" y1="2" y2="22" />
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          </div>
-          <div className="text-2xl font-bold">$45,231</div>
-          <p className="text-xs text-muted-foreground">
-            +4.5% from last month
-          </p>
-        </div>
+        <StatCard
+          title="Total Users"
+          value={stats?.totalUsers || 0}
+          change="+20.1% from last month"
+          icon={Users}
+          trend="up"
+        />
+        <StatCard
+          title="Total Businesses"
+          value={stats?.totalBusinesses || 0}
+          change={`+${stats?.pendingBusinesses || 0} pending verification`}
+          icon={Building2}
+          trend="up"
+        />
+        <StatCard
+          title="Total Services"
+          value={stats?.totalServices || 0}
+          change="+18.2% from last month"
+          icon={Wrench}
+          trend="up"
+        />
+        <StatCard
+          title="Total Bookings"
+          value={stats?.totalBookings || 0}
+          change={`${stats?.pendingBookings || 0} pending`}
+          icon={Calendar}
+          trend="neutral"
+        />
       </div>
 
-      {/* Recent activity section */}
-      <div className="rounded-lg border bg-card p-6 shadow-sm">
-        <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-        <div className="space-y-4">
-          <div className="flex items-center gap-4 text-sm">
-            <div className="h-2 w-2 rounded-full bg-green-500" />
-            <span className="flex-1">New user registration: john@example.com</span>
-            <span className="text-muted-foreground">2 minutes ago</span>
-          </div>
-          <div className="flex items-center gap-4 text-sm">
-            <div className="h-2 w-2 rounded-full bg-blue-500" />
-            <span className="flex-1">Service request #1234 assigned to Provider #56</span>
-            <span className="text-muted-foreground">15 minutes ago</span>
-          </div>
-          <div className="flex items-center gap-4 text-sm">
-            <div className="h-2 w-2 rounded-full bg-yellow-500" />
-            <span className="flex-1">Payment processed for order #9876</span>
-            <span className="text-muted-foreground">1 hour ago</span>
-          </div>
-          <div className="flex items-center gap-4 text-sm">
-            <div className="h-2 w-2 rounded-full bg-purple-500" />
-            <span className="flex-1">New service provider application submitted</span>
-            <span className="text-muted-foreground">3 hours ago</span>
-          </div>
-        </div>
+      {/* Additional Stats Row */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard
+          title="Verified Businesses"
+          value={stats?.verifiedBusinesses || 0}
+          icon={CheckCircle}
+          trend="up"
+        />
+        <StatCard
+          title="Pending Verification"
+          value={stats?.pendingBusinesses || 0}
+          icon={Clock}
+          trend="neutral"
+        />
+        <StatCard
+          title="Revenue"
+          value={`$${stats?.revenue?.toLocaleString() || "0"}`}
+          change="+4.5% from last month"
+          icon={DollarSign}
+          trend="up"
+        />
       </div>
+
+      {/* Recent Activity */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {activities.length > 0 ? (
+            <div className="space-y-4">
+              {activities.map((activity) => (
+                <div key={activity.id} className="flex items-center gap-4 text-sm">
+                  <div className={`h-2 w-2 rounded-full ${getActivityColor(activity.type)}`} />
+                  <span className="flex-1">{activity.message}</span>
+                  <span className="text-muted-foreground">{activity.timestamp}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No recent activity
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="outline" onClick={() => window.location.href = "/admin/users"}>
+              <Users className="h-4 w-4 mr-2" />
+              Manage Users
+            </Button>
+            <Button variant="outline" onClick={() => window.location.href = "/admin/business"}>
+              <Building2 className="h-4 w-4 mr-2" />
+              Verify Businesses
+            </Button>
+            <Button variant="outline" onClick={() => window.location.href = "/admin/categories"}>
+              <Wrench className="h-4 w-4 mr-2" />
+              Manage Categories
+            </Button>
+            <Button variant="outline" onClick={() => window.location.href = "/admin/bookings"}>
+              <Calendar className="h-4 w-4 mr-2" />
+              View Bookings
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default AdminDashboardPage;
+}

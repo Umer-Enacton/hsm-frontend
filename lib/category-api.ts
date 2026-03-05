@@ -93,6 +93,8 @@ export const deleteCategory = async (id: number): Promise<void> => {
 export const uploadCategoryImage = async (
   file: File,
 ): Promise<{ url: string; publicId: string }> => {
+  console.log("⚠️⚠️⚠️ [API] uploadCategoryImage CALLED - This should ONLY happen on submit!", file.name);
+
   try {
     const formData = new FormData();
     formData.append("image", file);
@@ -114,6 +116,7 @@ export const uploadCategoryImage = async (
 
     // Handle backend response format: { success: true, message: "...", data: { url, publicId, ... } }
     if (data.success && data.data) {
+      console.log("✅ [API] uploadCategoryImage SUCCESS", data.data.url);
       return {
         url: data.data.url,
         publicId: data.data.publicId,
@@ -122,6 +125,7 @@ export const uploadCategoryImage = async (
 
     throw new Error(data.message || "Invalid response from server");
   } catch (error: any) {
+    console.error("❌ [API] uploadCategoryImage FAILED", error);
     throw new Error(error.message || "Failed to upload image");
   }
 };

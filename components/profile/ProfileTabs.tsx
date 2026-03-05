@@ -3,27 +3,35 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { User, Settings, Shield } from "lucide-react";
+import { User, Settings, Shield, MapPin } from "lucide-react";
 
-export type ProfileTab = "overview" | "edit" | "security";
+export type ProfileTab = "overview" | "edit" | "security" | "addresses";
 
 interface ProfileTabsProps {
   activeTab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
   className?: string;
+  showAddressesTab?: boolean;
 }
 
-const tabs = [
+const allTabs = [
   { id: "overview" as ProfileTab, label: "Overview", icon: User },
   { id: "edit" as ProfileTab, label: "Edit Profile", icon: Settings },
   { id: "security" as ProfileTab, label: "Security", icon: Shield },
+  { id: "addresses" as ProfileTab, label: "Addresses", icon: MapPin },
 ];
 
 export function ProfileTabs({
   activeTab,
   onTabChange,
   className,
+  showAddressesTab = false,
 }: ProfileTabsProps) {
+  // Filter tabs based on showAddressesTab prop
+  const tabs = showAddressesTab
+    ? allTabs
+    : allTabs.filter(tab => tab.id !== "addresses");
+
   return (
     <div className={cn("flex items-center gap-2 border-b", className)}>
       {tabs.map((tab) => {
