@@ -20,6 +20,7 @@ import { ProfileSkeleton } from "@/components/customer/skeletons/ProfileSkeleton
 import type { User } from "@/types/auth";
 import type { Address } from "@/types/customer";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Plus, List, Grid3x3, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";

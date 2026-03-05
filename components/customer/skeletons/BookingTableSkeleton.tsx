@@ -1,3 +1,43 @@
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function BookingsTableSkeletonRow({ index }: { index: number }) {
+  return (
+    <TableRow>
+      <TableCell className="py-3 px-4">
+        <Skeleton className="h-4 w-4" />
+      </TableCell>
+      <TableCell className="py-3 px-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-12 w-12 rounded" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="py-3 px-4">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+      </TableCell>
+      <TableCell className="py-3 px-4">
+        <div className="space-y-1">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-3 w-12" />
+        </div>
+      </TableCell>
+      <TableCell className="py-3 px-4">
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </TableCell>
+      <TableCell className="py-3 px-4 text-right">
+        <Skeleton className="h-4 w-12 ml-auto" />
+      </TableCell>
+    </TableRow>
+  );
+}
+
 export function BookingsTableSkeleton({ rows = 5 }) {
   return (
     <div className="border rounded-lg overflow-hidden bg-card shadow-sm">

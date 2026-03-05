@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Loader2, Upload, User } from "lucide-react";
+import { Loader2, Upload, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 import { updateProfile, uploadAvatar } from "@/lib/profile-api";
 import type { User } from "@/types/auth";
@@ -46,6 +46,7 @@ export function EditProfileModal({
       const updatedUser = await updateProfile({
         name: formData.name,
         phone: formData.phone,
+        email: user.email,
       });
 
       onUpdate(updatedUser);
@@ -77,8 +78,11 @@ export function EditProfileModal({
 
     try {
       setIsUploadingAvatar(true);
-      const updatedUser = await uploadAvatar(file);
-      onUpdate(updatedUser);
+      const avatarData = await uploadAvatar(file);
+      onUpdate({
+        ...user,
+        avatar: avatarData.url,
+      });
       toast.success("Avatar updated successfully");
     } catch (error: any) {
       console.error("Error uploading avatar:", error);
@@ -111,7 +115,7 @@ export function EditProfileModal({
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <User className="h-10 w-10 text-primary/40" />
+                    <UserIcon className="h-10 w-10 text-primary/40" />
                   )}
                 </div>
                 {isUploadingAvatar && (

@@ -11,7 +11,7 @@ import {
   ProfileHeader,
   ProfileTabs,
   ProfileOverview,
-  ProfileEditForm,
+  EditProfileModal,
   PasswordChangeForm,
   type ProfileTab,
 } from "@/components/profile";
@@ -24,6 +24,7 @@ export default function ProviderProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Check auth and load user on mount
   useEffect(() => {
@@ -58,7 +59,7 @@ export default function ProviderProfilePage() {
 
   const handleProfileUpdate = (updatedUser: User) => {
     setUser(updatedUser);
-    setActiveTab("overview");
+    setIsEditModalOpen(false);
     // Emit custom event to notify layout to refresh user data
     window.dispatchEvent(new CustomEvent('profile-updated'));
   };
@@ -118,17 +119,18 @@ export default function ProviderProfilePage() {
       {/* Tab Content */}
       <div className="mt-6">
         {activeTab === "overview" && (
-          <ProfileOverview user={user} onEditClick={() => setActiveTab("edit")} />
-        )}
-        {activeTab === "edit" && (
-          <ProfileEditForm
-            user={user}
-            onUpdate={handleProfileUpdate}
-            onCancel={() => setActiveTab("overview")}
-          />
+          <ProfileOverview user={user} onEditClick={() => setIsEditModalOpen(true)} />
         )}
         {activeTab === "security" && <PasswordChangeForm />}
       </div>
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        user={user}
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onUpdate={handleProfileUpdate}
+      />
     </div>
   );
 }
