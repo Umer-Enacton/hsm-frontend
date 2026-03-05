@@ -135,10 +135,15 @@ export const API_ENDPOINTS = {
 /**
  * Standard fetch options for authenticated requests
  */
-export const getAuthHeaders = () => ({
-  "Content-Type": "application/json",
-  credentials: "include" as RequestCredentials,
-});
+export const getAuthHeaders = () => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
+
+  return {
+    "Content-Type": "application/json",
+    ...(token && { "Authorization": `Bearer ${token}` }),
+    credentials: "include" as RequestCredentials,
+  };
+};
 
 /**
  * Helper function to make API requests
@@ -155,7 +160,7 @@ export const apiRequest = async <T = any>(
   const config: RequestInit = {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...getAuthHeaders(),
       ...options.headers,
     },
     credentials: "include",

@@ -106,12 +106,20 @@ function getUserRoleFromToken(token: string): UserRole | null {
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get("token")?.value;
+
+  // Get token from both cookie and Authorization header
+  const cookieToken = request.cookies.get("token")?.value;
+  const authHeader = request.headers.get("authorization");
+  const headerToken = authHeader?.replace("Bearer ", "") || "";
+
+  // Prefer header token (from localStorage) over cookie
+  const token = headerToken || cookieToken;
 
   // Debug logging (only in development)
   if (process.env.NODE_ENV === "development") {
     console.log("[Middleware] Path:", pathname);
-    console.log("[Middleware] Token exists:", !!token);
+    console.log("[Middleware] Cookie token exists:", !!cookieToken);
+    console.log("[Middleware] Header token exists:", !!headerToken);
   }
 
   // Check if user is authenticated

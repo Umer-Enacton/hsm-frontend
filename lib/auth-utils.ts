@@ -221,7 +221,7 @@ export function redirectBasedOnRole(): string {
     case UserRole.PROVIDER:
       return "/provider/dashboard";
     case UserRole.CUSTOMER:
-      return "/customer/home";
+      return "/customer";
     default:
       return "/";
   }
