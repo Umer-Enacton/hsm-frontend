@@ -108,7 +108,7 @@ function LoginForm() {
           // Otherwise, redirect based on user role from API response
           // Use the roleId from the response directly
           const roleRedirectMap: Record<UserRole, string> = {
-            [UserRole.CUSTOMER]: "/customer",
+            [UserRole.CUSTOMER]: "/customer/home",
             [UserRole.PROVIDER]: "/provider/dashboard",
             [UserRole.ADMIN]: "/admin/dashboard",
           };

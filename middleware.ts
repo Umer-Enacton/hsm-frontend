@@ -182,7 +182,7 @@ export function middleware(request: NextRequest) {
         url.pathname = "/provider/dashboard";
         break;
       case UserRole.CUSTOMER:
-        url.pathname = "/customer/home";
+        url.pathname = "/customer";
         break;
       default:
         // If role is null or unrecognized, try to get from token payload
