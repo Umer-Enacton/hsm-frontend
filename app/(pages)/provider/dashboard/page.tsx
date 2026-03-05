@@ -58,6 +58,11 @@ export default function ProviderDashboardPage() {
           const businessData = await getProviderBusiness(userData.id);
           setBusiness(businessData);
 
+          if (!businessData) {
+            setIsLoading(false);
+            return;
+          }
+
           // Fetch bookings for stats
           const bookingsResponse: any = await api.get(API_ENDPOINTS.PROVIDER_BOOKINGS);
           const bookings = Array.isArray(bookingsResponse)

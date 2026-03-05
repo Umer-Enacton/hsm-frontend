@@ -254,19 +254,6 @@ export function PaymentModal({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Render creating state (shouldn't happen anymore since parent creates order)
-  if (step === "creating") {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">Preparing Payment</h3>
-          <p className="text-muted-foreground">Reserving your slot...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Render success state
   if (step === "success") {
     return (
@@ -325,7 +312,7 @@ export function PaymentModal({
             <button
               onClick={() => {
                 // Reset and allow parent to retry
-                onCancel();
+                onCancel?.();
               }}
               className="flex-1 bg-purple-600 text-white py-3 rounded-xl hover:bg-purple-700 transition font-medium"
             >
@@ -466,7 +453,7 @@ export function PaymentModal({
                   console.warn("⚠️ Failed to cancel payment intent:", err);
                 });
             }
-            onCancel();
+            onCancel?.();
           }}
           className="w-full mt-3 text-gray-600 hover:text-gray-800 transition font-medium text-sm"
         >

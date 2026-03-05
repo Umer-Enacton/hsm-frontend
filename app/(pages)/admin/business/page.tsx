@@ -328,7 +328,7 @@ function BusinessGridCard({
       <div className="relative h-48 sm:h-56 bg-muted">
         {business.logo || business.coverImage ? (
           <img
-            src={business.logo || business.coverImage}
+            src={business.logo || business.coverImage || undefined}
             alt={business.name}
             className="w-full h-full object-cover"
           />

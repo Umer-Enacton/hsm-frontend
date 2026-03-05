@@ -42,29 +42,7 @@ import {
   completeBooking,
 } from "@/lib/provider/api";
 import { cn } from "@/lib/utils";
-
-interface ProviderBooking {
-  id: number;
-  customerId: number;
-  businessId: number;
-  serviceId: number;
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
-  customerAvatar?: string | null;
-  serviceName: string;
-  price: number;
-  date: string;
-  bookingDate: string;
-  startTime: string;
-  address: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled" | "rejected";
-  feedback?: {
-    rating: number;
-    comments?: string;
-    createdAt: string;
-  };
-}
+import type { ProviderBooking } from "@/types/provider";
 
 interface BookingStats {
   total: number;

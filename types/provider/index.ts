@@ -39,6 +39,7 @@ export interface Business {
   isVerified: boolean;
   rating?: number;
   totalReviews?: number;
+  totalBookings?: number;
   createdAt?: string;
   updatedAt?: string;
   // Provider info (for reference)
@@ -145,6 +146,8 @@ export interface Service {
   EstimateDuration?: number; // Backend field name (for compatibility)
   image?: string | null;
   isActive: boolean;
+  rating?: number;
+  totalReviews?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -159,13 +162,22 @@ export interface ProviderBooking {
   customerId: number;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
+  customerAvatar?: string | null;
+  serviceName?: string;
   date: string;
+  bookingDate?: string;
   startTime: string;
   endTime: string;
   address: string;
   status: BookingStatus;
   price: number;
   createdAt?: string;
+  feedback?: {
+    rating: number;
+    comments?: string;
+    createdAt: string;
+  };
 }
 
 /**

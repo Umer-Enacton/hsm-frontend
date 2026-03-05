@@ -249,9 +249,9 @@ export default function CustomerDashboardPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">{service.provider.rating.toFixed(1)}</span>
+                      <span className="text-sm font-medium">{(service.provider.rating || 0).toFixed(1)}</span>
                       <span className="text-xs text-muted-foreground">
-                        ({service.provider.totalReviews} reviews)
+                        ({service.provider.totalReviews || 0} reviews)
                       </span>
                     </div>
                     <div className="text-right">

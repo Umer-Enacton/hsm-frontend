@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { createAddress } from "@/lib/customer/api";
 import Link from "next/link";
 import { getAllStates, getCitiesByState } from "@/lib/data/india-locations";
+import type { Address } from "@/types/customer";
 
 const ADDRESS_TYPES = ["home", "work", "other"] as const;
 

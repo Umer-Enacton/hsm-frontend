@@ -371,7 +371,7 @@ export async function getNotifications(params?: {
  * Mark notification as read
  */
 export async function markNotificationAsRead(notificationId: number): Promise<Notification> {
-  const response = await api.put<Notification>(`/notifications/${notificationId}/read`);
+  const response = await api.put<Notification>(`/notifications/${notificationId}/read`, {});
   return response;
 }
 
@@ -379,7 +379,7 @@ export async function markNotificationAsRead(notificationId: number): Promise<No
  * Mark all notifications as read
  */
 export async function markAllNotificationsAsRead(): Promise<{ message: string }> {
-  const response = await api.put<{ message: string }>("/notifications/read-all");
+  const response = await api.put<{ message: string }>("/notifications/read-all", {});
   return response;
 }
 

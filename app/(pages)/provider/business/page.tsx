@@ -65,6 +65,11 @@ export default function ProviderBusinessPage() {
           const businessData = await getProviderBusiness(userData.id);
           setBusiness(businessData);
 
+          if (!businessData) {
+            setIsLoading(false);
+            return;
+          }
+
           // Fetch services
           const servicesResponse: any = await api.get(API_ENDPOINTS.SERVICES_BY_BUSINESS(businessData.id));
           const services = Array.isArray(servicesResponse)

@@ -34,6 +34,8 @@ export interface CustomerService {
     city: string;
     logo: string | null;
     isVerified: boolean;
+    rating?: number;
+    totalReviews?: number;
   };
 }
 
@@ -111,18 +113,6 @@ export interface CustomerBooking {
 
   canCancel?: boolean;
   canReschedule?: boolean;
-}
-
-/**
- * Booking status enum
- */
-export enum BookingStatus {
-  PENDING = "pending",
-  PAYMENT_PENDING = "payment_pending",
-  CONFIRMED = "confirmed",
-  COMPLETED = "completed",
-  CANCELLED = "cancelled",
-  REFUNDED = "refunded",
 }
 
 /**

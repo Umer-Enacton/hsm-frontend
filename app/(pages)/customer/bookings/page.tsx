@@ -78,12 +78,13 @@ interface Slot {
 
 interface CustomerBooking {
   id: number;
+  customerId: number;
   serviceId: number;
   businessProfileId: number;
   addressId: number;
   slotId: number;
   bookingDate: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled" | "rejected";
+  status: "pending" | "confirmed" | "completed" | "cancelled" | "refunded" | "payment_pending";
   totalPrice: number;
   createdAt: string;
   feedback?: Feedback | null;
@@ -146,8 +147,7 @@ export default function CustomerBookingsPage() {
           (b: CustomerBooking) => b.status === "completed",
         ).length,
         cancelled: bookingsArray.filter(
-          (b: CustomerBooking) =>
-            b.status === "cancelled" || b.status === "rejected",
+          (b: CustomerBooking) => b.status === "cancelled",
         ).length,
       };
       setStats(newStats);
@@ -259,22 +259,25 @@ export default function CustomerBookingsPage() {
     const variants: Record<string, string> = {
       pending:
         "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800",
+      payment_pending:
+        "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800",
       confirmed:
         "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
       completed:
         "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
       cancelled:
         "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
-      rejected:
-        "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
+      refunded:
+        "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800",
     };
 
     const icons: Record<string, React.ReactNode> = {
       pending: <Clock className="h-3 w-3" />,
+      payment_pending: <Clock className="h-3 w-3" />,
       confirmed: <Calendar className="h-3 w-3" />,
       completed: <Calendar className="h-3 w-3" />,
       cancelled: <XCircle className="h-3 w-3" />,
-      rejected: <XCircle className="h-3 w-3" />,
+      refunded: <XCircle className="h-3 w-3" />,
     };
 
     return (
@@ -289,10 +292,11 @@ export default function CustomerBookingsPage() {
   const getStatusRowTint = (status: string) => {
     const statusTints: Record<string, string> = {
       pending: "bg-amber-50/50 hover:bg-amber-50/50 dark:bg-amber-950/20",
+      payment_pending: "bg-orange-50/50 hover:bg-orange-50/50 dark:bg-orange-950/20",
       confirmed: "bg-blue-50/50 hover:bg-blue-50/50 dark:bg-blue-950/20",
       completed: "bg-green-50/50 hover:bg-green-50/50 dark:bg-green-950/20",
       cancelled: "bg-red-50/50 hover:bg-red-50/50 dark:bg-red-950/20",
-      rejected: "bg-red-50/50 hover:bg-red-50/50 dark:bg-red-950/20",
+      refunded: "bg-gray-50/50 hover:bg-gray-50/50 dark:bg-gray-950/20",
     };
     return statusTints[status] || statusTints.pending;
   };

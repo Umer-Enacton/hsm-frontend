@@ -31,7 +31,6 @@ import {
   getServiceById,
   getAvailableSlots,
   getAddresses,
-  getServiceFeedback,
 } from "@/lib/customer/api";
 import type { ServiceDetails, Slot, Address } from "@/types/customer";
 import type {

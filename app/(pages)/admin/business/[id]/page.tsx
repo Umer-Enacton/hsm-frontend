@@ -48,6 +48,12 @@ interface Service {
   image?: string | null;
 }
 
+interface ProviderInfo {
+  providerEmail?: string;
+  providerPhone?: string;
+  providerAvatar?: string | null;
+}
+
 interface BusinessDetails extends Business {
   providerEmail?: string;
   providerPhone?: string;
@@ -96,7 +102,7 @@ export default function BusinessDetailsPage() {
       console.log("Has email:", businessData.email);
 
       // Fetch provider info
-      let providerInfo = {};
+      let providerInfo: ProviderInfo = {};
       try {
         if (businessData.userId || businessData.providerId) {
           const userId = businessData.userId || businessData.providerId;
@@ -278,7 +284,7 @@ export default function BusinessDetailsPage() {
         <div className="relative h-48 bg-muted">
           {business.coverImage || business.logo ? (
             <img
-              src={business.coverImage || business.logo}
+              src={business.coverImage || business.logo || undefined}
               alt={`${business.name} cover`}
               className="h-full w-full object-cover"
             />

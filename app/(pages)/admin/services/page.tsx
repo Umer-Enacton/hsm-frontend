@@ -75,6 +75,16 @@ interface Service {
   createdAt?: string;
 }
 
+interface BusinessMapInfo {
+  name: string;
+  category?: string;
+  city?: string;
+  state?: string;
+  phone?: string;
+  logo?: string | null;
+  isVerified?: boolean;
+}
+
 interface ServiceStats {
   total: number;
   active: number;
@@ -126,7 +136,7 @@ export default function AdminServicesPage() {
         : (businessesResponse?.businesses || businessesResponse?.data || []);
 
       // Create a map of business details
-      const businessMap = new Map(
+      const businessMap = new Map<number, BusinessMapInfo>(
         businesses.map((b: any) => [
           b.id,
           {

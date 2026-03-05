@@ -223,9 +223,9 @@ export function ServiceTable({
                         >
                           <MessageSquare className="h-4 w-4 mr-2 text-gray-600" />
                           <span>View Reviews</span>
-                          {service.totalReviews > 0 && (
+                          {(service.totalReviews || 0) > 0 && (
                             <Badge variant="secondary" className="ml-auto text-xs">
-                              {service.totalReviews}
+                              {service.totalReviews || 0}
                             </Badge>
                           )}
                         </DropdownMenuItem>
