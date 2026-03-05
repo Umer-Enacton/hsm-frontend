@@ -4,7 +4,7 @@
  */
 
 // Auto-detect environment and set appropriate API base URL
-function getApiBaseUrl(): string {
+export function getApiBaseUrl(): string {
   // IMPORTANT: Runtime detection (hostname) takes precedence over build-time env vars
   // This ensures production deployments use production backend even if
   // .env.local has localhost:8000 (which is for local development only)
