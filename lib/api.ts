@@ -136,7 +136,11 @@ export const API_ENDPOINTS = {
  * Standard fetch options for authenticated requests
  */
 export const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
+  // Check both localStorage and sessionStorage for token
+  let token = null;
+  if (typeof window !== 'undefined') {
+    token = localStorage.getItem("token") || sessionStorage.getItem("token");
+  }
 
   // Debug logging in production
   if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
@@ -144,6 +148,8 @@ export const getAuthHeaders = () => {
       hasToken: !!token,
       tokenLength: token?.length,
       hasAuthHeader: !!token,
+      localStorageHasToken: !!localStorage.getItem("token"),
+      sessionStorageHasToken: !!sessionStorage.getItem("token"),
     });
   }
 
