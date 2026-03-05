@@ -5,12 +5,10 @@
 
 // Auto-detect environment and set appropriate API base URL
 function getApiBaseUrl(): string {
-  // 1. Check if explicitly set via environment variable (highest priority)
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL;
-  }
+  // IMPORTANT: Runtime detection (hostname) takes precedence over build-time env vars
+  // This ensures production deployments use production backend even if
+  // .env.local has localhost:8000 (which is for local development only)
 
-  // 2. Auto-detect based on frontend hostname
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
 
@@ -23,6 +21,11 @@ function getApiBaseUrl(): string {
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return 'http://localhost:8000';
     }
+  }
+
+  // 2. Fall back to environment variable (for custom deployments)
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
   }
 
   // 3. Default fallback
@@ -38,6 +41,7 @@ if (typeof window !== 'undefined') {
   console.log("NEXT_PUBLIC_API_BASE_URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
   console.log("Window location:", window.location.href);
   console.log("Hostname:", window.location.hostname);
+  console.log("Environment:", process.env.NODE_ENV);
   console.log("================");
 }
 
