@@ -3,9 +3,33 @@
  * Centralized API configuration for the Home Service Management frontend
  */
 
-// Base URL from environment or fallback to localhost:8000
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+// Auto-detect environment and set appropriate API base URL
+function getApiBaseUrl(): string {
+  // 1. Check if explicitly set via environment variable (highest priority)
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+
+  // 2. Auto-detect based on frontend hostname
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+
+    // Production frontend on Vercel
+    if (hostname === 'homefixcare.vercel.app' || hostname.endsWith('.vercel.app')) {
+      return 'https://homefixcare-backend.vercel.app';
+    }
+
+    // Local development
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8000';
+    }
+  }
+
+  // 3. Default fallback
+  return 'http://localhost:8000';
+}
+
+export const API_BASE_URL = getApiBaseUrl();
 
 // Log API_BASE_URL for debugging
 if (typeof window !== 'undefined') {
@@ -13,6 +37,7 @@ if (typeof window !== 'undefined') {
   console.log("API_BASE_URL:", API_BASE_URL);
   console.log("NEXT_PUBLIC_API_BASE_URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
   console.log("Window location:", window.location.href);
+  console.log("Hostname:", window.location.hostname);
   console.log("================");
 }
 
