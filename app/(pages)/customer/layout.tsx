@@ -11,6 +11,7 @@ import {
   handleLogout,
 } from "@/lib/auth-utils";
 import { UserRole, type User } from "@/types/auth";
+import { getApiBaseUrl, getAuthHeaders } from "@/lib/api";
 
 export default function CustomerLayout({
   children,
@@ -58,13 +59,11 @@ export default function CustomerLayout({
 
         // Fetch full user profile from backend to get avatar
         try {
-          const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-          const response = await fetch(`${API_BASE_URL}/user/profile`, {
+          const apiUrl = getApiBaseUrl();
+          const response = await fetch(`${apiUrl}/user/profile`, {
             method: "GET",
             credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: getAuthHeaders(),
           });
 
           if (response.ok) {
