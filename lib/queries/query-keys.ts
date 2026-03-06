@@ -44,4 +44,28 @@ export const queryKeys = {
   categories: {
     all: ["categories"] as const,
   },
+
+  // Provider-specific query keys
+  provider: {
+    all: ["provider"] as const,
+    bookings: {
+      all: ["provider", "bookings"] as const,
+      lists: () => [...queryKeys.provider.bookings.all, "list"] as const,
+      list: (filters: { status?: string }) =>
+        [...queryKeys.provider.bookings.lists(), filters] as const,
+      detail: (id: number) => [...queryKeys.provider.bookings.all, "detail", id] as const,
+    },
+    business: {
+      all: ["provider", "business"] as const,
+      detail: (userId?: number) => [...queryKeys.provider.business.all, "detail", userId] as const,
+    },
+    services: {
+      all: ["provider", "services"] as const,
+      forBusiness: (businessId: number) => [...queryKeys.provider.services.all, businessId] as const,
+    },
+    dashboard: {
+      all: ["provider", "dashboard"] as const,
+      stats: () => [...queryKeys.provider.dashboard.all, "stats"] as const,
+    },
+  },
 } as const;

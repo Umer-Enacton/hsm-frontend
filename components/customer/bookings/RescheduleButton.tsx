@@ -434,7 +434,11 @@ export function RescheduleButton({
                   {displaySlots.map((slot) => {
                     const booked = isSlotBooked(slot);
                     const isSelected = selectedSlot?.id === slot.id;
-                    const isCurrent = slot.id === currentSlotId;
+                    // Normalize both dates to YYYY-MM-DD for comparison
+                    const normalizedCurrentDate = currentBookingDate
+                      ? new Date(currentBookingDate).toISOString().split("T")[0]
+                      : "";
+                    const isCurrent = slot.id === currentSlotId && selectedDate === normalizedCurrentDate;
                     const isDisabled = booked || isCurrent;
 
                     return (

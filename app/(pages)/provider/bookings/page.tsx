@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
   Loader2,
   Calendar,
@@ -37,14 +37,9 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import {
-  getProviderBookings,
-  acceptBooking,
-  rejectBooking,
-  completeBooking,
-} from "@/lib/provider/api";
 import { cn } from "@/lib/utils";
 import type { ProviderBooking } from "@/types/provider";
+import { useProviderBookings, useAcceptBooking, useRejectBooking, useCompleteBooking, useBookingStats } from "@/lib/queries/use-provider-bookings";
 import { ProviderBookingsSkeleton } from "@/components/provider/skeletons/ProviderBookingsSkeleton";
 import { ReschedulePendingActions } from "@/components/provider/bookings/ReschedulePendingActions";
 import { ProviderRescheduleDialog } from "@/components/provider/bookings/ProviderRescheduleDialog";
@@ -59,118 +54,37 @@ interface BookingStats {
 }
 
 export default function ProviderBookingsPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [actionLoading, setActionLoading] = useState<Record<number, boolean>>(
-    {},
-  );
-  const [bookings, setBookings] = useState<ProviderBooking[]>([]);
+  // TanStack Query hooks
+  const { data: bookings = [], isLoading, error, refetch, isFetching } = useProviderBookings();
+  const acceptBooking = useAcceptBooking();
+  const rejectBooking = useRejectBooking();
+  const completeBooking = useCompleteBooking();
+
+  // Compute stats from bookings data
+  const stats = useBookingStats(bookings);
+
+  // Local UI state
   const [activeTab, setActiveTab] = useState<
     "all" | "pending" | "confirmed" | "reschedule_pending" | "completed" | "cancelled"
   >("all");
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<ProviderBooking | null>(null);
-  const [stats, setStats] = useState<BookingStats>({
-    total: 0,
-    pending: 0,
-    confirmed: 0,
-    reschedulePending: 0,
-    completed: 0,
-    cancelled: 0,
-  });
 
-  useEffect(() => {
-    loadBookings();
-  }, []);
-
-  const loadBookings = async (showRefreshLoading = false) => {
-    try {
-      if (showRefreshLoading) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
-      console.log("📡 Fetching provider bookings...");
-
-      const data = await getProviderBookings();
-      console.log("📦 Provider bookings response:", data);
-
-      setBookings(data);
-
-      // Calculate stats
-      const newStats: BookingStats = {
-        total: data.length,
-        pending: data.filter((b: ProviderBooking) => b.status === "pending")
-          .length,
-        confirmed: data.filter((b: ProviderBooking) => b.status === "confirmed")
-          .length,
-        reschedulePending: data.filter((b: ProviderBooking) => b.status === "reschedule_pending")
-          .length,
-        completed: data.filter((b: ProviderBooking) => b.status === "completed")
-          .length,
-        cancelled: data.filter(
-          (b: ProviderBooking) =>
-            b.status === "cancelled" || b.status === "rejected",
-        ).length,
-      };
-      setStats(newStats);
-    } catch (error: any) {
-      console.error("Error loading bookings:", error);
-      toast.error(error.message || "Failed to load bookings");
-      setBookings([]);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
-
-  const handleAccept = async (bookingId: number) => {
+  // Action handlers using mutations
+  const handleAccept = (bookingId: number) => {
     if (!confirm("Accept this booking request?")) return;
-
-    try {
-      setActionLoading((prev) => ({ ...prev, [bookingId]: true }));
-      await acceptBooking(bookingId);
-      toast.success("Booking accepted");
-      await loadBookings(true);
-    } catch (error: any) {
-      console.error("Error accepting booking:", error);
-      toast.error(error.message || "Failed to accept booking");
-    } finally {
-      setActionLoading((prev) => ({ ...prev, [bookingId]: false }));
-    }
+    acceptBooking.mutate(bookingId);
   };
 
-  const handleReject = async (bookingId: number) => {
+  const handleReject = (bookingId: number) => {
     if (!confirm("Reject this booking request?")) return;
-
-    try {
-      setActionLoading((prev) => ({ ...prev, [bookingId]: true }));
-      await rejectBooking(bookingId);
-      toast.success("Booking rejected");
-      await loadBookings(true);
-    } catch (error: any) {
-      console.error("Error rejecting booking:", error);
-      toast.error(error.message || "Failed to reject booking");
-    } finally {
-      setActionLoading((prev) => ({ ...prev, [bookingId]: false }));
-    }
+    rejectBooking.mutate(bookingId);
   };
 
-  const handleComplete = async (bookingId: number) => {
+  const handleComplete = (bookingId: number) => {
     if (!confirm("Mark this booking as complete?")) return;
-
-    try {
-      setActionLoading((prev) => ({ ...prev, [bookingId]: true }));
-      await completeBooking(bookingId);
-      toast.success("Booking completed");
-      await loadBookings(true);
-    } catch (error: any) {
-      console.error("Error completing booking:", error);
-      toast.error(error.message || "Failed to complete booking");
-    } finally {
-      setActionLoading((prev) => ({ ...prev, [bookingId]: false }));
-    }
+    completeBooking.mutate(bookingId);
   };
 
   const getFilteredBookings = () => {
@@ -249,7 +163,11 @@ export default function ProviderBookingsPage() {
   };
 
   const getActionButtons = (booking: ProviderBooking) => {
-    const isLoading = actionLoading[booking.id];
+    // Use mutation loading states
+    const isAccepting = acceptBooking.isPending && acceptBooking.variables === booking.id;
+    const isRejecting = rejectBooking.isPending && rejectBooking.variables === booking.id;
+    const isCompleting = completeBooking.isPending && completeBooking.variables === booking.id;
+    const isLoading = isAccepting || isRejecting || isCompleting;
 
     // Reschedule pending - show approve/decline buttons
     if (booking.status === "reschedule_pending") {
@@ -259,7 +177,7 @@ export default function ProviderBookingsPage() {
           rescheduleReason={booking.rescheduleReason || null}
           newDate={booking.rescheduleBookingDate || booking.bookingDate || booking.date || ""}
           newTime={formatTime(booking.rescheduleSlotTime || booking.startTime)}
-          onActionComplete={loadBookings}
+          onActionComplete={refetch}
           variant="expanded"
         />
       );
@@ -352,11 +270,37 @@ export default function ProviderBookingsPage() {
     return "has-data";
   };
 
+  // Handle refresh
+  const handleRefresh = async () => {
+    await refetch();
+  };
+
   const filteredBookings = getFilteredBookings();
 
   // Show skeleton on initial load
-  if (isLoading && bookings.length === 0) {
+  if (isLoading) {
     return <ProviderBookingsSkeleton />;
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="p-16 text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-destructive/10 mb-4">
+            <XCircle className="h-7 w-7 text-destructive/40" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">Error Loading Bookings</h3>
+          <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+            {error instanceof Error ? error.message : "Failed to load bookings. Please try again."}
+          </p>
+          <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -374,11 +318,11 @@ export default function ProviderBookingsPage() {
         <Button
           variant="outline"
           size="icon"
-          onClick={() => loadBookings(true)}
-          disabled={isRefreshing}
+          onClick={handleRefresh}
+          disabled={isFetching}
         >
           <RefreshCw
-            className={cn("h-4 w-4", isRefreshing && "animate-spin")}
+            className={cn("h-4 w-4", isFetching && "animate-spin")}
           />
         </Button>
       </div>
@@ -500,7 +444,6 @@ export default function ProviderBookingsPage() {
             </TableHeader>
             <TableBody>
               {filteredBookings.map((booking) => {
-                const isLoading = actionLoading[booking.id];
                 const isExpanded = expandedRowId === booking.id;
 
                 return (
@@ -841,7 +784,7 @@ export default function ProviderBookingsPage() {
           serviceId={selectedBookingForReschedule.serviceId}
           currentSlotId={selectedBookingForReschedule.slotId}
           currentBookingDate={selectedBookingForReschedule.bookingDate || selectedBookingForReschedule.date}
-          onRescheduled={loadBookings}
+          onRescheduled={refetch}
           open={rescheduleDialogOpen}
           onOpenChange={setRescheduleDialogOpen}
         />
