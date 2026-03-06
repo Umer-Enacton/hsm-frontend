@@ -184,12 +184,12 @@ export function CustomerHeader({
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem
+                {/* <DropdownMenuItem
                   onClick={() => router.push("/customer/addresses")}
                 >
                   <MapPin className="mr-2 h-4 w-4" />
                   Addresses
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={onLogout}

@@ -15,6 +15,7 @@ import type {
   ServiceFilters,
   PaginatedResponse,
 } from "@/types/customer";
+import { BookingStatus } from "@/types/customer";
 
 // ============================================================================
 // SERVICES API
@@ -425,13 +426,5 @@ export async function searchServices(query: {
   };
 }
 
-// ============================================================================
-// ENUM EXPORT
-// ============================================================================
-
-export enum BookingStatus {
-  PENDING = "pending",
-  CONFIRMED = "confirmed",
-  COMPLETED = "completed",
-  CANCELLED = "cancelled",
-}
+// Re-export BookingStatus for convenience
+export { BookingStatus } from "@/types/customer";

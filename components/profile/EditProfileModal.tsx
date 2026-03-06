@@ -12,16 +12,21 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Loader2, Upload, User as UserIcon } from "lucide-react";
+import { Loader2, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
-import { updateProfile, uploadAvatar } from "@/lib/profile-api";
 import type { User } from "@/types/auth";
+import type { ProfileUpdateData } from "@/types/profile";
+import type { UseMutationResult } from "@tanstack/react-query";
+import { ImageUpload } from "@/components/common";
+import { profileValidators } from "@/lib/profile-api";
 
 interface EditProfileModalProps {
   user: User;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate: (updatedUser: User) => void;
+  updateProfileMutation: UseMutationResult<User, Error, ProfileUpdateData>;
+  uploadAvatarMutation: UseMutationResult<{ url: string; publicId: string }, Error, File>;
 }
 
 export function EditProfileModal({
@@ -29,66 +34,85 @@ export function EditProfileModal({
   open,
   onOpenChange,
   onUpdate,
+  updateProfileMutation,
+  uploadAvatarMutation,
 }: EditProfileModalProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [formData, setFormData] = useState({
     name: user.name || "",
     phone: user.phone || "",
   });
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(user.avatar || null);
+
+  const isLoading = updateProfileMutation.isPending || uploadAvatarMutation.isPending;
+
+  // Reset form when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      setFormData({
+        name: user.name || "",
+        phone: user.phone || "",
+      });
+      setPendingAvatarFile(null);
+      setCurrentAvatarUrl(user.avatar || null);
+    }
+  }, [open, user]);
+
+  const handleAvatarSelect = async (file: File | null) => {
+    console.log("🔍 [Profile] handleAvatarSelect called", file?.name || "null");
+    if (!file) {
+      setPendingAvatarFile(null);
+      setCurrentAvatarUrl(null);
+      return;
+    }
+
+    // Validate file
+    const validation = profileValidators.avatar(file);
+    if (!validation.valid) {
+      toast.error(validation.error || "Invalid file");
+      return;
+    }
+
+    // Store the file locally - DON'T upload yet
+    console.log("✅ [Profile] File stored locally in pendingAvatarFile state - NO API CALL");
+    setPendingAvatarFile(file);
+    // ImageUpload component will show preview via FileReader
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      setIsLoading(true);
+    console.log("🚀 [Profile] handleSubmit - Save Changes clicked");
 
-      const updatedUser = await updateProfile({
+    try {
+      let avatarUrl = currentAvatarUrl;
+
+      // Step 1: Upload avatar if there's a pending file
+      if (pendingAvatarFile) {
+        console.log("⬆️ [Profile] Pending file found - Uploading to Cloudinary NOW:", pendingAvatarFile.name);
+        const result = await uploadAvatarMutation.mutateAsync(pendingAvatarFile);
+        avatarUrl = result.url;
+        console.log("✅ [Profile] Upload successful, URL:", avatarUrl);
+      } else {
+        console.log("ℹ️ [Profile] No pending file - skipping upload");
+      }
+
+      // Step 2: Update profile with the avatar URL
+      console.log("📤 [Profile] Submitting profile data with avatar URL");
+      const updatedUser = await updateProfileMutation.mutateAsync({
         name: formData.name,
         phone: formData.phone,
         email: user.email,
+        avatar: avatarUrl,
       });
 
+      console.log("✅ [Profile] Profile updated successfully");
+      setPendingAvatarFile(null);
       onUpdate(updatedUser);
       onOpenChange(false);
-      toast.success("Profile updated successfully");
-    } catch (error: any) {
-      console.error("Error updating profile:", error);
-      toast.error(error.message || "Failed to update profile");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image size must be less than 5MB");
-      return;
-    }
-
-    try {
-      setIsUploadingAvatar(true);
-      const avatarData = await uploadAvatar(file);
-      onUpdate({
-        ...user,
-        avatar: avatarData.url,
-      });
-      toast.success("Avatar updated successfully");
-    } catch (error: any) {
-      console.error("Error uploading avatar:", error);
-      toast.error(error.message || "Failed to upload avatar");
-    } finally {
-      setIsUploadingAvatar(false);
+    } catch (error) {
+      console.error("❌ [Profile] Update failed:", error);
+      // Error is handled by mutation
     }
   };
 
@@ -105,46 +129,21 @@ export function EditProfileModal({
         <form onSubmit={handleSubmit}>
           <div className="space-y-6 py-4">
             {/* Avatar Upload */}
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden border-2">
-                  {user.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <UserIcon className="h-10 w-10 text-primary/40" />
-                  )}
-                </div>
-                {isUploadingAvatar && (
-                  <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
-                    <Loader2 className="h-6 w-6 animate-spin text-white" />
-                  </div>
-                )}
-              </div>
-              <div className="flex-1">
-                <Label htmlFor="avatar-upload" className="cursor-pointer">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-md transition-colors">
-                    <Upload className="h-4 w-4" />
-                    <span className="text-sm font-medium">
-                      {isUploadingAvatar ? "Uploading..." : "Change Avatar"}
-                    </span>
-                  </div>
-                </Label>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                  disabled={isUploadingAvatar}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  JPG, PNG or GIF. Max 5MB.
+            <div className="space-y-2">
+              <Label>Profile Picture</Label>
+              <ImageUpload
+                currentImage={currentAvatarUrl}
+                onImageSelect={handleAvatarSelect}
+                disabled={isLoading}
+                isLoading={uploadAvatarMutation.isPending}
+                isPending={pendingAvatarFile !== null}
+                className="w-full max-w-xs mx-auto"
+              />
+              {pendingAvatarFile !== null && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Image will be uploaded when you save changes
                 </p>
-              </div>
+              )}
             </div>
 
             {/* Name Field */}

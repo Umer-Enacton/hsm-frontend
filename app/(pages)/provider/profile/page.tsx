@@ -2,11 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { getUserData, isAuthenticated } from "@/lib/auth-utils";
-import { getCurrentProfile } from "@/lib/profile-api";
+import { Loader2 } from "lucide-react";
 import {
   ProfileHeader,
   ProfileTabs,
@@ -15,53 +11,28 @@ import {
   PasswordChangeForm,
   type ProfileTab,
 } from "@/components/profile";
+import { isAuthenticated } from "@/lib/auth-utils";
 import type { User } from "@/types/auth";
+import { useProfile, useUpdateProfile, useUploadAvatar } from "@/lib/queries";
 
 export default function ProviderProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: user, isLoading, error } = useProfile();
+  const updateProfileMutation = useUpdateProfile();
+  const uploadAvatarMutation = useUploadAvatar();
   const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Check auth and load user on mount
+  // Check auth on mount
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push("/login");
-      return;
     }
-    loadProfile();
   }, [router]);
 
-  const loadProfile = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await getCurrentProfile();
-      setUser(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load profile");
-      toast.error(err.message || "Failed to load profile");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await loadProfile();
-    setIsRefreshing(false);
-    toast.success("Profile refreshed");
-  };
-
   const handleProfileUpdate = (updatedUser: User) => {
-    setUser(updatedUser);
     setIsEditModalOpen(false);
-    // Emit custom event to notify layout to refresh user data
-    window.dispatchEvent(new CustomEvent('profile-updated'));
+    // Profile is automatically updated by React Query mutation
   };
 
   if (isLoading) {
@@ -80,11 +51,9 @@ export default function ProviderProfilePage() {
           <p className="text-lg font-semibold text-destructive mb-2">
             Failed to load profile
           </p>
-          <p className="text-sm text-muted-foreground mb-4">{error}</p>
-          <Button onClick={loadProfile} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Try Again
-          </Button>
+          <p className="text-sm text-muted-foreground mb-4">
+            {error instanceof Error ? error.message : "Unknown error"}
+          </p>
         </div>
       </div>
     );
@@ -100,14 +69,6 @@ export default function ProviderProfilePage() {
             Manage your account settings and preferences
           </p>
         </div>
-        <Button
-          onClick={handleRefresh}
-          variant="outline"
-          size="icon"
-          disabled={isRefreshing}
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-        </Button>
       </div>
 
       {/* Profile Header */}
@@ -130,6 +91,8 @@ export default function ProviderProfilePage() {
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
         onUpdate={handleProfileUpdate}
+        updateProfileMutation={updateProfileMutation}
+        uploadAvatarMutation={uploadAvatarMutation}
       />
     </div>
   );

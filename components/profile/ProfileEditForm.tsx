@@ -6,20 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  updateProfile,
-  uploadAvatar,
-  profileValidators,
-} from "@/lib/profile-api";
+import { profileValidators } from "@/lib/profile-api";
 import { ImageUpload } from "@/components/common";
 import type { User } from "@/types/auth";
 import type { ProfileUpdateData, ProfileFormErrors } from "@/types/profile";
+import type { UseMutationResult } from "@tanstack/react-query";
 
 interface ProfileEditFormProps {
   user: User;
   onUpdate: (user: User) => void;
   onCancel: () => void;
   className?: string;
+  updateProfileMutation: UseMutationResult<User, Error, ProfileUpdateData>;
+  uploadAvatarMutation: UseMutationResult<{ url: string; publicId: string }, Error, File>;
 }
 
 export function ProfileEditForm({
@@ -27,6 +26,8 @@ export function ProfileEditForm({
   onUpdate,
   onCancel,
   className,
+  updateProfileMutation,
+  uploadAvatarMutation,
 }: ProfileEditFormProps) {
   const [formData, setFormData] = useState<ProfileUpdateData>({
     name: user.name,
@@ -36,9 +37,9 @@ export function ProfileEditForm({
   });
   const [errors, setErrors] = useState<ProfileFormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  const isSubmitting = updateProfileMutation.isPending || uploadAvatarMutation.isPending;
 
   const validateField = (name: string, value: string) => {
     const validator =
@@ -102,55 +103,39 @@ export function ProfileEditForm({
 
     setTouched({ name: true, email: true, phone: true });
 
-    const isNameValid = validateField("name", formData.name);
-    const isEmailValid = validateField("email", formData.email);
-    const isPhoneValid = validateField("phone", formData.phone);
+    const isNameValid = validateField("name", formData.name || "");
+    const isEmailValid = validateField("email", formData.email || "");
+    const isPhoneValid = validateField("phone", formData.phone || "");
 
     if (!isNameValid || !isEmailValid || !isPhoneValid) {
       return;
     }
-
-    setIsSubmitting(true);
-    setIsUploadingAvatar(true);
 
     try {
       // Step 1: Upload avatar if there's a pending file
       let avatarUrl = formData.avatar;
       if (pendingAvatarFile) {
         console.log("⬆️ [Profile] Pending file found - Uploading to Cloudinary NOW:", pendingAvatarFile.name);
-        try {
-          const result = await uploadAvatar(pendingAvatarFile);
-          avatarUrl = result.url;
-          console.log("✅ [Profile] Upload successful, URL:", avatarUrl);
-        } catch (error: any) {
-          console.error("❌ [Profile] Upload failed:", error);
-          setErrors((prev) => ({
-            ...prev,
-            avatar: error.message || "Failed to upload avatar",
-          }));
-          toast.error(error.message || "Failed to upload avatar");
-          setIsUploadingAvatar(false);
-          setIsSubmitting(false);
-          return;
-        }
+        const result = await uploadAvatarMutation.mutateAsync(pendingAvatarFile);
+        avatarUrl = result.url;
+        console.log("✅ [Profile] Upload successful, URL:", avatarUrl);
       } else {
         console.log("ℹ️ [Profile] No pending file - skipping upload");
       }
 
       // Step 2: Update profile with the avatar URL
       console.log("📤 [Profile] Submitting profile data with avatar URL");
-      const updatedUser = await updateProfile({
+      const updatedUser = await updateProfileMutation.mutateAsync({
         ...formData,
         avatar: avatarUrl,
       });
-      toast.success("Profile updated successfully");
+
+      console.log("✅ [Profile] Profile updated successfully");
+      setPendingAvatarFile(null);
       onUpdate(updatedUser);
     } catch (error: any) {
-      toast.error(error.message || "Failed to update profile");
-    } finally {
-      setIsSubmitting(false);
-      setIsUploadingAvatar(false);
-      setPendingAvatarFile(null);
+      console.error("❌ [Profile] Update failed:", error);
+      // Error is already handled by the mutation's onError callback
     }
   };
 
@@ -165,7 +150,7 @@ export function ProfileEditForm({
               currentImage={formData.avatar}
               onImageSelect={handleAvatarSelect}
               disabled={isSubmitting}
-              isLoading={isUploadingAvatar}
+              isLoading={uploadAvatarMutation.isPending}
               isPending={pendingAvatarFile !== null}
               className="w-full max-w-xs"
             />
@@ -242,13 +227,13 @@ export function ProfileEditForm({
             type="button"
             variant="outline"
             onClick={onCancel}
-            disabled={isSubmitting || isUploadingAvatar}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || isUploadingAvatar}
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>

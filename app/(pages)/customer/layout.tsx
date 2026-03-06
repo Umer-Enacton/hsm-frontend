@@ -113,6 +113,18 @@ export default function CustomerLayout({
     };
 
     loadUserData();
+
+    // Listen for profile updates and refetch user data
+    const handleProfileUpdate = () => {
+      console.log("🔄 Profile update event detected, refetching user data in layout");
+      loadUserData();
+    };
+
+    window.addEventListener("profile-updated", handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdate);
+    };
   }, [router, pathname]);
 
   const onLogout = async () => {

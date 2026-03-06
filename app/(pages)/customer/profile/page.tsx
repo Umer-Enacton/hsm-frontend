@@ -6,8 +6,6 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { isAuthenticated } from "@/lib/auth-utils";
-import { getCurrentProfile } from "@/lib/profile-api";
-import { getAddresses, createAddress, updateAddress, deleteAddress } from "@/lib/customer/api";
 import {
   ProfileHeader,
   ProfileTabs,
@@ -17,6 +15,17 @@ import {
   type ProfileTab,
 } from "@/components/profile";
 import { ProfileSkeleton } from "@/components/customer/skeletons/ProfileSkeleton";
+import {
+  useProfile,
+  useAddresses,
+  useUpdateProfile,
+  useUploadAvatar,
+  useCreateAddress,
+  useUpdateAddress,
+  useDeleteAddress,
+} from "@/lib/queries";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queries/query-keys";
 import type { User } from "@/types/auth";
 import type { Address } from "@/types/customer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,19 +44,16 @@ type CustomerProfileTab = ProfileTab;
 
 export default function CustomerProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<CustomerProfileTab>("overview");
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Addresses state
-  const [addresses, setAddresses] = useState<Address[]>([]);
+  // UI State (keep local)
+  const [activeTab, setActiveTab] = useState<CustomerProfileTab>("overview");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Addresses UI state
   const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
-  const [isSubmittingAddress, setIsSubmittingAddress] = useState(false);
   const [addressViewMode, setAddressViewMode] = useState<ViewMode>("list");
   const [addressForm, setAddressForm] = useState({
     addressType: "home" as Address["addressType"],
@@ -57,61 +63,49 @@ export default function CustomerProfilePage() {
     zipCode: "",
   });
 
-  // Memoize available cities based on selected state to prevent infinite re-renders
+  // React Query hooks
+  const { data: user, isLoading: isLoadingProfile, error } = useProfile();
+  const { data: addresses = [], isLoading: isLoadingAddresses } = useAddresses();
+  const updateProfileMutation = useUpdateProfile();
+  const uploadAvatarMutation = useUploadAvatar();
+  const createAddressMutation = useCreateAddress();
+  const updateAddressMutation = useUpdateAddress();
+  const deleteAddressMutation = useDeleteAddress();
+
+  const isLoading = isLoadingProfile || isLoadingAddresses;
+  const isSubmittingAddress = createAddressMutation.isPending ||
+                           updateAddressMutation.isPending ||
+                           deleteAddressMutation.isPending;
+
+  // Memoize available cities
   const availableCities = React.useMemo(() => {
     if (!addressForm.state) return [];
     return getCitiesByState(addressForm.state);
   }, [addressForm.state]);
 
-  // Check auth and load user on mount
+  // Check auth on mount
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push("/login");
-      return;
     }
-    loadProfile();
-    loadAddresses();
   }, [router]);
 
-  const loadProfile = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await getCurrentProfile();
-      setUser(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load profile");
-      toast.error(err.message || "Failed to load profile");
-    } finally {
-      setIsLoading(false);
-      setHasLoadedOnce(true);
-    }
-  };
-
-  const loadAddresses = async () => {
-    try {
-      const data = await getAddresses();
-      setAddresses(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error loading addresses:", error);
-      toast.error("Failed to load addresses");
-      setAddresses([]);
-    }
-  };
-
+  // Handlers
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await loadProfile();
-    await loadAddresses();
-    setIsRefreshing(false);
-    toast.success("Profile refreshed");
+    try {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.profile.all });
+      await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      toast.success("Profile refreshed");
+    } catch (err) {
+      toast.error("Failed to refresh profile");
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
-  const handleProfileUpdate = (updatedUser: User) => {
-    setUser(updatedUser);
-    // Emit custom event to notify layout to refresh user data
-    window.dispatchEvent(new CustomEvent('profile-updated'));
+  const handleProfileUpdate = async (updates: { name?: string; email?: string; phone?: string }) => {
+    updateProfileMutation.mutate(updates);
   };
 
   // Address handlers
@@ -150,45 +144,33 @@ export default function CustomerProfilePage() {
     });
   };
 
-  const handleSaveAddress = async (e: React.FormEvent) => {
+  const handleSaveAddress = (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      setIsSubmittingAddress(true);
-
-      if (editingAddress) {
-        await updateAddress(editingAddress.id, addressForm);
-        toast.success("Address updated successfully");
-      } else {
-        await createAddress(addressForm);
-        toast.success("Address added successfully");
-      }
-
-      await loadAddresses();
-      handleCloseAddressDialog();
-    } catch (error: any) {
-      console.error("Error saving address:", error);
-      toast.error(error.message || "Failed to save address");
-    } finally {
-      setIsSubmittingAddress(false);
+    if (editingAddress) {
+      updateAddressMutation.mutate({
+        addressId: editingAddress.id,
+        updates: addressForm
+      });
+    } else {
+      createAddressMutation.mutate(addressForm);
     }
+
+    handleCloseAddressDialog();
   };
 
-  const handleDeleteAddress = async (addressId: number) => {
+  const handleDeleteAddress = (addressId: number) => {
     if (!confirm("Are you sure you want to delete this address?")) return;
-
-    try {
-      await deleteAddress(addressId);
-      toast.success("Address deleted successfully");
-      await loadAddresses();
-    } catch (error: any) {
-      console.error("Error deleting address:", error);
-      toast.error(error.message || "Failed to delete address");
-    }
+    deleteAddressMutation.mutate(addressId);
   };
 
-  if (!hasLoadedOnce) {
-    return <ProfileSkeleton />;
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading profile...</p>
+      </div>
+    );
   }
 
   if (error || !user) {
@@ -198,8 +180,10 @@ export default function CustomerProfilePage() {
           <p className="text-lg font-semibold text-destructive mb-2">
             Failed to load profile
           </p>
-          <p className="text-sm text-muted-foreground mb-4">{error}</p>
-          <Button onClick={loadProfile} variant="outline">
+          <p className="text-sm text-muted-foreground mb-4">
+            {error instanceof Error ? error.message : "Unknown error"}
+          </p>
+          <Button onClick={handleRefresh} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             Try Again
           </Button>
@@ -477,6 +461,8 @@ export default function CustomerProfilePage() {
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
         onUpdate={handleProfileUpdate}
+        updateProfileMutation={updateProfileMutation}
+        uploadAvatarMutation={uploadAvatarMutation}
       />
 
       {/* Add/Edit Address Dialog */}
