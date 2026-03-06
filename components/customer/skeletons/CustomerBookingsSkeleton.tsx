@@ -57,12 +57,20 @@ export function CustomerBookingsSkeleton() {
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
               <TableHead className="w-[1%] py-4 px-4"></TableHead>
-              <TableHead className="w-[35%] py-4 px-4">Service</TableHead>
-              <TableHead className="w-[25%] py-4 px-4">Provider</TableHead>
-              <TableHead className="w-[20%] py-4 px-4">Date & Time</TableHead>
-              <TableHead className="w-[10%] py-4 px-4">Status</TableHead>
+              <TableHead className="w-[35%] py-4 px-4">
+                <Skeleton className="h-4 w-16" />
+              </TableHead>
+              <TableHead className="w-[25%] py-4 px-4">
+                <Skeleton className="h-4 w-16" />
+              </TableHead>
+              <TableHead className="w-[20%] py-4 px-4">
+                <Skeleton className="h-4 w-20" />
+              </TableHead>
+              <TableHead className="w-[10%] py-4 px-4">
+                <Skeleton className="h-4 w-12" />
+              </TableHead>
               <TableHead className="w-[9%] py-4 px-4 text-right">
-                Price
+                <Skeleton className="h-4 w-12" />
               </TableHead>
             </TableRow>
           </TableHeader>

@@ -43,8 +43,10 @@ export interface Payment {
 export interface PaymentOrderRequest {
   serviceId: number;
   slotId: number;
-  addressId: number;
+  addressId?: number; // Optional for reschedule
   bookingDate: string; // ISO date string
+  reschedule?: boolean; // True if this is a reschedule payment
+  bookingId?: number; // Required for reschedule
 }
 
 /**
@@ -58,6 +60,7 @@ export interface PaymentOrderResponse {
   currency: string;
   keyId: string; // Razorpay key ID
   expiresAt: string; // ISO timestamp
+  isReschedule?: boolean; // True if this is a reschedule payment
 }
 
 /**

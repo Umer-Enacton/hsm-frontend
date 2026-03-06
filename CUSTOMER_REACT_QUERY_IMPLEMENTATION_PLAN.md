@@ -1,4 +1,5 @@
 # Customer Side - React Query Implementation Plan
+
 ## Updated for Current Codebase State (March 2025)
 
 ---
@@ -7,33 +8,34 @@
 
 ### Pages That Exist
 
-| Page | Path | API Calls | Mutations | Current State |
-|------|------|-----------|-----------|---------------|
-| **Dashboard** | `app/(pages)/customer/page.tsx` | 3 calls (bookings×2, services) | None | ⭐⭐ Need optimization |
-| **Bookings List** | `app/(pages)/customer/bookings/page.tsx` | 1 call | Cancel, Reschedule | ⭐⭐⭐ Manual state |
-| **Services List** | `app/(pages)/customer/services/page.tsx` | 2 calls | None | ⭐⭐⭐⭐ Complex filters |
-| **Service Details** | `app/(pages)/customer/services/[id]/page.tsx` | 3 calls | Create booking | ⭐⭐⭐⭐⭐ Most complex |
-| **Profile** | `app/(pages)/customer/profile/page.tsx` | 1 call | Update, Avatar | ⭐⭐ Simple |
+| Page                | Path                                          | API Calls                      | Mutations          | Current State            |
+| ------------------- | --------------------------------------------- | ------------------------------ | ------------------ | ------------------------ |
+| **Dashboard**       | `app/(pages)/customer/page.tsx`               | 3 calls (bookings×2, services) | None               | ⭐⭐ Need optimization   |
+| **Bookings List**   | `app/(pages)/customer/bookings/page.tsx`      | 1 call                         | Cancel, Reschedule | ⭐⭐⭐ Manual state      |
+| **Services List**   | `app/(pages)/customer/services/page.tsx`      | 2 calls                        | None               | ⭐⭐⭐⭐ Complex filters |
+| **Service Details** | `app/(pages)/customer/services/[id]/page.tsx` | 3 calls                        | Create booking     | ⭐⭐⭐⭐⭐ Most complex  |
+| **Profile**         | `app/(pages)/customer/profile/page.tsx`       | 1 call                         | Update, Avatar     | ⭐⭐ Simple              |
 
 ### Pages Removed (by user)
+
 - ❌ **Addresses Page** - No longer exists
 - ❌ **Booking Details** - No longer exists
 
 ### API Files Available
 
-| File | Purpose | Functions Available |
-|------|---------|---------------------|
+| File                      | Purpose      | Functions Available                                                                                                                                                                                                 |
+| ------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`lib/customer/api.ts`** | Customer API | ✅ getServices, getServiceById, getAvailableSlots, getCustomerBookings, createBooking, cancelBooking, rescheduleBooking, getAddresses, createAddress, updateAddress, deleteAddress, getServiceReviews, submitReview |
-| **`lib/profile-api.ts`** | Profile API | ✅ getCurrentProfile, updateProfile, uploadAvatar |
+| **`lib/profile-api.ts`**  | Profile API  | ✅ getCurrentProfile, updateProfile, uploadAvatar                                                                                                                                                                   |
 
 ### Skeleton Components Available
 
-| Component | Path | Status |
-|-----------|------|--------|
+| Component                 | Path                             | Status       |
+| ------------------------- | -------------------------------- | ------------ |
 | CustomerDashboardSkeleton | `components/customer/skeletons/` | ✅ Available |
-| CustomerBookingsSkeleton | `components/customer/skeletons/` | ✅ Available |
-| ServiceDetailSkeleton | `components/customer/skeletons/` | ✅ Available |
-| ProfileSkeleton | `components/customer/skeletons/` | ✅ Available |
+| CustomerBookingsSkeleton  | `components/customer/skeletons/` | ✅ Available |
+| ServiceDetailSkeleton     | `components/customer/skeletons/` | ✅ Available |
+| ProfileSkeleton           | `components/customer/skeletons/` | ✅ Available |
 
 ---
 
@@ -179,12 +181,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 ```typescript
 // lib/queries/index.ts
 
-export * from './query-keys'
-export * from './query-client'
-export * from './use-profile'
-export * from './use-dashboard'
-export * from './use-bookings'
-export * from './use-services'
+export * from "./query-keys";
+export * from "./query-client";
+export * from "./use-profile";
+export * from "./use-dashboard";
+export * from "./use-bookings";
+export * from "./use-services";
 ```
 
 ---
@@ -192,6 +194,7 @@ export * from './use-services'
 ## PHASE 1: Profile Page (30 minutes) ⭐ Simplest
 
 ### Why Start Here?
+
 - Only 1 query + 2 mutations
 - Simplest page
 - Good starting point to understand patterns
@@ -205,7 +208,11 @@ export * from './use-services'
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { getCurrentProfile, updateProfile, uploadAvatar } from "@/lib/profile-api";
+import {
+  getCurrentProfile,
+  updateProfile,
+  uploadAvatar,
+} from "@/lib/profile-api";
 import { queryKeys } from "./query-keys";
 
 export function useProfile() {
@@ -257,12 +264,14 @@ export function useUploadAvatar() {
 **File**: `app/(pages)/customer/profile/page.tsx`
 
 **What to Change:**
+
 1. Remove `useState` for user and isLoading
 2. Remove `useEffect` that loads profile
 3. Import and use `useProfile`, `useUpdateProfile`, `useUploadAvatar`
 4. Remove manual refresh calls
 
 **Key Changes:**
+
 ```typescript
 // BEFORE (lines ~36-50)
 const [user, setUser] = useState<User | null>(null);
@@ -302,6 +311,7 @@ if (error) return <ErrorState />;
 ## PHASE 2: Dashboard Page (30 minutes) ⭐⭐
 
 ### Why This Phase?
+
 - Multiple queries running in parallel
 - Demonstrates the power of React Query
 - Fixes the duplicate API call issue
@@ -339,7 +349,8 @@ export function useBookingStats() {
       return {
         totalBookings: data?.total || 0,
         pendingBookings: bookings.filter((b) => b.status === "pending").length,
-        completedBookings: bookings.filter((b) => b.status === "completed").length,
+        completedBookings: bookings.filter((b) => b.status === "completed")
+          .length,
       };
     },
     staleTime: 60 * 1000, // 1 minute - stats change frequently
@@ -368,6 +379,7 @@ export function useFeaturedServices() {
 **File**: `app/(pages)/customer/page.tsx`
 
 **What to Change:**
+
 1. Remove all `useState` for data and isLoading
 2. Remove `loadDashboardData()` function
 3. Remove `useEffect`
@@ -375,6 +387,7 @@ export function useFeaturedServices() {
 5. Remove manual error handling
 
 **Key Changes:**
+
 ```typescript
 // BEFORE (lines 18-67)
 const [isLoading, setIsLoading] = useState(true);
@@ -408,6 +421,7 @@ if (isLoading) return <CustomerDashboardSkeleton />;
 ```
 
 **Benefits:**
+
 - ✅ Parallel loading instead of sequential
 - ✅ No duplicate `getCustomerBookings` call
 - ✅ Automatic caching
@@ -418,6 +432,7 @@ if (isLoading) return <CustomerDashboardSkeleton />;
 ## PHASE 3: Bookings Page (45 minutes) ⭐⭐⭐
 
 ### Why This Phase?
+
 - Introduces mutations
 - Optimistic updates (UX improvement)
 - Query invalidation patterns
@@ -469,13 +484,20 @@ export function useCancelBooking() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ bookingId, reason }: { bookingId: number; reason?: string }) =>
-      cancelBooking(bookingId, reason),
+    mutationFn: ({
+      bookingId,
+      reason,
+    }: {
+      bookingId: number;
+      reason?: string;
+    }) => cancelBooking(bookingId, reason),
 
     onMutate: async ({ bookingId }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.bookings.all });
 
-      const previousBookings = queryClient.getQueryData(queryKeys.bookings.lists());
+      const previousBookings = queryClient.getQueryData(
+        queryKeys.bookings.lists(),
+      );
 
       // Optimistically update to cancelled
       queryClient.setQueryData(queryKeys.bookings.lists(), (old: any) => {
@@ -492,7 +514,10 @@ export function useCancelBooking() {
     },
 
     onError: (error, variables, context) => {
-      queryClient.setQueryData(queryKeys.bookings.lists(), context?.previousBookings);
+      queryClient.setQueryData(
+        queryKeys.bookings.lists(),
+        context?.previousBookings,
+      );
       toast.error("Failed to cancel booking");
     },
 
@@ -507,7 +532,10 @@ export function useRescheduleBooking() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ bookingId, newData }: {
+    mutationFn: ({
+      bookingId,
+      newData,
+    }: {
       bookingId: number;
       newData: { newSlotId: number; newDate?: string };
     }) => rescheduleBooking(bookingId, newData),
@@ -529,6 +557,7 @@ export function useRescheduleBooking() {
 **File**: `app/(pages)/customer/bookings/page.tsx`
 
 **What to Change:**
+
 1. Remove state for bookings, stats, serviceCache, etc.
 2. Remove `loadBookings()` function
 3. Import hooks and use them
@@ -536,6 +565,7 @@ export function useRescheduleBooking() {
 5. Keep UI state (activeTab, expandedRowId)
 
 **Key Changes:**
+
 ```typescript
 // BEFORE - lots of state
 const [isLoading, setIsLoading] = useState(true);
@@ -588,6 +618,7 @@ const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
 ## PHASE 4: Services Pages (60 minutes) ⭐⭐⭐⭐
 
 ### Why This Phase?
+
 - Complex filtering with debouncing
 - Dependent queries (service → slots)
 - Multiple parallel queries in detail page
@@ -600,7 +631,11 @@ const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
 // lib/queries/use-services.ts
 
 import { useQuery } from "@tanstack/react-query";
-import { getServices, getServiceById, getAvailableSlots } from "@/lib/customer/api";
+import {
+  getServices,
+  getServiceById,
+  getAvailableSlots,
+} from "@/lib/customer/api";
 import { queryKeys } from "./query-keys";
 import type { ServiceFilters, ServiceDetails, Slot } from "@/types/customer";
 
@@ -647,12 +682,14 @@ export function useServiceSlots(
 **File**: `app/(pages)/customer/services/page.tsx`
 
 **What to Change:**
+
 1. Remove `useDebounce` hook (React Query handles this)
 2. Remove `loadServices` function
 3. Remove state for services, categories, total
 4. Use `useServices` hook
 
 **Key Changes:**
+
 ```typescript
 // BEFORE
 const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -700,11 +737,13 @@ const filters = useMemo<ServiceFilters>(() => ({ ... }), [filterState]);
 **File**: `app/(pages)/customer/services/[id]/page.tsx`
 
 **What to Change:**
+
 1. Remove all state for service, slots, addresses
 2. Remove sequential loading logic
 3. Use parallel queries
 
 **Key Changes:**
+
 ```typescript
 // BEFORE - Lines 71-90
 const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -740,7 +779,7 @@ import { useAddresses } from "@/lib/queries";
 // All queries run in parallel
 const { data: service, isLoading: isLoadingService } = useService(serviceId);
 const { data: slots = [], isLoading: isLoadingSlots } = useServiceSlots(
-  service?.businessProfileId || 0
+  service?.businessProfileId || 0,
 );
 const { data: addresses = [], isLoading: isLoadingAddresses } = useAddresses();
 
@@ -824,6 +863,7 @@ export default function CustomerBookingsPage() {
 ## 📋 MIGRATION CHECKLIST
 
 ### Phase 0: Setup
+
 - [ ] Install `@tanstack/react-query` and `@tanstack/react-query-devtools`
 - [ ] Create `lib/queries/` folder
 - [ ] Create `lib/queries/query-keys.ts`
@@ -832,6 +872,7 @@ export default function CustomerBookingsPage() {
 - [ ] Update `app/layout.tsx` with QueryClientProvider
 
 ### Phase 1: Profile (30 min)
+
 - [ ] Create `lib/queries/use-profile.ts`
 - [ ] Update `app/(pages)/customer/profile/page.tsx`
 - [ ] Remove useState for user, isLoading
@@ -839,6 +880,7 @@ export default function CustomerBookingsPage() {
 - [ ] Test avatar upload
 
 ### Phase 2: Dashboard (30 min)
+
 - [ ] Create `lib/queries/use-dashboard.ts`
 - [ ] Update `app/(pages)/customer/page.tsx`
 - [ ] Verify parallel loading (DevTools)
@@ -846,6 +888,7 @@ export default function CustomerBookingsPage() {
 - [ ] Test cache on revisit
 
 ### Phase 3: Bookings (45 min)
+
 - [ ] Create `lib/queries/use-bookings.ts`
 - [ ] Update `app/(pages)/customer/bookings/page.tsx`
 - [ ] Test cancel booking (optimistic update)
@@ -853,6 +896,7 @@ export default function CustomerBookingsPage() {
 - [ ] Verify error rollback
 
 ### Phase 4: Services (60 min)
+
 - [ ] Create `lib/queries/use-services.ts`
 - [ ] Update `app/(pages)/customer/services/page.tsx`
 - [ ] Update `app/(pages)/customer/services/[id]/page.tsx`
@@ -861,6 +905,7 @@ export default function CustomerBookingsPage() {
 - [ ] Check slots auto-refetch
 
 ### Phase 5: Advanced (30 min)
+
 - [ ] Add prefetch on hover
 - [ ] Add refresh buttons
 - [ ] Test all user flows
@@ -907,18 +952,21 @@ mkdir -p lib/queries
 ## 📝 SUMMARY
 
 ### What We Have:
+
 - ✅ 5 customer pages (Dashboard, Bookings, Services, Profile, Service Detail)
 - ✅ API functions in `lib/customer/api.ts` and `lib/profile-api.ts`
 - ✅ Skeleton components for all pages
 - ✅ Types defined
 
 ### What We Need:
+
 - 📦 Install React Query
 - 🔧 Create query infrastructure (keys, client, hooks)
 - 🔄 Update 5 pages to use React Query
 - ⚡ Add advanced features (prefetch, refresh)
 
 ### Time Investment:
+
 - **Phase 0 (Setup)**: 20 minutes
 - **Phase 1 (Profile)**: 30 minutes
 - **Phase 2 (Dashboard)**: 30 minutes

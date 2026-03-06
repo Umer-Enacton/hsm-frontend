@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import React from "react";
-import { useRouter } from "next/navigation";
 import {
   Calendar,
   Clock,
@@ -15,10 +14,13 @@ import {
   RefreshCw,
   Package,
   Building2,
+  History,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -29,233 +31,68 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { api, API_ENDPOINTS } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { BookingActions } from "@/components/customer/bookings/BookingActions";
 import { CustomerBookingsSkeleton } from "@/components/customer/skeletons/CustomerBookingsSkeleton";
-import { BookingDetailsSkeleton } from "@/components/customer/skeletons/BookingDetailsSkeleton";
-import { BookingsTableSkeleton } from "@/components/customer/skeletons/BookingTableSkeleton";
-interface Service {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  estimateDuration?: number;
-  duration?: number;
-  image?: string | null;
-  rating?: string | number;
-  totalReviews?: number;
-  provider?: {
-    id: number;
-    businessName: string;
-    avatar?: string | null;
-    email?: string;
-    phone?: string;
-    isVerified?: boolean;
-  };
-}
+import { useBookings } from "@/lib/queries/use-bookings";
+import { useService } from "@/lib/queries/use-services";
+import type { CustomerBooking, Address, Slot, ServiceDetails } from "@/types/customer";
 
-interface Feedback {
-  id: number;
-  rating: number;
-  comments?: string;
-}
-
-interface Address {
-  id: number;
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  state: string;
-  zipCode: string;
-}
-
-interface Slot {
-  id: number;
-  startTime: string;
-  endTime: string;
-  date: string;
-}
-
-interface CustomerBooking {
-  id: number;
-  customerId: number;
-  serviceId: number;
-  businessProfileId: number;
-  addressId: number;
-  slotId: number;
-  bookingDate: string;
-  status:
-    | "pending"
-    | "confirmed"
-    | "completed"
-    | "cancelled"
-    | "refunded"
-    | "payment_pending";
-  totalPrice: number;
-  createdAt: string;
-  feedback?: Feedback | null;
-}
-
+// Local types for UI-specific data structures
 interface BookingStats {
   total: number;
   pending: number;
   confirmed: number;
+  reschedulePending: number;
   completed: number;
   cancelled: number;
 }
 
+// Type for nested service in CustomerBooking
+type BookingService = CustomerBooking["service"];
+
 export default function CustomerBookingsPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [bookings, setBookings] = useState<CustomerBooking[]>([]);
-  const [serviceCache, setServiceCache] = useState<Record<number, Service>>({});
-  const [addressCache, setAddressCache] = useState<Record<number, Address>>({});
-  const [slotCache, setSlotCache] = useState<Record<number, Slot>>({});
+  // Use React Query for bookings data
+  const {
+    data: bookingsData,
+    isLoading,
+    error: bookingsError,
+    refetch: refetchBookings,
+    isFetching: isRefreshing,
+  } = useBookings();
+
+  // Local state for UI-only concerns
   const [activeTab, setActiveTab] = useState<
-    "all" | "pending" | "confirmed" | "completed" | "cancelled"
+    "all" | "pending" | "confirmed" | "reschedule_pending" | "completed" | "cancelled"
   >("all");
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
-  const [stats, setStats] = useState<BookingStats>({
-    total: 0,
-    pending: 0,
-    confirmed: 0,
-    completed: 0,
-    cancelled: 0,
-  });
 
-  useEffect(() => {
-    loadBookings();
-  }, []);
+  const bookings = bookingsData?.bookings || [];
+  const total = bookingsData?.total || 0;
 
-  const loadBookings = async (showRefreshLoading = false) => {
-    try {
-      if (showRefreshLoading) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
+  // Find the service ID of the expanded booking
+  const expandedBooking = bookings.find((b) => b.id === expandedRowId);
+  const expandedServiceId = expandedBooking?.serviceId;
 
-      const data: any = await api.get(API_ENDPOINTS.CUSTOMER_BOOKINGS);
-      const bookingsArray = Array.isArray(data?.bookings) ? data.bookings : [];
-      setBookings(bookingsArray);
+  // Fetch full service details when a row is expanded
+  const { data: fullServiceDetails, isLoading: isServiceLoading } = useService(
+    expandedServiceId ?? 0
+  );
 
-      // Calculate stats
-      const newStats: BookingStats = {
-        total: bookingsArray.length,
-        pending: bookingsArray.filter(
-          (b: CustomerBooking) => b.status === "pending",
-        ).length,
-        confirmed: bookingsArray.filter(
-          (b: CustomerBooking) => b.status === "confirmed",
-        ).length,
-        completed: bookingsArray.filter(
-          (b: CustomerBooking) => b.status === "completed",
-        ).length,
-        cancelled: bookingsArray.filter(
-          (b: CustomerBooking) => b.status === "cancelled",
-        ).length,
-      };
-      setStats(newStats);
-
-      // Fetch details for each booking
-      if (bookingsArray.length > 0) {
-        await loadBookingDetails(bookingsArray);
-      }
-    } catch (error: any) {
-      console.error("Error loading bookings:", error);
-      toast.error(error.message || "Failed to load bookings");
-      setBookings([]);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
+  // Calculate stats from bookings data
+  const stats: BookingStats = {
+    total: bookings.length,
+    pending: bookings.filter((b) => b.status === "pending").length,
+    confirmed: bookings.filter((b) => b.status === "confirmed").length,
+    reschedulePending: bookings.filter((b) => b.status === "reschedule_pending").length,
+    completed: bookings.filter((b) => b.status === "completed").length,
+    cancelled: bookings.filter((b) => b.status === "cancelled").length,
   };
 
-  const loadBookingDetails = async (bookingsList: CustomerBooking[]) => {
-    try {
-      // Get unique IDs
-      const serviceIds = [...new Set(bookingsList.map((b) => b.serviceId))];
-      const businessProfileIds = [
-        ...new Set(bookingsList.map((b) => b.businessProfileId)),
-      ];
-
-      // Fetch service details
-      const servicesPromises = serviceIds.map(async (serviceId) => {
-        if (!serviceCache[serviceId]) {
-          try {
-            const service: any = await api.get(
-              API_ENDPOINTS.SERVICE_BY_ID(serviceId),
-            );
-            return { id: serviceId, service };
-          } catch (error) {
-            console.error(`Error loading service ${serviceId}:`, error);
-            return { id: serviceId, service: null };
-          }
-        }
-        return { id: serviceId, service: serviceCache[serviceId] };
-      });
-
-      // Fetch all addresses
-      const addressesResult: any = await api.get(API_ENDPOINTS.ADDRESSES);
-      const addressesArray = Array.isArray(addressesResult)
-        ? addressesResult
-        : [];
-
-      // Create address cache
-      const newAddressCache: Record<number, Address> = {};
-      addressesArray.forEach((addr: Address) => {
-        newAddressCache[addr.id] = addr;
-      });
-      setAddressCache(newAddressCache);
-
-      // Fetch slots for each business
-      const slotsPromises = businessProfileIds.map(async (businessId) => {
-        try {
-          const slots: any = await api.get(
-            API_ENDPOINTS.SLOTS_PUBLIC(businessId),
-          );
-          return {
-            businessId,
-            slots: Array.isArray(slots) ? slots : slots?.slots || [],
-          };
-        } catch (error) {
-          console.error(
-            `Error loading slots for business ${businessId}:`,
-            error,
-          );
-          return { businessId, slots: [] };
-        }
-      });
-
-      // Wait for all parallel requests
-      const [serviceResults, slotsResults] = await Promise.all([
-        Promise.all(servicesPromises),
-        Promise.all(slotsPromises),
-      ]);
-
-      // Update service cache
-      const newServiceCache = { ...serviceCache };
-      serviceResults.forEach(({ id, service }) => {
-        if (service) {
-          newServiceCache[id] = service;
-        }
-      });
-      setServiceCache(newServiceCache);
-
-      // Create slot cache
-      const newSlotCache: Record<number, Slot> = { ...slotCache };
-      slotsResults.forEach(({ slots }) => {
-        slots.forEach((slot: Slot) => {
-          newSlotCache[slot.id] = slot;
-        });
-      });
-      setSlotCache(newSlotCache);
-    } catch (error) {
-      console.error("Error loading booking details:", error);
-    }
+  // Refresh function using query invalidation
+  const handleRefresh = async () => {
+    await refetchBookings();
   };
 
   const getFilteredBookings = () => {
@@ -271,27 +108,42 @@ export default function CustomerBookingsPage() {
         "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800",
       confirmed:
         "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
+      reschedule_pending:
+        "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800",
       completed:
         "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
       cancelled:
         "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
       refunded:
         "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800",
+      rejected:
+        "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
     };
 
     const icons: Record<string, React.ReactNode> = {
       pending: <Clock className="h-3 w-3" />,
       payment_pending: <Clock className="h-3 w-3" />,
       confirmed: <Calendar className="h-3 w-3" />,
+      reschedule_pending: <History className="h-3 w-3" />,
       completed: <Calendar className="h-3 w-3" />,
       cancelled: <XCircle className="h-3 w-3" />,
       refunded: <XCircle className="h-3 w-3" />,
+      rejected: <XCircle className="h-3 w-3" />,
+    };
+
+    // Format status text for display
+    const formatStatusText = (s: string) => {
+      const statusMap: Record<string, string> = {
+        reschedule_pending: "Reschedule Pending",
+        payment_pending: "Payment Pending",
+      };
+      return statusMap[s] || s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
     };
 
     return (
       <Badge className={variants[status] || variants.pending} variant="outline">
         <span className="mr-1">{icons[status] || icons.pending}</span>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {formatStatusText(status)}
       </Badge>
     );
   };
@@ -303,6 +155,7 @@ export default function CustomerBookingsPage() {
       payment_pending:
         "bg-orange-50/50 hover:bg-orange-50/50 dark:bg-orange-950/20",
       confirmed: "bg-blue-50/50 hover:bg-blue-50/50 dark:bg-blue-950/20",
+      reschedule_pending: "bg-purple-50/50 hover:bg-purple-50/50 dark:bg-purple-950/20",
       completed: "bg-green-50/50 hover:bg-green-50/50 dark:bg-green-950/20",
       cancelled: "bg-red-50/50 hover:bg-red-50/50 dark:bg-red-950/20",
       refunded: "bg-gray-50/50 hover:bg-gray-50/50 dark:bg-gray-950/20",
@@ -341,7 +194,26 @@ export default function CustomerBookingsPage() {
 
   if (isLoading) {
     return <CustomerBookingsSkeleton />;
-    //return <BookingDetailsSkeleton />;
+  }
+
+  if (bookingsError) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="p-16 text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-destructive/10 mb-4">
+            <XCircle className="h-7 w-7 text-destructive/40" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">Error Loading Bookings</h3>
+          <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+            {bookingsError instanceof Error ? bookingsError.message : "Failed to load bookings. Please try again."}
+          </p>
+          <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
+    );
   }
 
   const filteredBookings = getFilteredBookings();
@@ -364,7 +236,7 @@ export default function CustomerBookingsPage() {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => loadBookings(true)}
+            onClick={handleRefresh}
             disabled={isRefreshing}
           >
             <RefreshCw
@@ -435,10 +307,18 @@ export default function CustomerBookingsPage() {
 
       {/* Status Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full max-w-lg grid-cols-5 h-10">
+        <TabsList className="grid w-full max-w-2xl grid-cols-6 h-10">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
+          <TabsTrigger value="reschedule_pending">
+            Reschedule
+            {stats.reschedulePending > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                {stats.reschedulePending}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
         </TabsList>
@@ -485,12 +365,11 @@ export default function CustomerBookingsPage() {
             </TableHeader>
             <TableBody>
               {filteredBookings.map((booking) => {
-                const service = serviceCache[booking.serviceId];
+                const service = booking.service;
                 const provider = service?.provider;
-                console.log("provider", provider);
 
-                const address = addressCache[booking.addressId];
-                const slot = slotCache[booking.slotId];
+                const address = booking.address;
+                const slot = booking.slot;
                 const isExpanded = expandedRowId === booking.id;
 
                 return (
@@ -525,47 +404,11 @@ export default function CustomerBookingsPage() {
                       {/* Service Column */}
                       <TableCell className="py-4 px-4">
                         {service ? (
-                          <div className="flex items-center gap-3">
-                            {/* Service Image */}
-                            <div className="h-12 w-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 border flex items-center justify-center">
-                              {service.image ? (
-                                <img
-                                  src={service.image}
-                                  alt={service.name}
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <Package className="h-5 w-5 text-primary/40" />
-                              )}
-                            </div>
-
-                            {/* Service Info */}
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-sm line-clamp-1">
-                                {service.name}
-                              </h3>
-                              <div className="flex items-center gap-1 mt-0.5">
-                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                <span className="text-xs font-medium">
-                                  {formatRating(service.rating)}
-                                </span>
-                                {service.totalReviews &&
-                                  service.totalReviews > 0 && (
-                                    <span className="text-xs text-muted-foreground">
-                                      ({service.totalReviews})
-                                    </span>
-                                  )}
-                              </div>
-                            </div>
-                          </div>
+                          <h3 className="font-semibold text-sm line-clamp-1">
+                            {service.name}
+                          </h3>
                         ) : (
-                          <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-lg bg-muted animate-pulse" />
-                            <div className="flex-1">
-                              <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
-                              <div className="h-3 bg-muted rounded w-1/2 animate-pulse mt-1" />
-                            </div>
-                          </div>
+                          <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
                         )}
                       </TableCell>
 
@@ -641,9 +484,48 @@ export default function CustomerBookingsPage() {
                         )}
                       >
                         <TableCell colSpan={6} className="py-6 px-6 ">
-                          <div className="grid lg:grid-cols-2 gap-8">
+                          {isServiceLoading ? (
+                            // Skeleton while loading service details
+                            <div className="grid lg:grid-cols-2 gap-8">
+                              <div className="space-y-5">
+                                <div className="flex items-center gap-3 pb-3 border-b">
+                                  <Skeleton className="h-10 w-10 rounded-lg" />
+                                  <div className="space-y-2">
+                                    <Skeleton className="h-4 w-28" />
+                                    <Skeleton className="h-3 w-24" />
+                                  </div>
+                                </div>
+                                <Skeleton className="h-48 w-full rounded-xl" />
+                                <div className="space-y-4 pl-1">
+                                  <Skeleton className="h-4 w-24" />
+                                  <Skeleton className="h-3 w-full" />
+                                  <Skeleton className="h-3 w-3/4" />
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <Skeleton className="h-10 w-full" />
+                                    <Skeleton className="h-10 w-full" />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="space-y-6">
+                                <div className="bg-background/50 rounded-xl p-5 border space-y-3">
+                                  <Skeleton className="h-4 w-28" />
+                                  <Skeleton className="h-4 w-full" />
+                                  <Skeleton className="h-4 w-3/4" />
+                                </div>
+                                <div className="bg-background/50 rounded-xl p-5 border space-y-3">
+                                  <Skeleton className="h-4 w-28" />
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <Skeleton className="h-10 w-full" />
+                                    <Skeleton className="h-10 w-full" />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            // Actual content when loaded
+                            <div className="grid lg:grid-cols-2 gap-8">
                             {/* LEFT COLUMN: Service Details (spans vertically) */}
-                            {service && (
+                            {(service || fullServiceDetails) && (
                               <div className="space-y-5">
                                 <div className="flex items-center gap-3 pb-3 border-b">
                                   <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
@@ -659,12 +541,12 @@ export default function CustomerBookingsPage() {
                                   </div>
                                 </div>
 
-                                {/* Service Image */}
-                                {service.image ? (
+                                {/* Service Image - Use full service details if available */}
+                                {(fullServiceDetails?.image || service?.imageUrl) ? (
                                   <div className="rounded-xl overflow-hidden border">
                                     <img
-                                      src={service.image}
-                                      alt={service.name}
+                                      src={fullServiceDetails?.image || service?.imageUrl || undefined}
+                                      alt={fullServiceDetails?.name || service?.name || "Service"}
                                       className="w-full h-48 object-cover"
                                     />
                                   </div>
@@ -680,7 +562,7 @@ export default function CustomerBookingsPage() {
                                       Service Name
                                     </label>
                                     <p className="font-medium text-sm mt-1">
-                                      {service.name}
+                                      {fullServiceDetails?.name || service?.name}
                                     </p>
                                   </div>
 
@@ -689,7 +571,7 @@ export default function CustomerBookingsPage() {
                                       Description
                                     </label>
                                     <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                                      {service.description ||
+                                      {fullServiceDetails?.description || service?.description ||
                                         "No description available"}
                                     </p>
                                   </div>
@@ -702,7 +584,7 @@ export default function CustomerBookingsPage() {
                                       <p className="font-semibold text-base mt-1">
                                         <span className="flex items-center gap-1">
                                           <IndianRupee className="h-4 w-4" />
-                                          {service.price}
+                                          {fullServiceDetails?.price || service?.price}
                                         </span>
                                       </p>
                                     </div>
@@ -712,10 +594,7 @@ export default function CustomerBookingsPage() {
                                         Duration
                                       </label>
                                       <p className="font-medium text-base mt-1">
-                                        {service.estimateDuration ||
-                                          service.duration ||
-                                          "N/A"}{" "}
-                                        min
+                                        {fullServiceDetails?.estimateDuration || service?.duration || "N/A"} min
                                       </p>
                                     </div>
                                   </div>
@@ -728,7 +607,7 @@ export default function CustomerBookingsPage() {
                                       <div className="flex items-center gap-1 mt-1">
                                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                                         <span className="font-medium text-base">
-                                          {formatRating(service.rating)}
+                                          {formatRating(fullServiceDetails?.rating || provider?.rating)}
                                         </span>
                                       </div>
                                     </div>
@@ -738,7 +617,7 @@ export default function CustomerBookingsPage() {
                                         Reviews
                                       </label>
                                       <p className="font-medium text-base mt-1">
-                                        {service.totalReviews || 0} reviews
+                                        {(fullServiceDetails?.totalReviews || provider?.totalReviews || 0)} reviews
                                       </p>
                                     </div>
                                   </div>
@@ -749,7 +628,7 @@ export default function CustomerBookingsPage() {
                             {/* RIGHT COLUMN: Split into two rows */}
                             <div className="space-y-6">
                               {/* Row 1: Provider Details */}
-                              {provider && (
+                              {(fullServiceDetails?.provider || provider) && (
                                 <div className="bg-background/50 rounded-xl p-5 border">
                                   <div className="flex items-center gap-2 pb-3 border-b">
                                     <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -763,7 +642,7 @@ export default function CustomerBookingsPage() {
                                         Business Name
                                       </label>
                                       <p className="font-medium text-sm mt-1">
-                                        {provider.businessName}
+                                        {fullServiceDetails?.provider?.businessName || provider?.businessName}
                                       </p>
                                     </div>
                                     <div>
@@ -771,7 +650,7 @@ export default function CustomerBookingsPage() {
                                         Email
                                       </label>
                                       <p className="text-sm text-muted-foreground mt-1">
-                                        {provider.email || "N/A"}
+                                        {fullServiceDetails?.provider?.email || "N/A"}
                                       </p>
                                     </div>
                                   </div>
@@ -840,13 +719,8 @@ export default function CustomerBookingsPage() {
                                   </div>
                                   <div className="space-y-2 mt-4 text-sm">
                                     <p className="font-medium">
-                                      {address.addressLine1}
+                                      {address.street}
                                     </p>
-                                    {address.addressLine2 && (
-                                      <p className="font-medium">
-                                        {address.addressLine2}
-                                      </p>
-                                    )}
                                     <p className="text-muted-foreground">
                                       {address.city}, {address.state}{" "}
                                       {address.zipCode}
@@ -856,6 +730,7 @@ export default function CustomerBookingsPage() {
                               )}
                             </div>
                           </div>
+                          )}
 
                           {/* Quick Actions - Using modular BookingActions component */}
                           <div className="mt-6 pt-5 border-t">
@@ -864,7 +739,7 @@ export default function CustomerBookingsPage() {
                               businessId={booking.businessProfileId}
                               serviceName={service?.name}
                               hasReviewed={!!booking.feedback}
-                              onActionComplete={() => loadBookings(true)}
+                              onActionComplete={handleRefresh}
                               variant="expanded"
                             />
                           </div>

@@ -103,6 +103,10 @@ export const API_ENDPOINTS = {
   ACCEPT_BOOKING: (id: string | number) => `/accept-booking/${id}`,
   REJECT_BOOKING: (id: string | number) => `/reject-booking/${id}`,
   COMPLETE_BOOKING: (id: string | number) => `/complete-booking/${id}`,
+  // Reschedule management (provider actions)
+  APPROVE_RESCHEDULE: (id: string | number) => `/booking/${id}/reschedule-approve`,
+  DECLINE_RESCHEDULE: (id: string | number) => `/booking/${id}/reschedule-decline`,
+  PROVIDER_RESCHEDULE: (id: string | number) => `/booking/${id}/provider-reschedule`,
 
   // Feedback
   FEEDBACK_BUSINESS: (businessId: string | number) =>

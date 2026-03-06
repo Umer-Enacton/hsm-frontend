@@ -1,70 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Calendar, MapPin, Star, Search, ChevronRight, Clock, CheckCircle, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import {
-  getCustomerBookings,
-  getServices,
-} from "@/lib/customer/api";
+import { useRecentBookings, useBookingStats, useFeaturedServices } from "@/lib/queries";
 import type { CustomerBooking, CustomerService } from "@/types/customer";
 import { CustomerDashboardSkeleton } from "@/components/customer/skeletons/CustomerDashboardSkeleton";
 
 export default function CustomerDashboardPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [recentBookings, setRecentBookings] = useState<CustomerBooking[]>([]);
-  const [featuredServices, setFeaturedServices] = useState<CustomerService[]>([]);
-  const [stats, setStats] = useState({
-    totalBookings: 0,
-    pendingBookings: 0,
-    completedBookings: 0,
-  });
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  // All three queries run in parallel automatically
+  const { data: recentBookings = [], isLoading: isLoadingBookings } = useRecentBookings();
+  const { data: stats = { totalBookings: 0, pendingBookings: 0, completedBookings: 0 }, isLoading: isLoadingStats } = useBookingStats();
+  const { data: featuredServices = [], isLoading: isLoadingServices } = useFeaturedServices();
 
-  const loadDashboardData = async () => {
-    try {
-      // Load recent bookings (limit 3)
-      const bookingsData = await getCustomerBookings({ limit: 3 });
-      setRecentBookings(Array.isArray(bookingsData?.bookings) ? bookingsData.bookings.slice(0, 3) : []);
-
-      // Calculate stats
-      const allBookings = await getCustomerBookings();
-      const bookingsList = Array.isArray(allBookings?.bookings) ? allBookings.bookings : [];
-      setStats({
-        totalBookings: allBookings?.total || 0,
-        pendingBookings: bookingsList.filter((b) => b.status === "pending").length,
-        completedBookings: bookingsList.filter((b) => b.status === "completed").length,
-      });
-
-      // Load featured services (verified providers, top rated)
-      const servicesData = await getServices();
-      // Sort by rating and take top 6
-      const servicesList = Array.isArray(servicesData?.data) ? servicesData.data : [];
-      const topServices = servicesList
-        .filter((s) => s.provider?.rating)
-        .sort((a, b) => (b.provider?.rating || 0) - (a.provider?.rating || 0))
-        .slice(0, 6);
-      setFeaturedServices(topServices);
-    } catch (error: any) {
-      console.error("Error loading dashboard data:", error);
-      toast.error("Failed to load dashboard data");
-      // Set empty defaults on error
-      setRecentBookings([]);
-      setStats({ totalBookings: 0, pendingBookings: 0, completedBookings: 0 });
-      setFeaturedServices([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const isLoading = isLoadingBookings || isLoadingStats || isLoadingServices;
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {

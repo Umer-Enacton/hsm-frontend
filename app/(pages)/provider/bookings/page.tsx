@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import {
   Loader2,
   Calendar,
+  CalendarDays,
   CheckCircle,
   XCircle,
   Clock,
@@ -20,6 +21,7 @@ import {
   Mail,
   RefreshCw,
   IndianRupee,
+  History as HistoryIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,11 +46,14 @@ import {
 import { cn } from "@/lib/utils";
 import type { ProviderBooking } from "@/types/provider";
 import { ProviderBookingsSkeleton } from "@/components/provider/skeletons/ProviderBookingsSkeleton";
+import { ReschedulePendingActions } from "@/components/provider/bookings/ReschedulePendingActions";
+import { ProviderRescheduleDialog } from "@/components/provider/bookings/ProviderRescheduleDialog";
 
 interface BookingStats {
   total: number;
   pending: number;
   confirmed: number;
+  reschedulePending: number;
   completed: number;
   cancelled: number;
 }
@@ -61,13 +66,16 @@ export default function ProviderBookingsPage() {
   );
   const [bookings, setBookings] = useState<ProviderBooking[]>([]);
   const [activeTab, setActiveTab] = useState<
-    "all" | "pending" | "confirmed" | "completed" | "cancelled"
+    "all" | "pending" | "confirmed" | "reschedule_pending" | "completed" | "cancelled"
   >("all");
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<ProviderBooking | null>(null);
   const [stats, setStats] = useState<BookingStats>({
     total: 0,
     pending: 0,
     confirmed: 0,
+    reschedulePending: 0,
     completed: 0,
     cancelled: 0,
   });
@@ -96,6 +104,8 @@ export default function ProviderBookingsPage() {
         pending: data.filter((b: ProviderBooking) => b.status === "pending")
           .length,
         confirmed: data.filter((b: ProviderBooking) => b.status === "confirmed")
+          .length,
+        reschedulePending: data.filter((b: ProviderBooking) => b.status === "reschedule_pending")
           .length,
         completed: data.filter((b: ProviderBooking) => b.status === "completed")
           .length,
@@ -178,6 +188,8 @@ export default function ProviderBookingsPage() {
         "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400",
       confirmed:
         "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400",
+      reschedule_pending:
+        "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400",
       completed:
         "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400",
       cancelled:
@@ -189,15 +201,24 @@ export default function ProviderBookingsPage() {
     const icons: Record<string, React.ReactNode> = {
       pending: <Clock className="h-3 w-3" />,
       confirmed: <CheckCircle className="h-3 w-3" />,
+      reschedule_pending: <HistoryIcon className="h-3 w-3" />,
       completed: <CheckCircle className="h-3 w-3" />,
       cancelled: <XCircle className="h-3 w-3" />,
       rejected: <XCircle className="h-3 w-3" />,
     };
 
+    // Format status text for display
+    const formatStatusText = (s: string) => {
+      const statusMap: Record<string, string> = {
+        reschedule_pending: "Reschedule Pending",
+      };
+      return statusMap[s] || s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
+    };
+
     return (
       <Badge className={variants[status] || variants.pending} variant="outline">
         <span className="mr-1">{icons[status] || icons.pending}</span>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {formatStatusText(status)}
       </Badge>
     );
   };
@@ -229,6 +250,20 @@ export default function ProviderBookingsPage() {
 
   const getActionButtons = (booking: ProviderBooking) => {
     const isLoading = actionLoading[booking.id];
+
+    // Reschedule pending - show approve/decline buttons
+    if (booking.status === "reschedule_pending") {
+      return (
+        <ReschedulePendingActions
+          bookingId={booking.id}
+          rescheduleReason={booking.rescheduleReason || null}
+          newDate={booking.rescheduleBookingDate || booking.bookingDate || booking.date || ""}
+          newTime={formatTime(booking.rescheduleSlotTime || booking.startTime)}
+          onActionComplete={loadBookings}
+          variant="expanded"
+        />
+      );
+    }
 
     if (booking.status === "pending") {
       return (
@@ -272,22 +307,39 @@ export default function ProviderBookingsPage() {
 
     if (booking.status === "confirmed") {
       return (
-        <Button
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleComplete(booking.id);
-          }}
-          disabled={isLoading}
-          className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          {isLoading ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <Check className="h-3 w-3" />
-          )}
-          Complete
-        </Button>
+        <div className="flex gap-2">
+          {/* Reschedule button */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedBookingForReschedule(booking);
+              setRescheduleDialogOpen(true);
+            }}
+            className="gap-1.5"
+          >
+            <CalendarDays className="h-3 w-3" />
+            Reschedule
+          </Button>
+          {/* Complete button */}
+          <Button
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleComplete(booking.id);
+            }}
+            disabled={isLoading}
+            className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {isLoading ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Check className="h-3 w-3" />
+            )}
+            Complete
+          </Button>
+        </div>
       );
     }
 
@@ -392,10 +444,18 @@ export default function ProviderBookingsPage() {
 
       {/* Status Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full max-w-lg grid-cols-5 h-10">
+        <TabsList className="grid w-full max-w-2xl grid-cols-6 h-10">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
+          <TabsTrigger value="reschedule_pending">
+            Reschedule
+            {stats.reschedulePending > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                {stats.reschedulePending}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
         </TabsList>
@@ -623,6 +683,56 @@ export default function ProviderBookingsPage() {
 
                             {/* RIGHT COLUMN: Service & Actions */}
                             <div className="space-y-4">
+                              {/* Reschedule Request Info (for reschedule_pending) */}
+                              {booking.status === "reschedule_pending" && (
+                                <div className="bg-purple-50 dark:bg-purple-950/20 rounded-xl p-5 border border-purple-200 dark:border-purple-800">
+                                  <div className="flex items-center gap-2 pb-3 border-b border-purple-200 dark:border-purple-800">
+                                    <HistoryIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                    <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">
+                                      Reschedule Request
+                                    </h4>
+                                  </div>
+                                  <div className="mt-4 space-y-4">
+                                    {/* Reason - bigger text */}
+                                    {booking.rescheduleReason && (
+                                      <div>
+                                        <label className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">
+                                          Reason
+                                        </label>
+                                        <p className="text-base font-medium text-purple-900 dark:text-purple-100 mt-1 leading-relaxed">
+                                          {booking.rescheduleReason}
+                                        </p>
+                                      </div>
+                                    )}
+
+                                    {/* New Schedule */}
+                                    <div className="bg-white dark:bg-purple-950/40 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
+                                      <label className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">
+                                        Requested New Time
+                                      </label>
+                                      <div className="flex items-center gap-3 mt-2">
+                                        <div className="flex items-center gap-1.5 text-purple-900 dark:text-purple-100">
+                                          <CalendarDays className="h-4 w-4" />
+                                          <span className="text-sm font-medium">
+                                            {new Date(booking.rescheduleBookingDate || booking.bookingDate || booking.date).toLocaleDateString("en-US", {
+                                              weekday: "short",
+                                              month: "short",
+                                              day: "numeric",
+                                            })}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-purple-900 dark:text-purple-100">
+                                          <Clock className="h-4 w-4" />
+                                          <span className="text-sm font-medium">
+                                            {formatTime(booking.rescheduleSlotTime || booking.startTime)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
                               {/* Service Info */}
                               <div className="bg-background/50 rounded-xl p-5 border">
                                 <div className="flex items-center gap-2 pb-3 border-b">
@@ -721,6 +831,20 @@ export default function ProviderBookingsPage() {
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {/* Provider Reschedule Dialog */}
+      {selectedBookingForReschedule && selectedBookingForReschedule.slotId && (
+        <ProviderRescheduleDialog
+          bookingId={selectedBookingForReschedule.id}
+          businessId={selectedBookingForReschedule.businessProfileId || selectedBookingForReschedule.businessId}
+          serviceId={selectedBookingForReschedule.serviceId}
+          currentSlotId={selectedBookingForReschedule.slotId}
+          currentBookingDate={selectedBookingForReschedule.bookingDate || selectedBookingForReschedule.date}
+          onRescheduled={loadBookings}
+          open={rescheduleDialogOpen}
+          onOpenChange={setRescheduleDialogOpen}
+        />
       )}
     </div>
   );

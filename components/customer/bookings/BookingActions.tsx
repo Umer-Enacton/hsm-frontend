@@ -57,6 +57,8 @@ export function BookingActions({
               bookingId={id}
               businessId={businessId}
               serviceId={serviceId}
+              servicePrice={booking.service?.price || 0}
+              serviceName={booking.service?.name || serviceName || "Service"}
               currentSlotId={booking.slotId}
               currentBookingDate={booking.bookingDate}
               onRescheduled={onActionComplete}
@@ -120,6 +122,8 @@ export function BookingActions({
             bookingId={id}
             businessId={businessId}
             serviceId={serviceId}
+            servicePrice={booking.service?.price || 0}
+            serviceName={booking.service?.name || serviceName || "Service"}
             currentSlotId={booking.slotId}
             currentBookingDate={booking.bookingDate}
             onRescheduled={onActionComplete}

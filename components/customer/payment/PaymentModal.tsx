@@ -5,9 +5,11 @@
  * Handles payment flow for booking services
  * UPDATED: Receives pre-created order data from parent
  * Parent checks availability BEFORE opening this modal
+ * UPDATED: Uses Portal to render outside parent container for proper z-index
  */
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import type { PaymentOrderResponse, RazorpayOptions } from "@/types/payment";
 import { RazorpayCheckoutButton } from "./RazorpayCheckout";
@@ -104,22 +106,28 @@ export function PaymentModal({
     setError(null);
 
     try {
+      // Log full response for debugging
+      console.log("📦 Full Razorpay response:", JSON.stringify(response, null, 2));
+
       // Razorpay v2 checkout structure
       const razorpayPaymentId =
         response.payload?.payment?.id ||
-        response.payload?.payment?.razorpay_payment_id;
+        response.payload?.payment?.razorpay_payment_id ||
+        response.razorpay_payment_id;
 
       const razorpayOrderId = orderData.razorpayOrderId;
 
       const razorpaySignature =
         response.payload?.payment?.razorpay_signature ||
         response.razorpay_signature ||
+        response.signature ||
         "";
 
       console.log("🔑 Payment details extracted:", {
         orderId: razorpayOrderId,
         paymentId: razorpayPaymentId,
         hasSignature: !!razorpaySignature,
+        signatureLength: razorpaySignature.length,
         event_name: response.event_name,
       });
 
@@ -133,14 +141,14 @@ export function PaymentModal({
 
       console.log("📤 Sending verification request...");
 
-      await api.post(API_ENDPOINTS.PAYMENT.VERIFY, {
+      const verifyResponse = await api.post(API_ENDPOINTS.PAYMENT.VERIFY, {
         razorpayOrderId,
         razorpayPaymentId,
         signature: razorpaySignature,
         paymentIntentId: orderData.paymentIntentId,
       });
 
-      console.log("✅ Payment verified successfully");
+      console.log("✅ Payment verified successfully:", verifyResponse);
 
       // Mark as handled to prevent duplicates
       flowHandledRef.current = true;
@@ -254,10 +262,11 @@ export function PaymentModal({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Render success state
-  if (step === "success") {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+  // Render modal content based on step
+  const renderModalContent = () => {
+    // Success state
+    if (step === "success") {
+      return (
         <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center">
           <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2 text-green-700">
@@ -270,14 +279,12 @@ export function PaymentModal({
             Redirecting to booking details...
           </p>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // Render expired state
-  if (step === "expired") {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    // Expired state
+    if (step === "expired") {
+      return (
         <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center">
           <Clock className="h-16 w-16 text-slate-950 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2 text-slate-700">
@@ -294,14 +301,12 @@ export function PaymentModal({
             Close
           </button>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // Render failed state
-  if (step === "failed") {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    // Failed state
+    if (step === "failed") {
+      return (
         <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center">
           <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2 text-gray-900">
@@ -320,26 +325,22 @@ export function PaymentModal({
             </button>
           </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // Render processing state
-  if (step === "processing") {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    // Processing state
+    if (step === "processing") {
+      return (
         <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center">
           <Loader2 className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Confirming Payment</h3>
           <p className="text-muted-foreground">Please wait...</p>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // Render payment ready state (main UI)
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    // Payment ready state (main UI)
+    return (
       <div className="bg-white rounded-2xl p-6 max-w-md w-full">
         {/* Header with timer */}
         <div className="flex items-center justify-between mb-4">
@@ -469,11 +470,21 @@ export function PaymentModal({
             }
             onCancel?.();
           }}
-          className="w-full mt-3 text-gray-600 hover:text-gray-800 transition font-medium text-sm"
+          className="w-full mt-3 border border-gray-300 py-3 rounded-xl hover:bg-gray-50 transition font-medium text-gray-700"
         >
-          Cancel
+          Cancel Payment
         </button>
       </div>
-    </div>
-  );
+    );
+  };
+
+  // Use Portal to render modal at document.body level for proper z-index
+  return typeof document !== "undefined"
+    ? createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          {renderModalContent()}
+        </div>,
+        document.body
+      )
+    : null;
 }

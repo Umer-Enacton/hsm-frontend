@@ -39,6 +39,7 @@ import type {
 } from "@/types/payment";
 import { PaymentModal } from "@/components/customer/payment";
 import { ServiceDetailSkeleton } from "@/components/customer/skeletons/ServiceDetailSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -892,7 +893,17 @@ export default function ServiceDetailsPage({
                             );
                           }
 
-                          if (availableSlots.length === 0 && !isLoadingSlots) {
+                          if (isLoadingSlots) {
+                            return (
+                              <div className="grid grid-cols-3 gap-2">
+                                {Array.from({ length: 12 }).map((_, i) => (
+                                  <Skeleton key={i} className="h-9 rounded-lg" />
+                                ))}
+                              </div>
+                            );
+                          }
+
+                          if (availableSlots.length === 0) {
                             return (
                               <div className="text-center py-8 bg-muted/50 rounded-lg">
                                 <X className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
@@ -905,7 +916,7 @@ export default function ServiceDetailsPage({
 
                           return (
                             <div className="grid grid-cols-3 sm:grid-cols-3 gap-2">
-                              {availableSlots.slice(0, 12).map((slot) => {
+                              {availableSlots.map((slot) => {
                                 const isBooked =
                                   slot.status === "booked" ||
                                   slot.isAvailable === false;

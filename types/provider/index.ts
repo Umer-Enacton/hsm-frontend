@@ -158,7 +158,9 @@ export interface Service {
 export interface ProviderBooking {
   id: number;
   businessId: number;
+  businessProfileId?: number;
   serviceId: number;
+  slotId?: number;
   customerId: number;
   customerName: string;
   customerPhone: string;
@@ -178,6 +180,12 @@ export interface ProviderBooking {
     comments?: string;
     createdAt: string;
   };
+  // Reschedule-related fields
+  rescheduleReason?: string | null;
+  rescheduleBookingDate?: string;
+  rescheduleSlotTime?: string;
+  previousSlotId?: number;
+  previousBookingDate?: string;
 }
 
 /**
@@ -186,6 +194,7 @@ export interface ProviderBooking {
 export enum BookingStatus {
   PENDING = "pending",
   CONFIRMED = "confirmed",
+  RESCHEDULE_PENDING = "reschedule_pending",
   COMPLETED = "completed",
   CANCELLED = "cancelled",
   REJECTED = "rejected",

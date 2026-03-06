@@ -29,6 +29,7 @@ export interface CustomerService {
     id: number;
     businessName: string;
     description?: string;
+    email?: string;
     phone: string;
     state: string;
     city: string;
@@ -58,8 +59,10 @@ export enum BookingStatus {
   PENDING = "pending",
   PAYMENT_PENDING = "payment_pending",
   CONFIRMED = "confirmed",
+  RESCHEDULE_PENDING = "reschedule_pending", // Customer rescheduled, waiting provider approval
   COMPLETED = "completed",
   CANCELLED = "cancelled",
+  REJECTED = "rejected", // Provider rejected the booking
   REFUNDED = "refunded",
 }
 
@@ -74,11 +77,17 @@ export interface CustomerBooking {
   serviceId: number;
   slotId: number;
   addressId: number;
-  status: BookingStatus | "pending" | "payment_pending" | "confirmed" | "completed" | "cancelled" | "refunded";
+  status: BookingStatus | "pending" | "payment_pending" | "confirmed" | "reschedule_pending" | "completed" | "cancelled" | "rejected" | "refunded";
   paymentStatus?: "pending" | "initiated" | "paid" | "failed" | "refunded";
   totalPrice: number;
   bookingDate: string;
   createdAt: string;
+  // Reschedule tracking fields
+  previousSlotId?: number;
+  previousBookingDate?: string;
+  rescheduleReason?: string;
+  rescheduledBy?: "customer" | "provider";
+  rescheduledAt?: string;
 
   // These ARE included in backend response from updated getCustomerBookings endpoint
   service?: {
@@ -91,6 +100,7 @@ export interface CustomerBooking {
     provider?: {
       id: number;
       businessName: string;
+      email?: string;
       rating?: number;
       totalReviews?: number;
       isVerified?: boolean;
@@ -109,6 +119,12 @@ export interface CustomerBooking {
     city: string;
     state: string;
     zipCode: string;
+  };
+
+  feedback?: {
+    id: number;
+    rating: number;
+    comments?: string;
   };
 
   canCancel?: boolean;
