@@ -26,6 +26,7 @@ const navItems = [
   { label: "Services", href: "/provider/services", icon: Settings },
   { label: "Availability", href: "/provider/availability", icon: Calendar },
   { label: "Bookings", href: "/provider/bookings", icon: Clock },
+  { label: "Reviews", href: "/provider/reviews", icon: Star },
   // Profile removed from sidebar - accessible via Header user menu (same as admin)
 ];
 

@@ -58,6 +58,12 @@ export const API_ENDPOINTS = {
   VERIFY_OTP: "/verify-otp",
   RESET_PASSWORD: "/reset-password",
 
+  // Google OAuth
+  GOOGLE_AUTH: (role: string) => `/auth/google?role=${role}`,
+  GOOGLE_CALLBACK: "/auth/google/callback",
+  GOOGLE_UPDATE_PHONE: "/auth/google/update-phone",
+  GOOGLE_LINK: "/auth/google/link",
+
   // User
   USER_PROFILE: "/user/profile",
   USERS: "/users",
@@ -114,6 +120,13 @@ export const API_ENDPOINTS = {
   FEEDBACK_BY_SERVICE: (serviceId: string | number) =>
     `/feedback/service/${serviceId}`,
   ADD_FEEDBACK: "/add-feedback",
+  // Provider review management
+  TOGGLE_REVIEW_VISIBILITY: (id: string | number) =>
+    `/feedback/${id}/visibility`,
+  ADD_PROVIDER_REPLY: (id: string | number) =>
+    `/feedback/${id}/reply`,
+  DELETE_REVIEW: (id: string | number) =>
+    `/feedback/${id}`,
 
   // Invoice
   INVOICE_BY_BOOKING_ID: (bookingId: string | number) =>
