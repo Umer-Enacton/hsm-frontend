@@ -174,6 +174,7 @@ export interface ProviderBooking {
   address: string;
   status: BookingStatus;
   price: number;
+  paymentStatus?: string;
   createdAt?: string;
   feedback?: {
     rating: number;

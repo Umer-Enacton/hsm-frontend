@@ -127,8 +127,8 @@ export function useBookingStats(bookings: ProviderBooking[]) {
     confirmed: bookings.filter((b) => b.status === "confirmed").length,
     reschedulePending: bookings.filter((b) => b.status === "reschedule_pending").length,
     completed: bookings.filter((b) => b.status === "completed").length,
-    cancelled: bookings.filter(
-      (b) => b.status === "cancelled" || b.status === "rejected"
-    ).length,
+    cancelled: bookings.filter((b) => b.status === "cancelled").length,
+    rejected: bookings.filter((b) => b.status === "rejected").length,
+    refunded: bookings.filter((b) => b.paymentStatus === "refunded").length,
   };
 }

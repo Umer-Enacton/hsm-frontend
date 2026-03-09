@@ -22,6 +22,7 @@ import {
   RefreshCw,
   IndianRupee,
   History as HistoryIcon,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,6 +52,8 @@ interface BookingStats {
   reschedulePending: number;
   completed: number;
   cancelled: number;
+  rejected: number;
+  refunded: number;
 }
 
 export default function ProviderBookingsPage() {
@@ -65,7 +68,7 @@ export default function ProviderBookingsPage() {
 
   // Local UI state
   const [activeTab, setActiveTab] = useState<
-    "all" | "pending" | "confirmed" | "reschedule_pending" | "completed" | "cancelled"
+    "all" | "pending" | "confirmed" | "reschedule_pending" | "completed" | "cancelled" | "rejected" | "refunded"
   >("all");
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
@@ -89,6 +92,7 @@ export default function ProviderBookingsPage() {
 
   const getFilteredBookings = () => {
     if (activeTab === "all") return bookings;
+    if (activeTab === "refunded") return bookings.filter((b) => b.paymentStatus === "refunded");
     return bookings.filter((b) => b.status === activeTab);
   };
 
@@ -119,6 +123,7 @@ export default function ProviderBookingsPage() {
       completed: <CheckCircle className="h-3 w-3" />,
       cancelled: <XCircle className="h-3 w-3" />,
       rejected: <XCircle className="h-3 w-3" />,
+      refunded: <RotateCcw className="h-3 w-3" />,
     };
 
     // Format status text for display
@@ -388,7 +393,7 @@ export default function ProviderBookingsPage() {
 
       {/* Status Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full max-w-2xl grid-cols-6 h-10">
+        <TabsList className="grid w-full max-w-4xl grid-cols-8 h-10">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
@@ -402,6 +407,22 @@ export default function ProviderBookingsPage() {
           </TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+          <TabsTrigger value="rejected">
+            Rejected
+            {stats.rejected > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                {stats.rejected}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="refunded">
+            Refunded
+            {stats.refunded > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                {stats.refunded}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 

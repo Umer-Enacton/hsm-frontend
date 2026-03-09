@@ -16,6 +16,7 @@ import {
   Building2,
   History,
   Info,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,6 +48,8 @@ interface BookingStats {
   reschedulePending: number;
   completed: number;
   cancelled: number;
+  rejected: number;
+  refunded: number;
 }
 
 // Type for nested service in CustomerBooking
@@ -64,7 +67,7 @@ export default function CustomerBookingsPage() {
 
   // Local state for UI-only concerns
   const [activeTab, setActiveTab] = useState<
-    "all" | "pending" | "confirmed" | "reschedule_pending" | "completed" | "cancelled"
+    "all" | "pending" | "confirmed" | "reschedule_pending" | "completed" | "cancelled" | "rejected" | "refunded"
   >("all");
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
 
@@ -88,6 +91,8 @@ export default function CustomerBookingsPage() {
     reschedulePending: bookings.filter((b) => b.status === "reschedule_pending").length,
     completed: bookings.filter((b) => b.status === "completed").length,
     cancelled: bookings.filter((b) => b.status === "cancelled").length,
+    rejected: bookings.filter((b) => b.status === "rejected").length,
+    refunded: bookings.filter((b) => b.paymentStatus === "refunded").length,
   };
 
   // Refresh function using query invalidation
@@ -97,6 +102,7 @@ export default function CustomerBookingsPage() {
 
   const getFilteredBookings = () => {
     if (activeTab === "all") return bookings;
+    if (activeTab === "refunded") return bookings.filter((b) => b.paymentStatus === "refunded");
     return bookings.filter((b) => b.status === activeTab);
   };
 
@@ -127,7 +133,7 @@ export default function CustomerBookingsPage() {
       reschedule_pending: <History className="h-3 w-3" />,
       completed: <Calendar className="h-3 w-3" />,
       cancelled: <XCircle className="h-3 w-3" />,
-      refunded: <XCircle className="h-3 w-3" />,
+      refunded: <RotateCcw className="h-3 w-3" />,
       rejected: <XCircle className="h-3 w-3" />,
     };
 
@@ -158,6 +164,7 @@ export default function CustomerBookingsPage() {
       reschedule_pending: "bg-purple-50/50 hover:bg-purple-50/50 dark:bg-purple-950/20",
       completed: "bg-green-50/50 hover:bg-green-50/50 dark:bg-green-950/20",
       cancelled: "bg-red-50/50 hover:bg-red-50/50 dark:bg-red-950/20",
+      rejected: "bg-red-50/50 hover:bg-red-50/50 dark:bg-red-950/20",
       refunded: "bg-gray-50/50 hover:bg-gray-50/50 dark:bg-gray-950/20",
     };
     return statusTints[status] || statusTints.pending;
@@ -307,7 +314,7 @@ export default function CustomerBookingsPage() {
 
       {/* Status Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full max-w-2xl grid-cols-6 h-10">
+        <TabsList className="grid w-full max-w-4xl grid-cols-8 h-10">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
@@ -321,6 +328,22 @@ export default function CustomerBookingsPage() {
           </TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+          <TabsTrigger value="rejected">
+            Rejected
+            {stats.rejected > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                {stats.rejected}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="refunded">
+            Refunded
+            {stats.refunded > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                {stats.refunded}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
