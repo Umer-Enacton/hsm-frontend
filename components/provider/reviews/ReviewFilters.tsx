@@ -60,7 +60,7 @@ export function ReviewFilters({
   reviewCount = 0,
 }: ReviewFiltersProps) {
   const [open, setOpen] = useState(false);
-  const [localFilters, setLocalFilters] = useState<ReviewFilters>(filters);
+  const [localFilters, setLocalFilters] = useState<ReviewFiltersData>(filters);
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
@@ -70,15 +70,15 @@ export function ReviewFilters({
   };
 
   const handleClearFilters = () => {
-    const cleared: ReviewFilters = {};
+    const cleared: ReviewFiltersData = {};
     setLocalFilters(cleared);
     onFiltersChange(cleared);
     setOpen(false);
   };
 
-  const updateFilter = <K extends keyof ReviewFilters>(
+  const updateFilter = <K extends keyof ReviewFiltersData>(
     key: K,
-    value: ReviewFilters[K],
+    value: ReviewFiltersData[K],
   ) => {
     setLocalFilters((prev) => ({ ...prev, [key]: value }));
   };
