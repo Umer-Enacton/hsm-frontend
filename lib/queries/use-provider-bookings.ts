@@ -64,7 +64,14 @@ export function useAcceptBooking() {
 
     onError: (error: any) => {
       console.error("Error accepting booking:", error);
-      toast.error(error.message || "Failed to accept booking");
+
+      // Check if booking is already in a terminal state
+      if (error.message?.includes("Current status:")) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.provider.bookings.all });
+        toast.error(error.message || "This booking has already been processed. Refreshing...");
+      } else {
+        toast.error(error.message || "Failed to accept booking");
+      }
     },
   });
 }
@@ -81,12 +88,20 @@ export function useRejectBooking() {
     onSuccess: () => {
       // Invalidate all provider booking queries
       queryClient.invalidateQueries({ queryKey: queryKeys.provider.bookings.all });
-      toast.success("Booking rejected");
+      toast.success("Booking rejected successfully");
     },
 
     onError: (error: any) => {
       console.error("Error rejecting booking:", error);
-      toast.error(error.message || "Failed to reject booking");
+
+      // Check if booking is already in a terminal state
+      if (error.message?.includes("Current status:")) {
+        // Refresh data to show current state
+        queryClient.invalidateQueries({ queryKey: queryKeys.provider.bookings.all });
+        toast.error(error.message || "This booking has already been processed. Refreshing...");
+      } else {
+        toast.error(error.message || "Failed to reject booking");
+      }
     },
   });
 }
@@ -103,12 +118,19 @@ export function useCompleteBooking() {
     onSuccess: () => {
       // Invalidate all provider booking queries
       queryClient.invalidateQueries({ queryKey: queryKeys.provider.bookings.all });
-      toast.success("Booking marked as complete");
+      toast.success("Booking marked as complete successfully");
     },
 
     onError: (error: any) => {
       console.error("Error completing booking:", error);
-      toast.error(error.message || "Failed to complete booking");
+
+      // Check if booking is already in a terminal state
+      if (error.message?.includes("Current status:")) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.provider.bookings.all });
+        toast.error(error.message || "This booking has already been processed. Refreshing...");
+      } else {
+        toast.error(error.message || "Failed to complete booking");
+      }
     },
   });
 }
@@ -129,6 +151,5 @@ export function useBookingStats(bookings: ProviderBooking[]) {
     completed: bookings.filter((b) => b.status === "completed").length,
     cancelled: bookings.filter((b) => b.status === "cancelled").length,
     rejected: bookings.filter((b) => b.status === "rejected").length,
-    refunded: bookings.filter((b) => b.paymentStatus === "refunded").length,
   };
 }

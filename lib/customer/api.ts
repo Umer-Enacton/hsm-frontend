@@ -249,15 +249,16 @@ export async function getBookingById(bookingId: number): Promise<CustomerBooking
 
 /**
  * Cancel booking
+ * DELETE /booking/:id/cancel?reason=...
  */
 export async function cancelBooking(
   bookingId: number,
   reason?: string
-): Promise<{ booking: CustomerBooking; message: string }> {
-  const response = await api.put<{ booking: CustomerBooking; message: string }>(
-    `/booking/${bookingId}/cancel`,
-    { reason }
-  );
+): Promise<{ booking: CustomerBooking; message: string; refund?: any }> {
+  const url = reason
+    ? `/booking/${bookingId}/cancel?reason=${encodeURIComponent(reason)}`
+    : `/booking/${bookingId}/cancel`;
+  const response = await api.delete<{ booking: CustomerBooking; message: string; refund?: any }>(url);
   return response;
 }
 

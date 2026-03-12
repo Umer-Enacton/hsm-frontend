@@ -49,7 +49,6 @@ interface BookingStats {
   completed: number;
   cancelled: number;
   rejected: number;
-  refunded: number;
 }
 
 // Type for nested service in CustomerBooking
@@ -67,7 +66,7 @@ export default function CustomerBookingsPage() {
 
   // Local state for UI-only concerns
   const [activeTab, setActiveTab] = useState<
-    "all" | "pending" | "confirmed" | "reschedule_pending" | "completed" | "cancelled" | "rejected" | "refunded"
+    "all" | "pending" | "confirmed" | "reschedule_pending" | "completed" | "cancelled" | "rejected"
   >("all");
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
 
@@ -92,7 +91,6 @@ export default function CustomerBookingsPage() {
     completed: bookings.filter((b) => b.status === "completed").length,
     cancelled: bookings.filter((b) => b.status === "cancelled").length,
     rejected: bookings.filter((b) => b.status === "rejected").length,
-    refunded: bookings.filter((b) => b.paymentStatus === "refunded").length,
   };
 
   // Refresh function using query invalidation
@@ -102,7 +100,6 @@ export default function CustomerBookingsPage() {
 
   const getFilteredBookings = () => {
     if (activeTab === "all") return bookings;
-    if (activeTab === "refunded") return bookings.filter((b) => b.paymentStatus === "refunded");
     return bookings.filter((b) => b.status === activeTab);
   };
 
@@ -152,6 +149,66 @@ export default function CustomerBookingsPage() {
         {formatStatusText(status)}
       </Badge>
     );
+  };
+
+  // Enhanced status badge that shows refund indicator with amount
+  const getStatusBadgeWithRefund = (booking: CustomerBooking) => {
+    const baseBadge = getStatusBadge(booking.status);
+
+    // Show reschedule fee badge for bookings with reschedule outcome
+    if (booking.rescheduleOutcome) {
+      if (booking.rescheduleOutcome === "pending" || booking.rescheduleOutcome === "accepted") {
+        return (
+          <div className="flex flex-col gap-1">
+            {baseBadge}
+            <Badge
+              variant="outline"
+              className="text-xs px-2 py-0 h-6 bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800"
+            >
+              <History className="h-2.5 w-2.5 mr-1" />
+              Reschedule Fee: ₹100 paid
+            </Badge>
+          </div>
+        );
+      }
+      if (booking.rescheduleOutcome === "rejected" || booking.rescheduleOutcome === "cancelled") {
+        return (
+          <div className="flex flex-col gap-1">
+            {baseBadge}
+            <Badge
+              variant="outline"
+              className="text-xs px-2 py-0 h-6 bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+            >
+              <RotateCcw className="h-2.5 w-2.5 mr-1" />
+              Reschedule Fee: ₹100 refunded
+            </Badge>
+          </div>
+        );
+      }
+    }
+
+    // Show refund indicator for cancelled or rejected bookings that were refunded
+    if ((booking.status === "cancelled" || booking.status === "rejected") && booking.isRefunded) {
+      // Get refund amount from booking.refundAmount or default to totalPrice
+      const refundAmount = booking.refundAmount || booking.totalPrice;
+      // Convert from paise to rupees if needed (check if amount looks like paise)
+      const displayRefund = refundAmount > 10000 ? Math.round(refundAmount / 100) : refundAmount;
+
+      return (
+        <div className="flex flex-col gap-1">
+          {baseBadge}
+          <Badge
+            variant="outline"
+            className="text-xs px-2 py-0 h-6 bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+          >
+            <RotateCcw className="h-2.5 w-2.5 mr-1" />
+            Refunded: ₹{displayRefund}
+          </Badge>
+        </div>
+      );
+    }
+
+    return baseBadge;
   };
 
   // Get status-based tint color for expanded rows
@@ -314,7 +371,7 @@ export default function CustomerBookingsPage() {
 
       {/* Status Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full max-w-4xl grid-cols-8 h-10">
+        <TabsList className="grid w-full max-w-4xl grid-cols-7 h-10">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
@@ -333,14 +390,6 @@ export default function CustomerBookingsPage() {
             {stats.rejected > 0 && (
               <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                 {stats.rejected}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="refunded">
-            Refunded
-            {stats.refunded > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                {stats.refunded}
               </Badge>
             )}
           </TabsTrigger>
@@ -486,7 +535,7 @@ export default function CustomerBookingsPage() {
 
                       {/* Status Column */}
                       <TableCell className="py-4 px-4">
-                        {getStatusBadge(booking.status)}
+                        {getStatusBadgeWithRefund(booking)}
                       </TableCell>
 
                       {/* Price Column */}
@@ -703,7 +752,7 @@ export default function CustomerBookingsPage() {
                                         Status
                                       </label>
                                       <div className="mt-1">
-                                        {getStatusBadge(booking.status)}
+                                        {getStatusBadgeWithRefund(booking)}
                                       </div>
                                     </div>
                                   </div>
@@ -730,6 +779,49 @@ export default function CustomerBookingsPage() {
                                   </div>
                                 </div>
                               </div>
+
+                              {/* Reschedule Details - Show when rescheduleOutcome exists */}
+                              {booking.rescheduleOutcome && booking.previousSlotId && (
+                                <div className="bg-background/50 rounded-xl p-5 border">
+                                  <div className="flex items-center gap-2 pb-3 border-b">
+                                    <History className="h-4 w-4 text-muted-foreground" />
+                                    <h4 className="font-semibold text-sm">
+                                      Reschedule Details
+                                    </h4>
+                                  </div>
+                                  <div className="space-y-3 mt-4">
+                                    <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3">
+                                      <div className="flex items-center gap-2 text-sm">
+                                        <span className="text-muted-foreground">Previous:</span>
+                                        <span className="font-medium">
+                                          {booking.previousBookingDate ? formatDate(booking.previousBookingDate) : "N/A"}
+                                          {booking.previousSlotTime && ` at ${formatTime(booking.previousSlotTime)}`}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-center my-1">
+                                        <ChevronDown className="h-4 w-4 text-purple-600" />
+                                      </div>
+                                      <div className="flex items-center gap-2 text-sm">
+                                        <span className="text-muted-foreground">
+                                          {booking.rescheduleOutcome === "pending" ? "Requested:" :
+                                           booking.rescheduleOutcome === "accepted" ? "Confirmed:" :
+                                           booking.rescheduleOutcome === "rejected" ? "Declined (reverted):" :
+                                           "Cancelled (reverted):"}
+                                        </span>
+                                        <span className="font-medium">
+                                          {formatDate(booking.bookingDate)} at {slot ? formatTime(slot.startTime) : "N/A"}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {booking.rescheduleOutcome === "pending" && "Waiting for provider approval"}
+                                      {booking.rescheduleOutcome === "accepted" && "Provider approved your reschedule request"}
+                                      {booking.rescheduleOutcome === "rejected" && "Provider declined - refund initiated"}
+                                      {booking.rescheduleOutcome === "cancelled" && "You cancelled the reschedule request"}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
 
                               {/* Address Details */}
                               {address && (

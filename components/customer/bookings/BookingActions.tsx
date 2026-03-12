@@ -7,6 +7,7 @@ import { RescheduleButton } from "./RescheduleButton";
 import { RebookButton } from "./RebookButton";
 import { DownloadInvoiceButton } from "./DownloadInvoiceButton";
 import { ViewInvoiceButton } from "./ViewInvoiceButton";
+import { CancelRescheduleButton } from "./CancelRescheduleButton";
 
 interface BookingActionsProps {
   booking: CustomerBooking;
@@ -45,6 +46,8 @@ export function BookingActions({
           <>
             <CancelBookingButton
               bookingId={id}
+              status={status}
+              totalPrice={booking.service?.price || 0}
               onCancel={onActionComplete}
               variant="dropdown"
             />
@@ -61,10 +64,23 @@ export function BookingActions({
               serviceName={booking.service?.name || serviceName || "Service"}
               currentSlotId={booking.slotId}
               currentBookingDate={booking.bookingDate}
+              rescheduleCount={booking.rescheduleCount || 0}
               onRescheduled={onActionComplete}
               variant="dropdown"
             />
             <CancelBookingButton
+              bookingId={id}
+              status={status}
+              totalPrice={booking.service?.price || 0}
+              onCancel={onActionComplete}
+              variant="dropdown"
+            />
+          </>
+        )}
+
+        {status === "reschedule_pending" && (
+          <>
+            <CancelRescheduleButton
               bookingId={id}
               onCancel={onActionComplete}
               variant="dropdown"
@@ -108,6 +124,8 @@ export function BookingActions({
         <>
           <CancelBookingButton
             bookingId={id}
+            status={status}
+            totalPrice={booking.service?.price || 0}
             onCancel={onActionComplete}
           />
           <ViewInvoiceButton bookingId={id} />
@@ -126,9 +144,24 @@ export function BookingActions({
             serviceName={booking.service?.name || serviceName || "Service"}
             currentSlotId={booking.slotId}
             currentBookingDate={booking.bookingDate}
+            rescheduleCount={booking.rescheduleCount || 0}
             onRescheduled={onActionComplete}
           />
           <CancelBookingButton
+            bookingId={id}
+            status={status}
+            totalPrice={booking.service?.price || 0}
+            onCancel={onActionComplete}
+          />
+          <ViewInvoiceButton bookingId={id} />
+          <DownloadInvoiceButton bookingId={id} />
+        </>
+      )}
+
+      {/* RESCHEDULE_PENDING: Cancel Reschedule + View Invoice + Download Invoice */}
+      {status === "reschedule_pending" && (
+        <>
+          <CancelRescheduleButton
             bookingId={id}
             onCancel={onActionComplete}
           />
@@ -162,8 +195,17 @@ export function BookingActions({
         </>
       )}
 
+      {/* REJECTED: Rebook + View Invoice + Download Invoice */}
+      {status === "rejected" && (
+        <>
+          <RebookButton serviceId={serviceId} />
+          <ViewInvoiceButton bookingId={id} />
+          <DownloadInvoiceButton bookingId={id} />
+        </>
+      )}
+
       {/* Default fallback */}
-      {!["pending", "confirmed", "completed", "cancelled"].includes(
+      {!["pending", "confirmed", "reschedule_pending", "completed", "cancelled", "rejected"].includes(
         status
       ) && (
         <>

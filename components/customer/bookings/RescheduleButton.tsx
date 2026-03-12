@@ -65,11 +65,14 @@ interface RescheduleButtonProps {
   serviceName: string; // Service name for payment description
   currentSlotId: number;
   currentBookingDate: string;
+  rescheduleCount?: number; // Number of times already rescheduled
   onRescheduled?: () => void;
   variant?: "dropdown" | "button";
   size?: "default" | "sm" | "icon";
   className?: string;
 }
+
+const MAX_RESCHEDULES = 2;
 
 export function RescheduleButton({
   bookingId,
@@ -79,6 +82,7 @@ export function RescheduleButton({
   serviceName,
   currentSlotId,
   currentBookingDate,
+  rescheduleCount = 0,
   onRescheduled,
   variant = "button",
   size = "sm",
@@ -96,8 +100,8 @@ export function RescheduleButton({
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [otherReason, setOtherReason] = useState("");
 
-  // Calculate 10% reschedule fee
-  const rescheduleFee = Math.ceil(servicePrice * 0.1);
+  // Flat ₹100 reschedule fee
+  const RESCHEDULE_FEE = 100;
 
   // Get next 3 days (Today, Tomorrow, Overmorrow)
   const getNext3Days = () => {
@@ -138,17 +142,17 @@ export function RescheduleButton({
       return slots;
     }
 
-    // If today, filter out past slots and slots less than 30 min away
+    // If today, filter out past slots and slots less than 1 hour away
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const bufferMinutes = 30; // 30 minute buffer
+    const bufferMinutes = 60; // 1 hour buffer
 
     return slots.filter((slot) => {
       const slotTime = slot.startTime; // "HH:mm:ss"
       const [hours, minutes] = slotTime.split(":").map(Number);
       const slotMinutes = hours * 60 + minutes;
 
-      // Only show slots at least 30 minutes in future
+      // Only show slots at least 1 hour in future
       return slotMinutes > currentMinutes + bufferMinutes;
     });
   };
@@ -255,7 +259,7 @@ export function RescheduleButton({
       setIsRescheduling(true);
       setShowFeeWarning(false);
 
-      // Create payment order for reschedule fee (10%)
+      // Create payment order for reschedule fee (₹100)
       const bookingData = {
         serviceId,
         slotId: selectedSlot.id,
@@ -605,7 +609,7 @@ export function RescheduleButton({
               </AlertDialogTitle>
               <AlertDialogDescription className="space-y-3">
                 <p>
-                  A <strong>10% reschedule fee</strong> ({rescheduleFee} ₹) will
+                  A <strong>₹100 reschedule fee</strong> will
                   be charged to change your booking.
                 </p>
                 <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
@@ -614,8 +618,8 @@ export function RescheduleButton({
                     <span>{servicePrice} ₹</span>
                   </div>
                   <div className="flex justify-between font-semibold text-amber-600">
-                    <span>Reschedule fee (10%):</span>
-                    <span>{rescheduleFee} ₹</span>
+                    <span>Reschedule fee:</span>
+                    <span>{RESCHEDULE_FEE} ₹</span>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -639,7 +643,7 @@ export function RescheduleButton({
                     Processing...
                   </>
                 ) : (
-                  `Pay ${rescheduleFee} ₹ to Reschedule`
+                  `Pay ${RESCHEDULE_FEE} ₹ to Reschedule`
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -652,7 +656,7 @@ export function RescheduleButton({
             key={paymentOrderData.paymentIntentId}
             orderData={paymentOrderData}
             serviceName={`Reschedule: ${serviceName}`}
-            servicePrice={rescheduleFee}
+            servicePrice={RESCHEDULE_FEE}
             bookingDate={selectedDate}
             slotTime={formatTime(selectedSlot.startTime)}
             onSuccess={handlePaymentSuccess}
@@ -661,12 +665,22 @@ export function RescheduleButton({
         )}
 
         <button
-          onClick={() => setShowModal(true)}
-          disabled={isRescheduling}
+          onClick={() => {
+            if (rescheduleCount >= MAX_RESCHEDULES) {
+              toast.error(`Maximum reschedule limit (${MAX_RESCHEDULES}) reached`);
+              return;
+            }
+            setShowModal(true);
+          }}
+          disabled={isRescheduling || rescheduleCount >= MAX_RESCHEDULES}
           className={className}
+          title={rescheduleCount >= MAX_RESCHEDULES ? `Maximum ${MAX_RESCHEDULES} reschedules allowed` : `Reschedule (${rescheduleCount}/${MAX_RESCHEDULES} used)`}
         >
           <CalendarDays className="h-4 w-4 mr-2" />
           Reschedule
+          {rescheduleCount > 0 && (
+            <span className="ml-1 text-xs opacity-75">({rescheduleCount}/{MAX_RESCHEDULES})</span>
+          )}
         </button>
       </>
     );
@@ -691,7 +705,7 @@ export function RescheduleButton({
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
               <p>
-                A <strong>10% reschedule fee</strong> ({rescheduleFee} ₹) will
+                A <strong>₹100 reschedule fee</strong> will
                 be charged to change your booking.
               </p>
               <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
@@ -700,8 +714,8 @@ export function RescheduleButton({
                   <span>{servicePrice} ₹</span>
                 </div>
                 <div className="flex justify-between font-semibold text-amber-600">
-                  <span>Reschedule fee (10%):</span>
-                  <span>{rescheduleFee} ₹</span>
+                  <span>Reschedule fee:</span>
+                  <span>{RESCHEDULE_FEE} ₹</span>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -725,7 +739,7 @@ export function RescheduleButton({
                   Processing...
                 </>
               ) : (
-                `Pay ${rescheduleFee} ₹ to Reschedule`
+                `Pay ${RESCHEDULE_FEE} ₹ to Reschedule`
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -738,7 +752,7 @@ export function RescheduleButton({
           key={paymentOrderData.paymentIntentId}
           orderData={paymentOrderData}
           serviceName={`Reschedule: ${serviceName}`}
-          servicePrice={rescheduleFee}
+          servicePrice={RESCHEDULE_FEE}
           bookingDate={selectedDate}
           slotTime={formatTime(selectedSlot.startTime)}
           onSuccess={handlePaymentSuccess}
@@ -749,11 +763,22 @@ export function RescheduleButton({
       <Button
         size={size}
         variant="outline"
-        onClick={() => setShowModal(true)}
+        onClick={() => {
+          if (rescheduleCount >= MAX_RESCHEDULES) {
+            toast.error(`Maximum reschedule limit (${MAX_RESCHEDULES}) reached`);
+            return;
+          }
+          setShowModal(true);
+        }}
+        disabled={rescheduleCount >= MAX_RESCHEDULES}
         className={className}
+        title={rescheduleCount >= MAX_RESCHEDULES ? `Maximum ${MAX_RESCHEDULES} reschedules allowed` : `Reschedule (${rescheduleCount}/${MAX_RESCHEDULES} used)`}
       >
         <CalendarDays className="h-3.5 w-3.5" />
         Reschedule
+        {rescheduleCount > 0 && (
+          <span className="ml-1 text-xs opacity-75">({rescheduleCount}/{MAX_RESCHEDULES})</span>
+        )}
       </Button>
     </>
   );

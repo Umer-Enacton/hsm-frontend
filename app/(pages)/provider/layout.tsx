@@ -9,7 +9,6 @@ import {
   Calendar,
   MessageSquare,
   Star,
-  Settings,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -23,7 +22,7 @@ import { getProviderBusiness } from "@/lib/provider/api";
 const navItems = [
   { label: "Dashboard", href: "/provider/dashboard", icon: LayoutDashboard },
   { label: "Business", href: "/provider/business", icon: Briefcase },
-  { label: "Services", href: "/provider/services", icon: Settings },
+  { label: "Services", href: "/provider/services", icon: MessageSquare },
   { label: "Availability", href: "/provider/availability", icon: Calendar },
   { label: "Bookings", href: "/provider/bookings", icon: Clock },
   { label: "Reviews", href: "/provider/reviews", icon: Star },

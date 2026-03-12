@@ -182,11 +182,25 @@ export interface ProviderBooking {
     createdAt: string;
   };
   // Reschedule-related fields
+  rescheduleCount?: number;
+  lastRescheduleFee?: number;
+  rescheduleOutcome?: "pending" | "accepted" | "rejected" | "cancelled" | null;
   rescheduleReason?: string | null;
   rescheduleBookingDate?: string;
   rescheduleSlotTime?: string;
   previousSlotId?: number;
+  previousSlotTime?: string; // "HH:mm:ss" format
   previousBookingDate?: string;
+  // Refund tracking
+  isRefunded?: boolean;
+  refundAmount?: number; // Amount refunded to customer (in paise)
+  // Provider payout tracking (15% when customer cancels confirmed booking)
+  providerPayoutAmount?: number; // Amount paid to provider (in paise)
+  providerPayoutStatus?: "pending" | "paid" | "failed";
+  // Cancellation tracking
+  cancelledAt?: string;
+  cancellationReason?: string;
+  cancelledBy?: "customer" | "provider" | "system";
 }
 
 /**

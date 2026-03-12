@@ -37,10 +37,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { ProviderBooking } from "@/types/provider";
-import { useProviderBookings, useAcceptBooking, useRejectBooking, useCompleteBooking, useBookingStats } from "@/lib/queries/use-provider-bookings";
+import {
+  useProviderBookings,
+  useAcceptBooking,
+  useRejectBooking,
+  useCompleteBooking,
+  useBookingStats,
+} from "@/lib/queries/use-provider-bookings";
 import { ProviderBookingsSkeleton } from "@/components/provider/skeletons/ProviderBookingsSkeleton";
 import { ReschedulePendingActions } from "@/components/provider/bookings/ReschedulePendingActions";
 import { ProviderRescheduleDialog } from "@/components/provider/bookings/ProviderRescheduleDialog";
@@ -53,12 +69,17 @@ interface BookingStats {
   completed: number;
   cancelled: number;
   rejected: number;
-  refunded: number;
 }
 
 export default function ProviderBookingsPage() {
   // TanStack Query hooks
-  const { data: bookings = [], isLoading, error, refetch, isFetching } = useProviderBookings();
+  const {
+    data: bookings = [],
+    isLoading,
+    error,
+    refetch,
+    isFetching,
+  } = useProviderBookings();
   const acceptBooking = useAcceptBooking();
   const rejectBooking = useRejectBooking();
   const completeBooking = useCompleteBooking();
@@ -68,31 +89,54 @@ export default function ProviderBookingsPage() {
 
   // Local UI state
   const [activeTab, setActiveTab] = useState<
-    "all" | "pending" | "confirmed" | "reschedule_pending" | "completed" | "cancelled" | "rejected" | "refunded"
+    | "all"
+    | "pending"
+    | "confirmed"
+    | "reschedule_pending"
+    | "completed"
+    | "cancelled"
+    | "rejected"
   >("all");
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
-  const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<ProviderBooking | null>(null);
+  const [selectedBookingForReschedule, setSelectedBookingForReschedule] =
+    useState<ProviderBooking | null>(null);
 
-  // Action handlers using mutations
-  const handleAccept = (bookingId: number) => {
-    if (!confirm("Accept this booking request?")) return;
-    acceptBooking.mutate(bookingId);
+  // Confirmation dialogs state
+  const [acceptDialogOpen, setAcceptDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(
+    null,
+  );
+
+  // Action handlers using mutations with confirmation dialogs
+  const handleAccept = () => {
+    if (selectedBookingId !== null) {
+      acceptBooking.mutate(selectedBookingId);
+      setAcceptDialogOpen(false);
+      setSelectedBookingId(null);
+    }
   };
 
-  const handleReject = (bookingId: number) => {
-    if (!confirm("Reject this booking request?")) return;
-    rejectBooking.mutate(bookingId);
+  const handleReject = () => {
+    if (selectedBookingId !== null) {
+      rejectBooking.mutate(selectedBookingId);
+      setRejectDialogOpen(false);
+      setSelectedBookingId(null);
+    }
   };
 
-  const handleComplete = (bookingId: number) => {
-    if (!confirm("Mark this booking as complete?")) return;
-    completeBooking.mutate(bookingId);
+  const handleComplete = () => {
+    if (selectedBookingId !== null) {
+      completeBooking.mutate(selectedBookingId);
+      setCompleteDialogOpen(false);
+      setSelectedBookingId(null);
+    }
   };
 
   const getFilteredBookings = () => {
     if (activeTab === "all") return bookings;
-    if (activeTab === "refunded") return bookings.filter((b) => b.paymentStatus === "refunded");
     return bookings.filter((b) => b.status === activeTab);
   };
 
@@ -123,7 +167,6 @@ export default function ProviderBookingsPage() {
       completed: <CheckCircle className="h-3 w-3" />,
       cancelled: <XCircle className="h-3 w-3" />,
       rejected: <XCircle className="h-3 w-3" />,
-      refunded: <RotateCcw className="h-3 w-3" />,
     };
 
     // Format status text for display
@@ -131,7 +174,10 @@ export default function ProviderBookingsPage() {
       const statusMap: Record<string, string> = {
         reschedule_pending: "Reschedule Pending",
       };
-      return statusMap[s] || s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
+      return (
+        statusMap[s] ||
+        s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ")
+      );
     };
 
     return (
@@ -140,6 +186,86 @@ export default function ProviderBookingsPage() {
         {formatStatusText(status)}
       </Badge>
     );
+  };
+
+  // Enhanced status badge that shows refund indicator and provider payout
+  const getStatusBadgeWithRefund = (booking: ProviderBooking) => {
+    const baseBadge = getStatusBadge(booking.status);
+
+    // Show reschedule fee badge for bookings with reschedule outcome
+    if (booking.rescheduleOutcome) {
+      if (booking.rescheduleOutcome === "pending" || booking.rescheduleOutcome === "accepted") {
+        return (
+          <div className="flex flex-col gap-1">
+            {baseBadge}
+            <Badge
+              variant="outline"
+              className="text-xs px-2 py-0 h-6 bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800"
+            >
+              <HistoryIcon className="h-2.5 w-2.5 mr-1" />
+              Customer paid ₹100 reschedule fee
+            </Badge>
+          </div>
+        );
+      }
+      if (booking.rescheduleOutcome === "rejected" || booking.rescheduleOutcome === "cancelled") {
+        return (
+          <div className="flex flex-col gap-1">
+            {baseBadge}
+            <Badge
+              variant="outline"
+              className="text-xs px-2 py-0 h-6 bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+            >
+              <RotateCcw className="h-2.5 w-2.5 mr-1" />
+              ₹100 refunded to customer
+            </Badge>
+          </div>
+        );
+      }
+    }
+
+    // Show payout amount for cancelled bookings where provider received their share (15%)
+    if (booking.status === "cancelled" && booking.providerPayoutAmount) {
+      // Convert from paise to rupees if needed
+      const payoutAmount =
+        booking.providerPayoutAmount > 100
+          ? Math.round(booking.providerPayoutAmount / 100)
+          : booking.providerPayoutAmount;
+
+      return (
+        <div className="flex flex-col gap-1">
+          {baseBadge}
+          <Badge
+            variant="outline"
+            className="text-xs px-2 py-0 h-6 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+          >
+            <IndianRupee className="h-2.5 w-2.5 mr-1" />
+            You received: ₹{payoutAmount}
+          </Badge>
+        </div>
+      );
+    }
+
+    // For rejected bookings (by provider), show refunded to customer
+    if (
+      (booking.status === "cancelled" || booking.status === "rejected") &&
+      booking.isRefunded
+    ) {
+      return (
+        <div className="flex flex-col gap-1">
+          {baseBadge}
+          <Badge
+            variant="outline"
+            className="text-xs px-2 py-0 h-6 bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"
+          >
+            <RotateCcw className="h-2.5 w-2.5 mr-1" />
+            Refunded to customer
+          </Badge>
+        </div>
+      );
+    }
+
+    return baseBadge;
   };
 
   const formatTime = (timeStr: string) => {
@@ -169,9 +295,12 @@ export default function ProviderBookingsPage() {
 
   const getActionButtons = (booking: ProviderBooking) => {
     // Use mutation loading states
-    const isAccepting = acceptBooking.isPending && acceptBooking.variables === booking.id;
-    const isRejecting = rejectBooking.isPending && rejectBooking.variables === booking.id;
-    const isCompleting = completeBooking.isPending && completeBooking.variables === booking.id;
+    const isAccepting =
+      acceptBooking.isPending && acceptBooking.variables === booking.id;
+    const isRejecting =
+      rejectBooking.isPending && rejectBooking.variables === booking.id;
+    const isCompleting =
+      completeBooking.isPending && completeBooking.variables === booking.id;
     const isLoading = isAccepting || isRejecting || isCompleting;
 
     // Reschedule pending - show approve/decline buttons
@@ -180,7 +309,12 @@ export default function ProviderBookingsPage() {
         <ReschedulePendingActions
           bookingId={booking.id}
           rescheduleReason={booking.rescheduleReason || null}
-          newDate={booking.rescheduleBookingDate || booking.bookingDate || booking.date || ""}
+          newDate={
+            booking.rescheduleBookingDate ||
+            booking.bookingDate ||
+            booking.date ||
+            ""
+          }
           newTime={formatTime(booking.rescheduleSlotTime || booking.startTime)}
           onActionComplete={refetch}
           variant="expanded"
@@ -195,7 +329,8 @@ export default function ProviderBookingsPage() {
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
-              handleAccept(booking.id);
+              setSelectedBookingId(booking.id);
+              setAcceptDialogOpen(true);
             }}
             disabled={isLoading}
             className="gap-1.5 bg-green-600 hover:bg-green-700"
@@ -212,7 +347,8 @@ export default function ProviderBookingsPage() {
             variant="destructive"
             onClick={(e) => {
               e.stopPropagation();
-              handleReject(booking.id);
+              setSelectedBookingId(booking.id);
+              setRejectDialogOpen(true);
             }}
             disabled={isLoading}
             className="gap-1.5"
@@ -250,7 +386,8 @@ export default function ProviderBookingsPage() {
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
-              handleComplete(booking.id);
+              setSelectedBookingId(booking.id);
+              setCompleteDialogOpen(true);
             }}
             disabled={isLoading}
             className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
@@ -297,7 +434,9 @@ export default function ProviderBookingsPage() {
           </div>
           <h3 className="text-lg font-semibold mb-2">Error Loading Bookings</h3>
           <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-            {error instanceof Error ? error.message : "Failed to load bookings. Please try again."}
+            {error instanceof Error
+              ? error.message
+              : "Failed to load bookings. Please try again."}
           </p>
           <Button onClick={handleRefresh} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -326,9 +465,7 @@ export default function ProviderBookingsPage() {
           onClick={handleRefresh}
           disabled={isFetching}
         >
-          <RefreshCw
-            className={cn("h-4 w-4", isFetching && "animate-spin")}
-          />
+          <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
         </Button>
       </div>
 
@@ -393,7 +530,7 @@ export default function ProviderBookingsPage() {
 
       {/* Status Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full max-w-4xl grid-cols-8 h-10">
+        <TabsList className="grid w-full max-w-4xl grid-cols-7 h-10">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
@@ -412,14 +549,6 @@ export default function ProviderBookingsPage() {
             {stats.rejected > 0 && (
               <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                 {stats.rejected}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="refunded">
-            Refunded
-            {stats.refunded > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                {stats.refunded}
               </Badge>
             )}
           </TabsTrigger>
@@ -498,7 +627,10 @@ export default function ProviderBookingsPage() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <Avatar className="h-7 w-7">
-                              <AvatarImage src={booking.customerAvatar || undefined} alt={booking.customerName} />
+                              <AvatarImage
+                                src={booking.customerAvatar || undefined}
+                                alt={booking.customerName}
+                              />
                               <AvatarFallback className="text-[10px]">
                                 {booking.customerName
                                   ? booking.customerName
@@ -554,7 +686,7 @@ export default function ProviderBookingsPage() {
 
                       {/* Status Column */}
                       <TableCell className="py-4 px-4">
-                        {getStatusBadge(booking.status)}
+                        {getStatusBadgeWithRefund(booking)}
                       </TableCell>
 
                       {/* Price Column */}
@@ -575,7 +707,10 @@ export default function ProviderBookingsPage() {
                             <div className="space-y-4">
                               <div className="flex items-center gap-3 pb-3 border-b">
                                 <Avatar className="h-10 w-10">
-                                  <AvatarImage src={booking.customerAvatar || undefined} alt={booking.customerName} />
+                                  <AvatarImage
+                                    src={booking.customerAvatar || undefined}
+                                    alt={booking.customerName}
+                                  />
                                   <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-primary/20 to-primary/5">
                                     {booking.customerName
                                       ? booking.customerName
@@ -657,41 +792,59 @@ export default function ProviderBookingsPage() {
                                     </h4>
                                   </div>
                                   <div className="mt-4 space-y-4">
-                                    {/* Reason - bigger text */}
+                                    {/* Slot Comparison - Previous → New */}
+                                    {booking.previousBookingDate && (
+                                      <div className="bg-white dark:bg-purple-950/40 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
+                                        <label className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">
+                                          Schedule Change
+                                        </label>
+                                        <div className="flex items-center gap-3 mt-2">
+                                          <div className="flex-1">
+                                            <div className="text-xs text-muted-foreground mb-1">From:</div>
+                                            <div className="text-sm">
+                                              {formatDate(booking.previousBookingDate)}
+                                              {booking.previousSlotTime && (
+                                                <span> at {formatTime(booking.previousSlotTime)}</span>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <ChevronRight className="h-4 w-4 text-purple-600 flex-shrink-0" />
+                                          <div className="flex-1">
+                                            <div className="text-xs text-purple-700 dark:text-purple-300 font-medium mb-1">To:</div>
+                                            <div className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                                              {formatDate(
+                                                booking.rescheduleBookingDate ||
+                                                  booking.bookingDate ||
+                                                  booking.date,
+                                              )}{" "}
+                                              at{" "}
+                                              {formatTime(
+                                                booking.rescheduleSlotTime ||
+                                                  booking.startTime ||
+                                                  "",
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Reason */}
                                     {booking.rescheduleReason && (
                                       <div>
                                         <label className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">
                                           Reason
                                         </label>
-                                        <p className="text-base font-medium text-purple-900 dark:text-purple-100 mt-1 leading-relaxed">
+                                        <p className="text-sm text-purple-900 dark:text-purple-100 mt-1 leading-relaxed">
                                           {booking.rescheduleReason}
                                         </p>
                                       </div>
                                     )}
 
-                                    {/* New Schedule */}
-                                    <div className="bg-white dark:bg-purple-950/40 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
-                                      <label className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">
-                                        Requested New Time
-                                      </label>
-                                      <div className="flex items-center gap-3 mt-2">
-                                        <div className="flex items-center gap-1.5 text-purple-900 dark:text-purple-100">
-                                          <CalendarDays className="h-4 w-4" />
-                                          <span className="text-sm font-medium">
-                                            {new Date(booking.rescheduleBookingDate || booking.bookingDate || booking.date).toLocaleDateString("en-US", {
-                                              weekday: "short",
-                                              month: "short",
-                                              day: "numeric",
-                                            })}
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 text-purple-900 dark:text-purple-100">
-                                          <Clock className="h-4 w-4" />
-                                          <span className="text-sm font-medium">
-                                            {formatTime(booking.rescheduleSlotTime || booking.startTime)}
-                                          </span>
-                                        </div>
-                                      </div>
+                                    {/* Fee Info */}
+                                    <div className="flex items-center gap-2 text-xs text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded px-2 py-1">
+                                      <IndianRupee className="h-3 w-3" />
+                                      <span>Customer paid ₹100 reschedule fee</span>
                                     </div>
                                   </div>
                                 </div>
@@ -801,15 +954,140 @@ export default function ProviderBookingsPage() {
       {selectedBookingForReschedule && selectedBookingForReschedule.slotId && (
         <ProviderRescheduleDialog
           bookingId={selectedBookingForReschedule.id}
-          businessId={selectedBookingForReschedule.businessProfileId || selectedBookingForReschedule.businessId}
+          businessId={
+            selectedBookingForReschedule.businessProfileId ||
+            selectedBookingForReschedule.businessId
+          }
           serviceId={selectedBookingForReschedule.serviceId}
           currentSlotId={selectedBookingForReschedule.slotId}
-          currentBookingDate={selectedBookingForReschedule.bookingDate || selectedBookingForReschedule.date}
+          currentBookingDate={
+            selectedBookingForReschedule.bookingDate ||
+            selectedBookingForReschedule.date
+          }
           onRescheduled={refetch}
           open={rescheduleDialogOpen}
           onOpenChange={setRescheduleDialogOpen}
         />
       )}
+
+      {/* Accept Confirmation Dialog */}
+      <AlertDialog open={acceptDialogOpen} onOpenChange={setAcceptDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Accept Booking Request?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will confirm the booking and you will be expected to provide
+              the service at the scheduled time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={acceptBooking.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleAccept}
+              disabled={acceptBooking.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {acceptBooking.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Accepting...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Accept
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reject Confirmation Dialog */}
+      <AlertDialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <XCircle className="h-5 w-5" />
+              Reject Booking Request?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will reject the booking request and the customer will receive
+              a full refund.
+              <br />
+              <br />
+              <strong>Note:</strong> Once rejected, the customer cannot rebook
+              the same slot.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={rejectBooking.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleReject}
+              disabled={rejectBooking.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {rejectBooking.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Rejecting...
+                </>
+              ) : (
+                <>
+                  <X className="h-4 w-4 mr-2" />
+                  Reject
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Complete Confirmation Dialog */}
+      <AlertDialog
+        open={completeDialogOpen}
+        onOpenChange={setCompleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark Booking as Complete?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Confirm that you have provided the service and the booking is
+              complete.
+              <br />
+              <br />
+              <strong>Note:</strong> The customer will be able to leave a review
+              and rating after completion.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={completeBooking.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleComplete}
+              disabled={completeBooking.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {completeBooking.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Completing...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Complete
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

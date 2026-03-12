@@ -68,6 +68,12 @@ interface BookingDetails {
   service: Service;
   slot: Slot;
   address: Address;
+  // Reschedule fields
+  rescheduleOutcome?: "pending" | "accepted" | "rejected" | "cancelled" | null;
+  rescheduleCount?: number;
+  lastRescheduleFee?: number;
+  previousBookingDate?: string;
+  previousSlotTime?: string;
 }
 
 export function InvoicePreviewModal({
@@ -126,6 +132,12 @@ export function InvoicePreviewModal({
         service: booking.service,
         slot: booking.slot,
         address: booking.address,
+        // Include reschedule fields
+        rescheduleOutcome: booking.rescheduleOutcome,
+        rescheduleCount: booking.rescheduleCount,
+        lastRescheduleFee: booking.lastRescheduleFee,
+        previousBookingDate: booking.previousBookingDate,
+        previousSlotTime: booking.previousSlotTime,
       });
     } catch (error: any) {
       console.error("Error fetching booking details:", error);
@@ -390,21 +402,46 @@ export function InvoicePreviewModal({
 
                 {/* Right - Totals Box */}
                 <div className="bg-slate-100 border-2 border-slate-200 rounded-xl p-6">
-                  <div className="space-y-5">
-                    {/* Subtotal */}
+                  <div className="space-y-4">
+                    {/* Service Charge */}
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-slate-600">Subtotal</span>
-                      <span className="text-sm text-slate-600 font-semibold">
-                        {formatCurrency(bookingData.totalPrice)}
+                      <span className="text-sm text-slate-600">Service Charge</span>
+                      <span className="text-sm text-slate-900 font-semibold">
+                        {formatCurrency(bookingData.service?.price || bookingData.totalPrice)}
                       </span>
                     </div>
+
+                    {/* Reschedule Fee (if applicable) */}
+                    {bookingData.rescheduleOutcome === "pending" || bookingData.rescheduleOutcome === "accepted" ? (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-600">Reschedule Fee</span>
+                        <span className="text-sm text-purple-700 font-semibold">
+                          ₹{bookingData.lastRescheduleFee ? bookingData.lastRescheduleFee / 100 : 100}
+                        </span>
+                      </div>
+                    ) : bookingData.rescheduleOutcome === "rejected" || bookingData.rescheduleOutcome === "cancelled" ? (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-600">Reschedule Fee</span>
+                          <span className="text-sm text-slate-900 font-semibold">
+                            ₹{bookingData.lastRescheduleFee ? bookingData.lastRescheduleFee / 100 : 100}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-green-700">Refund</span>
+                          <span className="text-sm text-green-700 font-semibold">
+                            -₹{bookingData.lastRescheduleFee ? bookingData.lastRescheduleFee / 100 : 100}
+                          </span>
+                        </div>
+                      </>
+                    ) : null}
 
                     {/* Tax */}
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-slate-600">
                         Tax (Included)
                       </span>
-                      <span className="text-sm text-slate-400">
+                      <span className="text-xs text-slate-400">
                         Included in subtotal
                       </span>
                     </div>
@@ -413,17 +450,58 @@ export function InvoicePreviewModal({
                     <div className="border-t-2 border-slate-200"></div>
 
                     {/* Total Amount */}
-                    <div className="flex justify-between items-center pt-2">
-                      <span className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-                        Total Amount
-                      </span>
-                      <span className="text-2xl font-black text-orange-600">
-                        {formatCurrency(bookingData.totalPrice)}
-                      </span>
-                    </div>
+                    {(() => {
+                      const servicePrice = bookingData.service?.price || bookingData.totalPrice;
+                      const rescheduleFee = bookingData.lastRescheduleFee ? bookingData.lastRescheduleFee / 100 : 100;
+                      const hasRefund = bookingData.rescheduleOutcome === "rejected" || bookingData.rescheduleOutcome === "cancelled";
+                      const finalTotal = hasRefund ? servicePrice : (servicePrice + (bookingData.rescheduleOutcome ? rescheduleFee : 0));
+
+                      return (
+                        <div className="flex justify-between items-center pt-2">
+                          <span className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                            Total
+                          </span>
+                          <span className="text-2xl font-black text-orange-600">
+                            {formatCurrency(finalTotal)}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
+
+              {/* ============================================ */}
+              {/* RESCHEDULE DETAILS (if applicable) */}
+              {/* ============================================ */}
+              {bookingData.rescheduleOutcome && bookingData.previousBookingDate && (
+                <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-8">
+                  <p className="text-xs font-bold text-purple-700 uppercase tracking-wide mb-2">
+                    Reschedule Details
+                  </p>
+                  <div className="text-sm text-purple-900">
+                    <div className="flex items-center gap-2">
+                      <span className="text-purple-700">From:</span>
+                      <span className="font-medium">
+                        {formatDate(bookingData.previousBookingDate)}
+                        {bookingData.previousSlotTime && ` at ${formatTime(bookingData.previousSlotTime)}`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 ml-6">
+                      <span className="text-purple-700">To:</span>
+                      <span className="font-medium">
+                        {formatDate(bookingData.bookingDate)} at {formatTime(bookingData.slot?.startTime)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-purple-700 mt-1">
+                      Status: {bookingData.rescheduleOutcome === "pending" ? "Pending approval" :
+                        bookingData.rescheduleOutcome === "accepted" ? "Approved" :
+                        bookingData.rescheduleOutcome === "rejected" ? "Declined by provider" :
+                        "Cancelled"}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* ============================================ */}
               {/* FOOTER SECTION */}

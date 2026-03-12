@@ -347,6 +347,38 @@ export async function getBusinessReviews(
 }
 
 // ============================================================================
+// RESCHEDULE SETTINGS API
+// ============================================================================
+
+/**
+ * Get reschedule settings for current provider
+ */
+export async function getRescheduleSettings(): Promise<any> {
+  try {
+    const response = await api.get<{ settings: any }>(
+      "/booking/provider/settings"
+    );
+    return response.settings;
+  } catch (error) {
+    console.error("Error fetching reschedule settings:", error);
+    return null;
+  }
+}
+
+/**
+ * Update reschedule settings for provider
+ */
+export async function updateRescheduleSettings(
+  settings: any
+): Promise<any> {
+  const response = await api.put<{ settings: any }>(
+    "/booking/provider/settings",
+    settings
+  );
+  return response.settings;
+}
+
+// ============================================================================
 // DASHBOARD STATS API
 // ============================================================================
 
