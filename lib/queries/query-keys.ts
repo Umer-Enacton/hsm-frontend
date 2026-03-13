@@ -67,5 +67,9 @@ export const queryKeys = {
       all: ["provider", "dashboard"] as const,
       stats: () => [...queryKeys.provider.dashboard.all, "stats"] as const,
     },
+    revenue: {
+      all: ["provider", "revenue"] as const,
+      stats: () => [...queryKeys.provider.revenue.all, "stats"] as const,
+    },
   },
 } as const;

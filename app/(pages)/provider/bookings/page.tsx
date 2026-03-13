@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Loader2,
   Calendar,
@@ -11,6 +11,7 @@ import {
   MapPin,
   Phone,
   AlertCircle,
+  AlertTriangle,
   Package,
   Check,
   X,
@@ -28,6 +29,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -49,7 +52,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getUserData } from "@/lib/auth-utils";
+import { getProviderBusiness } from "@/lib/provider/api";
 import type { ProviderBooking } from "@/types/provider";
+import type { Business } from "@/types/provider";
 import {
   useProviderBookings,
   useAcceptBooking,
@@ -86,6 +92,20 @@ export default function ProviderBookingsPage() {
 
   // Compute stats from bookings data
   const stats = useBookingStats(bookings);
+
+  // Business state for payment details check
+  const [business, setBusiness] = useState<Business | null>(null);
+
+  useEffect(() => {
+    const fetchBusiness = async () => {
+      const userData = getUserData();
+      if (userData) {
+        const businessData = await getProviderBusiness(userData.id);
+        setBusiness(businessData);
+      }
+    };
+    fetchBusiness();
+  }, []);
 
   // Local UI state
   const [activeTab, setActiveTab] = useState<
@@ -527,6 +547,27 @@ export default function ProviderBookingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Payment Details Warning */}
+      {business && !business.hasPaymentDetails && (
+        <Alert variant="destructive" className="border-orange-500 bg-orange-50 dark:bg-orange-950/40">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <strong className="block mb-1">Payment Details Required</strong>
+                You must add payment details (UPI ID or Bank Account) to receive bookings and earnings.
+                Without payment details, customers cannot book your services.
+              </div>
+              <Link href="/provider/payments">
+                <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
+                  Add Payment Details
+                </Button>
+              </Link>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Status Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>

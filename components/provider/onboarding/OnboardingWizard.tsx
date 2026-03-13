@@ -17,6 +17,7 @@ interface OnboardingWizardProps {
   existingData?: Partial<OnboardingData>;
   onComplete: (data: OnboardingData) => Promise<void>;
   onCancel: () => void;
+  onStageChange?: (stage: OnboardingStage, data: Partial<OnboardingData>) => void;
 }
 
 const STAGES = [
@@ -45,6 +46,7 @@ export function OnboardingWizard({
   existingData,
   onComplete,
   onCancel,
+  onStageChange,
 }: OnboardingWizardProps) {
   const [currentStage, setCurrentStage] = useState<OnboardingStage>(initialStage);
   const [isCompleting, setIsCompleting] = useState(false);
@@ -86,7 +88,10 @@ export function OnboardingWizard({
 
   const handleNext = () => {
     if (currentStage < OnboardingStage.SLOT_GENERATION) {
-      setCurrentStage((prev) => prev + 1);
+      const nextStage = currentStage + 1 as OnboardingStage;
+      setCurrentStage(nextStage);
+      // Notify parent of stage change
+      onStageChange?.(nextStage, onboardingData);
     } else {
       handleComplete();
     }
@@ -94,7 +99,10 @@ export function OnboardingWizard({
 
   const handleBack = () => {
     if (currentStage > OnboardingStage.BUSINESS_DETAILS) {
-      setCurrentStage((prev) => prev - 1);
+      const prevStage = currentStage - 1 as OnboardingStage;
+      setCurrentStage(prevStage);
+      // Notify parent of stage change
+      onStageChange?.(prevStage, onboardingData);
     }
   };
 

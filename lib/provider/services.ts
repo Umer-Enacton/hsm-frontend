@@ -14,6 +14,17 @@ export interface ServiceStats {
   active: number;
   inactive: number;
   averagePrice: number;
+  totalBookings?: number;
+  totalRevenue?: number; // in paise
+  services?: {
+    id: number;
+    name: string;
+    isActive: boolean;
+    price: number;
+    totalBookings: number;
+    completedBookings: number;
+    revenue: number; // in paise
+  }[];
 }
 
 // ============================================================================

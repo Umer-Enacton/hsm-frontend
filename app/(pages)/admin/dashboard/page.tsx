@@ -1,22 +1,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Wrench, Building2, DollarSign, Calendar, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Users, Wrench, Building2, DollarSign, Calendar, CheckCircle, Clock, Wallet, IndianRupee } from "lucide-react";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { AdminPageHeader, StatCard, LoadingState, ErrorState } from "@/components/admin/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
 
 interface DashboardStats {
-  totalUsers: number;
-  totalBusinesses: number;
-  verifiedBusinesses: number;
-  pendingBusinesses: number;
-  totalServices: number;
-  totalBookings: number;
-  completedBookings: number;
-  pendingBookings: number;
-  revenue: number;
+  users: {
+    total: number;
+  };
+  businesses: {
+    total: number;
+    verified: number;
+    pending: number;
+  };
+  services: {
+    total: number;
+    active: number;
+  };
+  bookings: {
+    total: number;
+    completed: number;
+    pending: number;
+  };
+  revenue: {
+    totalRevenue: number;
+    platformFees: number;
+    paymentCount: number;
+  };
+  payouts: {
+    pendingAmount: number;
+    pendingCount: number;
+    minimumThreshold: number;
+  };
 }
 
 interface Activity {
@@ -27,11 +46,21 @@ interface Activity {
 }
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const formatCurrency = (amountInPaise: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amountInPaise / 100);
+  };
 
   const fetchDashboardData = async (showRefreshLoading = false) => {
     try {
@@ -42,69 +71,29 @@ export default function AdminDashboardPage() {
       }
       setError(null);
 
-      // Fetch users - handle different response formats
-      const usersResponse: any = await api.get(API_ENDPOINTS.USERS);
-      const users = Array.isArray(usersResponse) ? usersResponse : (usersResponse?.users || usersResponse?.data || []);
+      // Use the new dashboard stats endpoint
+      const statsData: DashboardStats = await api.get(API_ENDPOINTS.ADMIN_DASHBOARD_STATS);
+      setStats(statsData);
 
-      // Fetch businesses - handle different response formats
-      const businessesResponse: any = await api.get(API_ENDPOINTS.BUSINESSES);
-      const businesses = Array.isArray(businessesResponse) ? businessesResponse : (businessesResponse?.businesses || businessesResponse?.data || []);
-
-      // Fetch services - handle different response formats
-      const servicesResponse: any = await api.get(API_ENDPOINTS.SERVICES);
-      const services = Array.isArray(servicesResponse) ? servicesResponse : (servicesResponse?.services || servicesResponse?.data || []);
-
-      // Calculate stats
-      const totalUsers = users?.length || 0;
-      const totalBusinesses = businesses?.length || 0;
-      const verifiedBusinesses = businesses?.filter((b: any) => b.is_verified)?.length || 0;
-      const pendingBusinesses = totalBusinesses - verifiedBusinesses;
-      const totalServices = services?.length || 0;
-
-      // For bookings and revenue, we'd need a dedicated admin endpoint
-      // Using placeholder values for now
-      const totalBookings = 0;
-      const completedBookings = 0;
-      const pendingBookings = 0;
-      const revenue = 0;
-
-      setStats({
-        totalUsers,
-        totalBusinesses,
-        verifiedBusinesses,
-        pendingBusinesses,
-        totalServices,
-        totalBookings,
-        completedBookings,
-        pendingBookings,
-        revenue,
-      });
-
-      // Mock activity data - in production, this would come from an activity log endpoint
+      // Mock activity data for now
       setActivities([
         {
           id: "1",
-          type: "user",
-          message: "New user registration",
-          timestamp: "2 minutes ago",
+          type: "booking",
+          message: `${statsData.bookings.completed} bookings completed this month`,
+          timestamp: "Today",
         },
         {
           id: "2",
-          type: "booking",
-          message: "Service booking completed",
-          timestamp: "15 minutes ago",
+          type: "payment",
+          message: `${statsData.revenue.paymentCount} payments processed`,
+          timestamp: "Today",
         },
         {
           id: "3",
           type: "business",
-          message: "New business application submitted",
-          timestamp: "1 hour ago",
-        },
-        {
-          id: "4",
-          type: "payment",
-          message: "Payment processed successfully",
-          timestamp: "3 hours ago",
+          message: `${statsData.businesses.pending} businesses pending verification`,
+          timestamp: "This week",
         },
       ]);
     } catch (err: any) {
@@ -153,58 +142,86 @@ export default function AdminDashboardPage() {
         isRefreshing={isRefreshing}
       />
 
-      {/* Stats Grid */}
+      {/* Main Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Users"
-          value={stats?.totalUsers || 0}
-          change="+20.1% from last month"
+          value={stats?.users.total || 0}
           icon={Users}
           trend="up"
         />
         <StatCard
           title="Total Businesses"
-          value={stats?.totalBusinesses || 0}
-          change={`+${stats?.pendingBusinesses || 0} pending verification`}
+          value={stats?.businesses.total || 0}
+          change={`${stats?.businesses.pending || 0} pending`}
           icon={Building2}
           trend="up"
         />
         <StatCard
           title="Total Services"
-          value={stats?.totalServices || 0}
-          change="+18.2% from last month"
+          value={stats?.services.total || 0}
+          change={`${stats?.services.active || 0} active`}
           icon={Wrench}
           trend="up"
         />
         <StatCard
           title="Total Bookings"
-          value={stats?.totalBookings || 0}
-          change={`${stats?.pendingBookings || 0} pending`}
+          value={stats?.bookings.total || 0}
+          change={`${stats?.bookings.completed || 0} completed`}
           icon={Calendar}
           trend="neutral"
         />
       </div>
 
-      {/* Additional Stats Row */}
-      <div className="grid gap-4 md:grid-cols-3">
+      {/* Revenue Stats Row */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <StatCard
+          title="Total Revenue"
+          value={formatCurrency(stats?.revenue.totalRevenue || 0)}
+          icon={IndianRupee}
+          trend="up"
+          className="border-green-200 dark:border-green-800"
+        />
+        <StatCard
+          title="Platform Fees"
+          value={formatCurrency(stats?.revenue.platformFees || 0)}
+          icon={DollarSign}
+          trend="up"
+          className="border-purple-200 dark:border-purple-800"
+          description="Your 5% commission"
+        />
+        <StatCard
+          title="Pending Payouts"
+          value={formatCurrency(stats?.payouts.pendingAmount || 0)}
+          change={`${stats?.payouts.pendingCount || 0} pending`}
+          icon={Wallet}
+          trend="neutral"
+          className="border-orange-200 dark:border-orange-800"
+        />
+        <StatCard
+          title="Min Payout"
+          value={formatCurrency(stats?.payouts.minimumThreshold || 30000)}
+          icon={Clock}
+          trend="neutral"
+          description="Provider threshold"
+        />
+      </div>
+
+      {/* Business Status */}
+      <div className="grid gap-4 md:grid-cols-2">
         <StatCard
           title="Verified Businesses"
-          value={stats?.verifiedBusinesses || 0}
+          value={stats?.businesses.verified || 0}
           icon={CheckCircle}
           trend="up"
+          className="border-emerald-200 dark:border-emerald-800"
         />
         <StatCard
           title="Pending Verification"
-          value={stats?.pendingBusinesses || 0}
+          value={stats?.businesses.pending || 0}
           icon={Clock}
           trend="neutral"
-        />
-        <StatCard
-          title="Revenue"
-          value={`$${stats?.revenue?.toLocaleString() || "0"}`}
-          change="+4.5% from last month"
-          icon={DollarSign}
-          trend="up"
+          className="border-amber-200 dark:border-amber-800"
         />
       </div>
 
@@ -239,21 +256,25 @@ export default function AdminDashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline" onClick={() => window.location.href = "/admin/users"}>
+            <Button variant="outline" onClick={() => router.push("/admin/users")}>
               <Users className="h-4 w-4 mr-2" />
               Manage Users
             </Button>
-            <Button variant="outline" onClick={() => window.location.href = "/admin/business"}>
+            <Button variant="outline" onClick={() => router.push("/admin/business")}>
               <Building2 className="h-4 w-4 mr-2" />
               Verify Businesses
             </Button>
-            <Button variant="outline" onClick={() => window.location.href = "/admin/categories"}>
+            <Button variant="outline" onClick={() => router.push("/admin/categories")}>
               <Wrench className="h-4 w-4 mr-2" />
               Manage Categories
             </Button>
-            <Button variant="outline" onClick={() => window.location.href = "/admin/bookings"}>
+            <Button variant="outline" onClick={() => router.push("/admin/bookings")}>
               <Calendar className="h-4 w-4 mr-2" />
               View Bookings
+            </Button>
+            <Button variant="outline" onClick={() => router.push("/admin/payouts")}>
+              <Wallet className="h-4 w-4 mr-2" />
+              Process Payouts
             </Button>
           </div>
         </CardContent>

@@ -9,6 +9,7 @@ import {
   Calendar,
   MessageSquare,
   Star,
+  CreditCard,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -17,6 +18,7 @@ import { getUserData, isAuthenticated, handleLogout } from "@/lib/auth-utils";
 import { getCurrentProfile } from "@/lib/profile-api";
 import { UserRole, type User } from "@/types/auth";
 import { getProviderBusiness } from "@/lib/provider/api";
+import { api, API_ENDPOINTS } from "@/lib/api";
 
 // Navigation items for the provider sidebar
 const navItems = [
@@ -26,6 +28,7 @@ const navItems = [
   { label: "Availability", href: "/provider/availability", icon: Calendar },
   { label: "Bookings", href: "/provider/bookings", icon: Clock },
   { label: "Reviews", href: "/provider/reviews", icon: Star },
+  { label: "Payments", href: "/provider/payments", icon: CreditCard },
   // Profile removed from sidebar - accessible via Header user menu (same as admin)
 ];
 
@@ -94,8 +97,9 @@ export default function ProviderLayout({
         }
 
         // Check if provider has completed onboarding
-        // Skip onboarding check if already on onboarding page
-        if (!pathname?.includes("/onboarding")) {
+        // Skip onboarding check if already on onboarding page or payments page
+        // Only redirect to onboarding if NO business exists
+        if (!pathname?.includes("/onboarding") && !pathname?.includes("/payments")) {
           try {
             const businessData = await getProviderBusiness(userData.id);
 
@@ -112,6 +116,7 @@ export default function ProviderLayout({
             setBusiness(businessData);
 
             // Business exists - continue to dashboard
+            // Payment details check is now handled on the dashboard itself with a warning banner
             console.log("Business profile found, continuing to dashboard");
           } catch (businessError) {
             console.error("Error checking business profile:", businessError);

@@ -284,7 +284,9 @@ export async function getProviderBookings(
     if (status) {
       endpoint += `?status=${status}`;
     }
+    console.log("[Provider API] Fetching bookings from:", endpoint);
     const response = await api.get<{ bookings: ProviderBooking[] }>(endpoint);
+    console.log("[Provider API] Received bookings:", response.bookings?.length || 0);
     return response.bookings || [];
   } catch (error) {
     console.error("Error fetching bookings:", error);

@@ -105,6 +105,7 @@ export const API_ENDPOINTS = {
   BOOKING_BY_ID: (id: string | number) => `/booking/${id}`,
   CUSTOMER_BOOKINGS: "/bookings/customer",
   PROVIDER_BOOKINGS: "/bookings/provider",
+  ADMIN_BOOKINGS_ALL: "/admin/bookings/all",
   ADD_BOOKING: "/add-booking",
   ACCEPT_BOOKING: (id: string | number) => `/accept-booking/${id}`,
   REJECT_BOOKING: (id: string | number) => `/reject-booking/${id}`,
@@ -135,6 +136,29 @@ export const API_ENDPOINTS = {
   // Invoice
   INVOICE_BY_BOOKING_ID: (bookingId: string | number) =>
     `/invoice/booking/${bookingId}`,
+
+  // Payment Details (Admin & Provider)
+  PAYMENT_DETAILS: "/payment-details",
+  PAYMENT_DETAILS_SET_ACTIVE: (id: string | number) =>
+    `/payment-details/${id}/set-active`,
+  PAYMENT_DETAILS_DELETE: (id: string | number) =>
+    `/payment-details/${id}`,
+  ADMIN_CHECK_PAYMENT_DETAILS: "/admin/check-payment-details",
+
+  // Admin Settings & Dashboard
+  ADMIN_DASHBOARD_STATS: "/admin/dashboard/stats",
+  ADMIN_SETTINGS: "/admin/settings",
+  ADMIN_REVENUE: "/admin/revenue",
+  ADMIN_PAYOUTS: "/admin/payouts",
+  ADMIN_PAYOUTS_BY_PROVIDER: "/admin/payouts/by-provider",
+
+  // Provider Analytics
+  PROVIDER_ANALYTICS_REVENUE: "/provider/analytics/revenue",
+  PROVIDER_ANALYTICS_SERVICES: "/provider/analytics/services",
+  PROVIDER_ANALYTICS_STATUS: "/provider/analytics/status",
+
+  // Provider Revenue
+  PROVIDER_REVENUE: "/admin/provider/revenue",
 
   // Payment
   PAYMENT: {

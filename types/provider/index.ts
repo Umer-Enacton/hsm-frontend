@@ -99,7 +99,7 @@ export enum SlotMode {
 }
 
 /**
- * Onboarding data - simplified 3-stage flow
+ * Onboarding data - 4-stage flow including payment details
  */
 export interface OnboardingData {
   // Stage 1: Business Details
@@ -122,15 +122,20 @@ export interface OnboardingData {
 
   // Stage 3: Slot Generation Settings
   slotInterval: number; // in minutes (15, 30, 60, etc.)
+
+  // Stage 4: Payment Details
+  hasPaymentDetails?: boolean; // True if provider has added at least one payment method
+  paymentDetails?: any[]; // Existing payment details
 }
 
 /**
- * Onboarding stage - simplified to 3 stages
+ * Onboarding stage - 4 stages including payment details
  */
 export enum OnboardingStage {
   BUSINESS_DETAILS = 1,
   WORKING_HOURS = 2,
   SLOT_GENERATION = 3,
+  PAYMENT_DETAILS = 4,
 }
 
 /**

@@ -9,6 +9,10 @@ import {
   Briefcase,
   Wrench,
   Calendar,
+  Settings,
+  CreditCard,
+  DollarSign,
+  Wallet,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -24,6 +28,11 @@ const navItems = [
   { label: "Services", href: "/admin/services", icon: Wrench },
   { label: "Categories", href: "/admin/categories", icon: LayoutTemplate },
   { label: "Users", href: "/admin/users", icon: Users },
+  { label: "Bookings", href: "/admin/bookings", icon: Calendar },
+  { label: "Revenue", href: "/admin/revenue", icon: DollarSign },
+  { label: "Payments", href: "/admin/payments", icon: CreditCard },
+  { label: "Payouts", href: "/admin/payouts", icon: Wallet },
+  { label: "Settings", href: "/admin/settings", icon: Settings },
   // Profile removed from sidebar - accessible via Header user menu
 ];
 
@@ -68,16 +77,18 @@ export default function AdminLayout({
         }
 
         // Fetch full user profile from backend (includes avatar)
-        try {
-          const userProfile = await getCurrentProfile();
+        // Note: Admin users may not have a profile endpoint, so we use token data directly
+        // Try to fetch profile but fall back to token data without throwing error
+        const userProfile = await getCurrentProfile().catch((err) => {
+          console.log("Admin profile not available (expected for admin users), using token data");
+          return null;
+        });
+
+        if (userProfile) {
           console.log("Fetched user profile:", userProfile);
           setUser(userProfile);
-        } catch (profileError) {
-          console.error(
-            "Failed to fetch profile, using token data:",
-            profileError,
-          );
-          // Fallback to token data if profile fetch fails
+        } else {
+          // Use token data for admin users
           setUser({
             id: userData.id,
             name:
@@ -128,6 +139,10 @@ export default function AdminLayout({
     router.push("/admin/profile");
   };
 
+  const onSettingsClick = () => {
+    router.push("/admin/settings");
+  };
+
   // Show loading state while checking auth
   if (isLoading) {
     return (
@@ -166,6 +181,7 @@ export default function AdminLayout({
             }
           : undefined,
         onProfileClick,
+        onSettingsClick,
         onLogout,
         showSearch: true,
         searchPlaceholder: "Search admin...",
