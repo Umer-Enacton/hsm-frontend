@@ -242,29 +242,31 @@ export default function ServiceDetailsPage() {
   const duration = service.duration || service.EstimateDuration || 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Navigation Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => router.push("/admin/services")}
+          className="w-fit"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="flex items-center justify-end w-full gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2 flex-1">
           {service.isActive ? (
             <Button
               variant="outline"
               onClick={handleToggleStatus}
               disabled={isActionLoading}
+              className="text-xs sm:text-sm"
             >
-              <Ban className="h-4 w-4 mr-2" />
+              <Ban className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
               Deactivate
             </Button>
           ) : (
-            <Button onClick={handleToggleStatus} disabled={isActionLoading}>
-              <CheckCircle className="h-4 w-4 mr-2" />
+            <Button onClick={handleToggleStatus} disabled={isActionLoading} className="text-xs sm:text-sm">
+              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
               Activate
             </Button>
           )}
@@ -272,9 +274,9 @@ export default function ServiceDetailsPage() {
             variant="outline"
             onClick={handleDelete}
             disabled={isActionLoading}
-            className="text-destructive hover:text-destructive"
+            className="text-destructive hover:text-destructive text-xs sm:text-sm"
           >
-            <X className="h-4 w-4 mr-2" />
+            <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
             Delete
           </Button>
         </div>
@@ -282,7 +284,7 @@ export default function ServiceDetailsPage() {
 
       {/* Cover Image Banner */}
       <Card className="overflow-hidden">
-        <div className="relative h-64 bg-muted">
+        <div className="relative h-36 sm:h-56 bg-muted">
           {service.image ? (
             <img
               src={service.image}
@@ -291,67 +293,63 @@ export default function ServiceDetailsPage() {
             />
           ) : (
             <div className="h-full w-full bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center">
-              <Wrench className="h-24 w-24 text-primary/20" />
+              <Wrench className="h-16 w-16 sm:h-24 sm:w-24 text-primary/20" />
             </div>
           )}
 
           {/* Badges */}
-          <div className="absolute top-4 left-4 flex gap-2">
+          <div className="absolute top-2 sm:top-4 left-2 sm:left-4 flex gap-1.5 sm:gap-2">
             {service.business?.category && (
-              <Badge className="bg-white/90 backdrop-blur-sm text-foreground border-0 shadow-sm px-3 py-1.5">
+              <Badge className="bg-white/90 backdrop-blur-sm text-foreground border-0 shadow-sm px-2 py-1 text-[10px] sm:px-3 sm:py-1.5">
                 {service.business.category}
               </Badge>
             )}
             {service.business?.isVerified && (
-              <Badge className="bg-green-100 text-green-700 border-green-300 px-3 py-1.5">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Verified
+              <Badge className="bg-green-100 text-green-700 border-green-300 px-2 py-1 text-[10px] sm:px-3 sm:py-1.5">
+                <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                <span className="hidden sm:inline">Verified</span>
+                <span className="sm:hidden">✓</span>
               </Badge>
             )}
           </div>
 
           {/* Status Badge */}
-          <div className="absolute top-4 right-4">
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4">
             <StatusBadge status={service.isActive ? "active" : "inactive"} />
           </div>
 
           {/* Rating Badge - Bottom Left */}
           {ratingValue !== null && ratingValue > 0 && (
-            <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm">
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                <span className="font-semibold">{ratingValue.toFixed(1)}</span>
-                {service.totalReviews && (
-                  <span className="text-xs text-muted-foreground ml-1">
-                    ({service.totalReviews})
-                  </span>
-                )}
+            <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 bg-white/90 backdrop-blur-sm rounded-full px-2 sm:px-4 py-1 sm:py-2 shadow-sm">
+              <div className="flex items-center gap-0.5 sm:gap-1">
+                <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
+                <span className="font-semibold text-xs sm:text-sm">{ratingValue.toFixed(1)}</span>
               </div>
             </div>
           )}
         </div>
 
         {/* Service Info */}
-        <div className="px-6 pb-6 ">
-          <h1 className="text-3xl font-bold">{service.name}</h1>
-          <p className="text-muted-foreground mt-2 max-w-2xl">
+        <div className="px-3 sm:px-6 pb-3 sm:pb-4 pt-1 sm:pt-2">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold truncate pr-16">{service.name}</h1>
+          <p className="text-muted-foreground mt-1.5 sm:mt-2 max-w-full text-sm sm:text-base line-clamp-2">
             {service.description || "No description provided"}
           </p>
 
           {/* Quick Stats */}
-          <div className="flex flex-wrap items-center gap-6 mt-3">
-            <div className="flex items-center gap-2 text-lg font-bold">
-              <IndianRupee className="h-5 w-5" />
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-2 sm:mt-3">
+            <div className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base lg:text-lg font-bold">
+              <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:h-5 sm:w-5" />
               <span>{service.price}</span>
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span>{duration} minutes</span>
+            <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground text-xs sm:text-sm">
+              <Clock className="h-3 w-3 sm:h-3.5 sm:h-4 sm:w-4" />
+              <span>{duration} min</span>
             </div>
             {service.business?.city && service.business?.state && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span>
+              <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground text-xs sm:text-sm truncate">
+                <MapPin className="h-3 w-3 sm:h-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="truncate">
                   {service.business.city}, {service.business.state}
                 </span>
               </div>
@@ -361,51 +359,51 @@ export default function ServiceDetailsPage() {
       </Card>
 
       {/* Two Column Layout */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-3 sm:gap-6 grid-cols-1 lg:grid-cols-2">
         {/* Left Column - Business & Provider Info */}
-        <div className="space-y-6">
+        <div className="space-y-3 sm:space-y-6">
           {/* Business Information Card */}
 
           {/* Provider Information Card */}
           {service.provider && (
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
+              <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
                   Provider / Owner
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-14 w-14 border-2 rounded-sm p-2">
+              <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 rounded-sm p-1.5 sm:p-2 flex-shrink-0">
                     {service.provider.avatar ? (
                       <AvatarImage
                         src={service.provider.avatar}
                         alt={service.provider.name}
                       />
                     ) : (
-                      <AvatarFallback className="text-xl bg-primary text-primary-foreground">
+                      <AvatarFallback className="text-base sm:text-xl bg-primary text-primary-foreground">
                         {service.provider.name?.charAt(0)?.toUpperCase() || "P"}
                       </AvatarFallback>
                     )}
                   </Avatar>
-                  <div className="flex-1 space-y-1">
-                    <p className="font-semibold">{service.provider.name}</p>
+                  <div className="flex-1 min-w-0 space-y-1 sm:space-y-1.5">
+                    <p className="font-semibold text-sm sm:text-base truncate">{service.provider.name}</p>
                     {service.provider.email && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Mail className="h-3.5 w-3.5" />
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+                        <Mail className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
                         <a
                           href={`mailto:${service.provider.email}`}
-                          className="text-primary hover:underline"
+                          className="text-primary hover:underline truncate"
                         >
                           {service.provider.email}
                         </a>
                       </div>
                     )}
                     {service.provider.phone && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Phone className="h-3.5 w-3.5" />
-                        <span>{service.provider.phone}</span>
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+                        <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+                        <span className="truncate">{service.provider.phone}</span>
                       </div>
                     )}
                   </div>
@@ -415,16 +413,16 @@ export default function ServiceDetailsPage() {
           )}
           {service.business && (
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
+              <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
                   Business Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-3">
+              <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-3 sm:space-y-4">
+                <div className="flex items-start gap-2.5 sm:gap-3">
                   {service.business.logo && (
-                    <div className="h-12 w-12 rounded-lg overflow-hidden border flex-shrink-0">
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg overflow-hidden border flex-shrink-0">
                       <img
                         src={service.business.logo}
                         alt={service.business.name}
@@ -432,12 +430,12 @@ export default function ServiceDetailsPage() {
                       />
                     </div>
                   )}
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-base">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm sm:text-base truncate">
                       {service.business.name}
                     </h3>
                     {service.business.category && (
-                      <Badge variant="outline" className="mt-1 text-xs">
+                      <Badge variant="outline" className="mt-1 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
                         {service.business.category}
                       </Badge>
                     )}
@@ -445,18 +443,18 @@ export default function ServiceDetailsPage() {
                 </div>
 
                 {service.business.city && service.business.state && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">
                       {service.business.city}, {service.business.state}
                     </span>
                   </div>
                 )}
 
                 {service.business.phone && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone className="h-4 w-4" />
-                    <span>{service.business.phone}</span>
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+                    <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="truncate">{service.business.phone}</span>
                   </div>
                 )}
               </CardContent>
@@ -465,50 +463,50 @@ export default function ServiceDetailsPage() {
         </div>
 
         {/* Right Column - Service Details */}
-        <div className="space-y-6">
+        <div className="space-y-3 sm:space-y-6">
           {/* Service Details Card */}
           <Card>
-            <CardHeader>
-              <CardTitle>Service Details</CardTitle>
+            <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
+              <CardTitle className="text-base sm:text-lg">Service Details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Service ID</p>
-                  <p className="font-mono text-sm">#{service.id}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Service ID</p>
+                  <p className="font-mono text-xs sm:text-sm">#{service.id}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Status</p>
                   <StatusBadge
                     status={service.isActive ? "active" : "inactive"}
                   />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Price</p>
-                  <div className="flex items-center gap-1 font-semibold">
-                    <IndianRupee className="h-4 w-4" />
+                  <p className="text-xs sm:text-sm text-muted-foreground">Price</p>
+                  <div className="flex items-center gap-1 font-semibold text-sm sm:text-base">
+                    <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     <span>{service.price}</span>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Duration</p>
-                  <div className="flex items-center gap-1 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs sm:text-sm text-muted-foreground">Duration</p>
+                  <div className="flex items-center gap-1 text-xs sm:text-sm">
+                    <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                     <span>{duration} min</span>
                   </div>
                 </div>
               </div>
 
               {ratingValue !== null && ratingValue > 0 && (
-                <div className="pt-2 border-t">
-                  <p className="text-sm text-muted-foreground mb-1">Rating</p>
-                  <div className="flex items-center gap-2">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">
+                <div className="pt-2 sm:pt-3 border-t">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">Rating</p>
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
+                    <span className="font-medium text-sm sm:text-base">
                       {ratingValue.toFixed(1)}
                     </span>
                     {service.totalReviews && (
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-xs sm:text-sm text-muted-foreground">
                         ({service.totalReviews}{" "}
                         {service.totalReviews === 1 ? "review" : "reviews"})
                       </span>
@@ -518,10 +516,10 @@ export default function ServiceDetailsPage() {
               )}
 
               {service.createdAt && (
-                <div className="pt-2 border-t">
-                  <p className="text-sm text-muted-foreground">Created</p>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div className="pt-2 sm:pt-3 border-t">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Created</p>
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                    <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                     <span>
                       {new Date(service.createdAt).toLocaleDateString()}
                     </span>

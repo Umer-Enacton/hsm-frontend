@@ -242,46 +242,48 @@ export default function BusinessDetailsPage() {
   console.log("final business", business);
 
   return (
-    <div className="space-y-6 ">
+    <div className="space-y-3 sm:space-y-6">
       {/* Navigation Header (Below cover) */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => router.push("/admin/business")}
+          className="w-fit"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="flex items-center justify-end w-full gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2 flex-1">
           {business.isVerified ? (
             <Button
               variant="outline"
               onClick={handleUnverify}
               disabled={isActionLoading}
+              className="text-xs sm:text-sm"
             >
-              <X className="h-4 w-4 mr-2" />
-              Unverify Business
+              <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              Unverify
             </Button>
           ) : (
-            <Button onClick={handleVerify} disabled={isActionLoading}>
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Verify Business
+            <Button onClick={handleVerify} disabled={isActionLoading} className="text-xs sm:text-sm">
+              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              Verify
             </Button>
           )}
           <Button
             variant="outline"
             onClick={handleDelete}
             disabled={isActionLoading}
-            className="text-destructive hover:text-destructive"
+            className="text-destructive hover:text-destructive text-xs sm:text-sm"
           >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Business
+            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+            Delete
           </Button>
         </div>
       </div>
       {/* Cover Image Banner */}
       <Card className="overflow-hidden">
-        <div className="relative h-48 bg-muted">
+        <div className="relative h-36 sm:h-48 bg-muted">
           {business.coverImage || business.logo ? (
             <img
               src={business.coverImage || business.logo || undefined}
@@ -290,14 +292,14 @@ export default function BusinessDetailsPage() {
             />
           ) : (
             <div className="h-full w-full bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center">
-              <Building2 className="h-24 w-24 text-primary/20" />
+              <Building2 className="h-16 w-16 sm:h-24 sm:w-24 text-primary/20" />
             </div>
           )}
 
           {/* Logo Overlay - Bottom Left */}
           {(business.logo || (!business.logo && !business.coverImage)) && (
-            <div className="absolute -bottom-6 left-6">
-              <div className="h-20 w-20 rounded-xl border-4 border-background overflow-hidden bg-card shadow-lg">
+            <div className="absolute -bottom-4 sm:-bottom-6 left-3 sm:left-6">
+              <div className="h-14 w-14 sm:h-20 sm:w-20 rounded-xl border-4 border-background overflow-hidden bg-card shadow-lg">
                 {business.logo ? (
                   <img
                     src={business.logo}
@@ -306,7 +308,7 @@ export default function BusinessDetailsPage() {
                   />
                 ) : (
                   <div className="h-full w-full bg-primary flex items-center justify-center">
-                    <span className="text-2xl font-bold text-primary-foreground">
+                    <span className="text-xl sm:text-2xl font-bold text-primary-foreground">
                       {business.name?.charAt(0) || "B"}
                     </span>
                   </div>
@@ -315,25 +317,27 @@ export default function BusinessDetailsPage() {
             </div>
           )}
 
-          {/* Verification Badge - Top Right */}
-          <div className="absolute top-4 right-4">
+          {/* Badges - Top Right */}
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 flex flex-col gap-1 items-end">
             {business.isVerified ? (
-              <Badge className="bg-green-100 text-green-700 border-green-300 px-3 py-1.5">
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Verified
+              <Badge className="bg-green-100 text-green-700 border-green-300 px-2 py-1 text-[10px] sm:px-3 sm:py-1.5">
+                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                <span className="hidden sm:inline">Verified</span>
+                <span className="sm:hidden">Verified</span>
               </Badge>
             ) : (
-              <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300 px-3 py-1.5">
-                <Clock className="h-4 w-4 mr-1" />
-                Pending Verification
+              <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300 px-2 py-1 text-[10px] sm:px-3 sm:py-1.5">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                <span className="hidden sm:inline">Pending</span>
+                <span className="sm:hidden">Pending</span>
               </Badge>
             )}
           </div>
 
           {/* Category Badge - Top Left */}
           {business.category && (
-            <div className="absolute top-4 left-4">
-              <Badge className="bg-white/90 backdrop-blur-sm text-foreground border-0 shadow-sm px-3 py-1.5">
+            <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
+              <Badge className="bg-white/90 backdrop-blur-sm text-foreground border-0 shadow-sm px-2 py-1 text-[10px] sm:px-3 sm:py-1.5">
                 {business.category}
               </Badge>
             </div>
@@ -341,18 +345,18 @@ export default function BusinessDetailsPage() {
         </div>
 
         {/* Business Info Below Cover */}
-        <div className="px-6 pb-4 pt-2">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold">{business.name}</h1>
+        <div className="px-3 sm:px-6 pb-3 sm:pb-4 pt-1 sm:pt-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold truncate">{business.name}</h1>
               {business.rating && (
-                <div className="flex items-center gap-2 mt-1">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="font-semibold">
+                <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
+                  <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
+                  <span className="font-semibold text-sm sm:text-base">
                     {business.rating.toFixed(1)}
                   </span>
                   {business.totalReviews && (
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs sm:text-sm text-muted-foreground">
                       ({business.totalReviews}{" "}
                       {business.totalReviews === 1 ? "review" : "reviews"})
                     </span>
@@ -367,38 +371,38 @@ export default function BusinessDetailsPage() {
       {/* Action Bar */}
 
       {/* Two Column Layout */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Left Column - Provider & Business Info */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Provider Information Card */}
           <Card className="gap-0">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Provider / Owner Information
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-base sm:text-lg">
+                <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="truncate">Provider / Owner</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
                 {/* Provider Avatar */}
-                <Avatar className="h-16 w-16 border-2 rounded-sm p-2">
+                <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 rounded-sm p-2 flex-shrink-0">
                   {business.providerAvatar ? (
                     <AvatarImage
                       src={business.providerAvatar}
                       alt={business.providerName || "Provider"}
                     />
                   ) : (
-                    <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                    <AvatarFallback className="text-xl sm:text-2xl bg-primary text-primary-foreground">
                       {business.providerName?.charAt(0)?.toUpperCase() || "P"}
                     </AvatarFallback>
                   )}
                 </Avatar>
 
                 {/* Provider Details */}
-                <div className="flex-1 space-y-3">
+                <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
                   {business.providerName && (
                     <div>
-                      <p className="text-base font-semibold">
+                      <p className="text-sm sm:text-base font-semibold truncate">
                         {business.providerName}
                       </p>
                     </div>
@@ -406,11 +410,11 @@ export default function BusinessDetailsPage() {
 
                   {business.providerEmail && (
                     <div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                        <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                         <a
                           href={`mailto:${business.providerEmail}`}
-                          className="text-primary hover:underline"
+                          className="text-primary hover:underline truncate"
                         >
                           {business.providerEmail}
                         </a>
@@ -424,31 +428,31 @@ export default function BusinessDetailsPage() {
 
           {/* Business Information Card */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                Business Information
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-base sm:text-lg">
+                <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="truncate">Business Information</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4">
               {business.description && (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                  <h4 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
                     Description
                   </h4>
-                  <p className="text-sm">{business.description}</p>
+                  <p className="text-xs sm:text-sm line-clamp-2">{business.description}</p>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {business.city && business.state && (
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                    <h4 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
                       Location
                     </h4>
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                      <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">
                         {business.city}, {business.state}
                       </span>
                     </div>
@@ -457,37 +461,37 @@ export default function BusinessDetailsPage() {
 
                 {business.phone && (
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                    <h4 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
                       Business Phone
                     </h4>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{business.phone}</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                      <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">{business.phone}</span>
                     </div>
                   </div>
                 )}
 
                 {business.category && (
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                    <h4 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
                       Category
                     </h4>
-                    <Badge variant="outline">{business.category}</Badge>
+                    <Badge variant="outline" className="text-xs">{business.category}</Badge>
                   </div>
                 )}
 
                 {business.website && (
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                    <h4 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
                       Website
                     </h4>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                      <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                       <a
                         href={business.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary hover:underline"
+                        className="text-primary hover:underline truncate"
                       >
                         {business.website}
                       </a>
@@ -498,18 +502,18 @@ export default function BusinessDetailsPage() {
 
               {business.rating && (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                  <h4 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
                     Rating
                   </h4>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
                     <div className="flex items-center">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
                       <span className="ml-1 font-medium">
                         {business.rating.toFixed(1)}
                       </span>
                     </div>
                     {business.totalReviews && (
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-muted-foreground">
                         ({business.totalReviews}{" "}
                         {business.totalReviews === 1 ? "review" : "reviews"})
                       </span>
@@ -520,11 +524,11 @@ export default function BusinessDetailsPage() {
 
               {business.createdAt && (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                  <h4 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
                     Joined
                   </h4>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                    <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                     <span>
                       {new Date(business.createdAt).toLocaleDateString()}
                     </span>
@@ -538,22 +542,22 @@ export default function BusinessDetailsPage() {
         {/* Right Column - Services Section (2/3 width) */}
         <div className="lg:col-span-2">
           <Card className="h-full">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wrench className="h-5 w-5" />
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-base sm:text-lg">
+                <Wrench className="h-4 w-4 sm:h-5 sm:w-5" />
                 Services ({business.totalServices || 0})
               </CardTitle>
             </CardHeader>
             <CardContent>
               {business.services && business.services.length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                   {business.services.map((service) => (
                     <Card
                       key={service.id}
                       className="group hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
                       onClick={() => router.push(`/admin/services/${service.id}`)}
                     >
-                      <CardContent className="p-4 space-y-3">
+                      <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
                         {/* Service Name & Status */}
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
@@ -577,11 +581,11 @@ export default function BusinessDetailsPage() {
                         )}
 
                         {/* Meta Info */}
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-muted-foreground">
                           {/* Rating */}
                           {business.rating && (
-                            <div className="flex items-center gap-1">
-                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                            <div className="flex items-center gap-0.5">
+                              <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 fill-yellow-400 text-yellow-400" />
                               <span className="font-medium text-foreground">
                                 {business.rating.toFixed(1)}
                               </span>
@@ -593,16 +597,16 @@ export default function BusinessDetailsPage() {
 
                           {/* Location */}
                           {business.city && (
-                            <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
+                            <div className="flex items-center gap-0.5">
+                              <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                               <span className="truncate">{business.city}</span>
                             </div>
                           )}
 
                           {/* Duration */}
                           {service.duration && (
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
+                            <div className="flex items-center gap-0.5">
+                              <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                               <span>{service.duration}m</span>
                             </div>
                           )}
@@ -611,14 +615,14 @@ export default function BusinessDetailsPage() {
                         {/* Price & View Button */}
                         <div className="flex items-center justify-between pt-2 border-t">
                           <div>
-                            <span className="text-lg font-bold flex items-center">
-                              <IndianRupee className="h-4 w-4" />
-                              {service.price}
+                            <span className="text-base sm:text-lg font-bold flex items-center">
+                              <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                              <span>{service.price}</span>
                             </span>
                           </div>
                           <Button
                             size="sm"
-                            className="h-8"
+                            className="h-7 sm:h-8 text-xs"
                             onClick={(e) => {
                               e.stopPropagation();
                               router.push(`/admin/services/${service.id}`);
@@ -632,10 +636,10 @@ export default function BusinessDetailsPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-16 text-muted-foreground">
-                  <Wrench className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                  <p className="text-lg font-medium mb-1">No services yet</p>
-                  <p className="text-sm">
+                <div className="text-center py-12 sm:py-16 text-muted-foreground">
+                  <Wrench className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-3 sm:mb-4 opacity-20" />
+                  <p className="text-base sm:text-lg font-medium mb-1">No services yet</p>
+                  <p className="text-xs sm:text-sm">
                     This business hasn't added any services.
                   </p>
                 </div>

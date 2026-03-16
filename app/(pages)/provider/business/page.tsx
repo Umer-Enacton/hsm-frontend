@@ -205,16 +205,16 @@ export default function ProviderBusinessPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             Business Profile
           </h1>
           <p className="text-muted-foreground">
             Manage your business information and view performance
           </p>
         </div>
-        <Button onClick={() => setIsEditDialogOpen(true)} className="gap-2">
+        <Button onClick={() => setIsEditDialogOpen(true)} className="gap-2 whitespace-nowrap">
           <Edit className="h-4 w-4" />
           Edit Profile
         </Button>
@@ -308,31 +308,37 @@ export default function ProviderBusinessPage() {
             </div>
 
             {/* Quick Actions */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => router.push("/provider/services")}
                 disabled={!business.isVerified}
+                className="flex-1 min-w-[100px]"
               >
-                <Package className="h-4 w-4 mr-2" />
-                Services
+                <Package className="h-4 w-4 mr-1" />
+                <span className="hidden xs:inline">Services</span>
+                <span className="xs:hidden">Svc</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => router.push("/provider/availability")}
+                className="flex-1 min-w-[100px]"
               >
-                <Calendar className="h-4 w-4 mr-2" />
-                Availability
+                <Calendar className="h-4 w-4 mr-1" />
+                <span className="hidden xs:inline">Availability</span>
+                <span className="xs:hidden">Slots</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => router.push("/provider/bookings")}
+                className="flex-1 min-w-[100px]"
               >
-                <Users className="h-4 w-4 mr-2" />
-                Bookings
+                <Users className="h-4 w-4 mr-1" />
+                <span className="hidden xs:inline">Bookings</span>
+                <span className="xs:hidden">Bkng</span>
               </Button>
             </div>
           </div>

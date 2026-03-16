@@ -54,68 +54,73 @@ export function ServicesChart({ data, totalBookings }: ServicesChartProps) {
   const topServices = [...data].sort((a, b) => b.bookingCount - a.bookingCount).slice(0, 5);
 
   return (
-    <Card className="shadow-lg hover:shadow-xl transition-all">
-      <CardHeader>
-        <CardTitle>Top Services</CardTitle>
-        <CardDescription>
+    <Card className="shadow-lg hover:shadow-xl transition-all overflow-hidden">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg sm:text-xl">Top Services</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">
           Your most booked services and their performance
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px]">
-          <BarChart
-            accessibilityLayer
-            data={topServices}
-            layout="vertical"
-            margin={{
-              left: 0,
-              right: 0,
-              top: 10,
-              bottom: 10,
-            }}
-          >
-            <CartesianGrid horizontal={true} strokeDasharray="3 3" className="stroke-muted/30" />
-            <XAxis
-              type="number"
-              tickLine={false}
-              axisLine={false}
-              className="text-muted-foreground"
-            />
-            <YAxis
-              type="category"
-              dataKey="serviceName"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              width={100}
-              className="text-muted-foreground text-sm"
-              tickFormatter={(value) => (value.length > 12 ? `${value.slice(0, 12)}...` : value)}
-            />
-            <ChartTooltip
-              cursor={true}
-              content={<ChartTooltipContent />}
-            />
-            <Bar
-              dataKey="bookingCount"
-              fill="var(--color-bookings)"
-              radius={4}
-            />
-          </BarChart>
-        </ChartContainer>
+        <div className="w-full overflow-x-auto">
+          <div className="min-w-[280px]">
+            <ChartContainer config={chartConfig} className="h-[250px]">
+              <BarChart
+                accessibilityLayer
+                data={topServices}
+                layout="vertical"
+                margin={{
+                  left: 0,
+                  right: 0,
+                  top: 5,
+                  bottom: 5,
+                }}
+              >
+                <CartesianGrid horizontal={true} strokeDasharray="3 3" className="stroke-muted/30" />
+                <XAxis
+                  type="number"
+                  tickLine={false}
+                  axisLine={false}
+                  className="text-muted-foreground"
+                  tick={{ fontSize: 10 }}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="serviceName"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  width={80}
+                  className="text-muted-foreground text-xs"
+                  tickFormatter={(value) => (value.length > 10 ? `${value.slice(0, 10)}...` : value)}
+                />
+                <ChartTooltip
+                  cursor={true}
+                  content={<ChartTooltipContent />}
+                />
+                <Bar
+                  dataKey="bookingCount"
+                  fill="var(--color-bookings)"
+                  radius={4}
+                />
+              </BarChart>
+            </ChartContainer>
+          </div>
+        </div>
 
         {/* Service Details List */}
-        <div className="space-y-3 mt-4">
+        <div className="space-y-2 sm:space-y-3 mt-4">
           {topServices.map((service, index) => (
             <div
               key={service.serviceId}
-              className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+              className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
             >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-xs sm:text-sm font-bold flex-shrink-0">
                   {index + 1}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium truncate">{service.serviceName}</p>
+                  <p className="font-medium text-xs sm:text-sm truncate">{service.serviceName}</p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{service.bookingCount} bookings</span>
                     <span>•</span>

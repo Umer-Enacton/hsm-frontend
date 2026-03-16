@@ -1,9 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Wrench, Building2, DollarSign, Calendar, CheckCircle, Clock, Wallet, IndianRupee } from "lucide-react";
+import {
+  Users,
+  Wrench,
+  Building2,
+  DollarSign,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Wallet,
+  IndianRupee,
+} from "lucide-react";
 import { api, API_ENDPOINTS } from "@/lib/api";
-import { AdminPageHeader, StatCard, LoadingState, ErrorState } from "@/components/admin/shared";
+import {
+  AdminPageHeader,
+  StatCard,
+  LoadingState,
+  ErrorState,
+} from "@/components/admin/shared";
+import { AnalyticsSection } from "@/components/admin/analytics";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
@@ -72,7 +88,9 @@ export default function AdminDashboardPage() {
       setError(null);
 
       // Use the new dashboard stats endpoint
-      const statsData: DashboardStats = await api.get(API_ENDPOINTS.ADMIN_DASHBOARD_STATS);
+      const statsData: DashboardStats = await api.get(
+        API_ENDPOINTS.ADMIN_DASHBOARD_STATS,
+      );
       setStats(statsData);
 
       // Mock activity data for now
@@ -143,7 +161,7 @@ export default function AdminDashboardPage() {
       />
 
       {/* Main Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Users"
           value={stats?.users.total || 0}
@@ -174,7 +192,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Revenue Stats Row */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Revenue"
           value={formatCurrency(stats?.revenue.totalRevenue || 0)}
@@ -208,7 +226,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Business Status */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2">
         <StatCard
           title="Verified Businesses"
           value={stats?.businesses.verified || 0}
@@ -225,6 +243,9 @@ export default function AdminDashboardPage() {
         />
       </div>
 
+      {/* Analytics Section with Charts */}
+      <AnalyticsSection defaultPeriod="7d" />
+
       {/* Recent Activity */}
       <Card>
         <CardHeader>
@@ -234,10 +255,17 @@ export default function AdminDashboardPage() {
           {activities.length > 0 ? (
             <div className="space-y-4">
               {activities.map((activity) => (
-                <div key={activity.id} className="flex items-center gap-4 text-sm">
-                  <div className={`h-2 w-2 rounded-full ${getActivityColor(activity.type)}`} />
+                <div
+                  key={activity.id}
+                  className="flex items-center gap-4 text-sm"
+                >
+                  <div
+                    className={`h-2 w-2 rounded-full ${getActivityColor(activity.type)}`}
+                  />
                   <span className="flex-1">{activity.message}</span>
-                  <span className="text-muted-foreground">{activity.timestamp}</span>
+                  <span className="text-muted-foreground">
+                    {activity.timestamp}
+                  </span>
                 </div>
               ))}
             </div>
@@ -256,23 +284,38 @@ export default function AdminDashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline" onClick={() => router.push("/admin/users")}>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/admin/users")}
+            >
               <Users className="h-4 w-4 mr-2" />
               Manage Users
             </Button>
-            <Button variant="outline" onClick={() => router.push("/admin/business")}>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/admin/business")}
+            >
               <Building2 className="h-4 w-4 mr-2" />
               Verify Businesses
             </Button>
-            <Button variant="outline" onClick={() => router.push("/admin/categories")}>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/admin/categories")}
+            >
               <Wrench className="h-4 w-4 mr-2" />
               Manage Categories
             </Button>
-            <Button variant="outline" onClick={() => router.push("/admin/bookings")}>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/admin/bookings")}
+            >
               <Calendar className="h-4 w-4 mr-2" />
               View Bookings
             </Button>
-            <Button variant="outline" onClick={() => router.push("/admin/payouts")}>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/admin/payouts")}
+            >
               <Wallet className="h-4 w-4 mr-2" />
               Process Payouts
             </Button>

@@ -6,9 +6,10 @@ import {
   Percent,
   TrendingUp,
   Wallet,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -74,128 +75,163 @@ export default function AdminSettingsPage() {
 
   const example = calculateExample(500);
 
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+          <p className="text-muted-foreground">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-          Platform Settings
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Configure platform fees and payment settings
-        </p>
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Platform Settings</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Configure platform fees and payment settings
+          </p>
+        </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full" />
-        </div>
-      ) : (
-        <Card className="shadow-lg max-w-2xl mx-auto">
-          <CardContent className="p-6 space-y-8">
-            {/* Platform Fee Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 pb-2 border-b">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                  <Percent className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Platform Fee</h3>
-                  <p className="text-sm text-muted-foreground">Your commission from each booking</p>
-                </div>
-                <div className="ml-auto text-2xl font-bold text-purple-600">{platformFee}%</div>
-              </div>
-
-              <div>
-                <Slider
-                  value={[platformFee]}
-                  onValueChange={(value) => setPlatformFee(value[0])}
-                  min={1}
-                  max={10}
-                  step={0.5}
-                  className="my-4"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>1%</span>
-                  <span>5%</span>
-                  <span>10%</span>
-                </div>
-              </div>
-
-              {/* Example */}
-              <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4">
-                <p className="text-sm font-medium text-muted-foreground mb-2">Example (₹500 booking):</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">You receive:</span>
-                  <span className="font-bold text-purple-600">₹{example.platformFee}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Provider receives:</span>
-                  <span className="font-bold text-green-600">₹{example.providerShare}</span>
-                </div>
+      {/* Platform Fee Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-3">
+            <div className="p-2 bg-purple-50 dark:bg-purple-950/30 rounded-lg w-fit">
+              <Percent className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="flex-1">
+              <div>Platform Fee</div>
+              <div className="text-sm font-normal text-muted-foreground">
+                Your commission from each booking
               </div>
             </div>
+            <div className="text-2xl sm:text-3xl font-bold text-purple-600 self-start sm:self-auto">{platformFee}%</div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <Slider
+              value={[platformFee]}
+              onValueChange={(value) => setPlatformFee(value[0])}
+              min={1}
+              max={10}
+              step={0.5}
+              className="my-4"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>1%</span>
+              <span>5%</span>
+              <span>10%</span>
+            </div>
+          </div>
 
-            {/* Minimum Payout Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 pb-2 border-b">
-                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                  <Wallet className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Minimum Payout</h3>
-                  <p className="text-sm text-muted-foreground">Minimum amount before processing payouts</p>
-                </div>
+          {/* Example */}
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <p className="text-sm font-medium">Example (₹500 booking):</p>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">You receive:</span>
+              <span className="font-semibold text-purple-600">₹{example.platformFee}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">Provider receives:</span>
+              <span className="font-semibold text-green-600">₹{example.providerShare}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Minimum Payout Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="p-2 bg-green-50 dark:bg-green-950/30 rounded-lg w-fit">
+              <Wallet className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div className="flex-1">
+              <div>Minimum Payout</div>
+              <div className="text-sm font-normal text-muted-foreground">
+                Minimum amount before processing payouts
               </div>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <div className="p-2 bg-muted rounded-lg w-fit">
+              <IndianRupee className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <Input
+              type="number"
+              min={300}
+              max={1000}
+              step={50}
+              value={minimumPayout}
+              onChange={(e) => setMinimumPayout(Number(e.target.value))}
+              className="w-full sm:max-w-[200px]"
+            />
+            <div className="text-sm text-muted-foreground">
+              Range: ₹300 - ₹1,000
+            </div>
+          </div>
 
-              <div className="flex items-center gap-4">
-                <IndianRupee className="h-5 w-5 text-muted-foreground" />
-                <Input
-                  type="number"
-                  min={300}
-                  max={1000}
-                  step={50}
-                  value={minimumPayout}
-                  onChange={(e) => setMinimumPayout(Number(e.target.value))}
-                  className="text-lg max-w-[200px]"
-                />
-                <div className="text-sm text-muted-foreground">
-                  Range: ₹300 - ₹1,000
-                </div>
-              </div>
-
-              <div className="bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                <p className="text-sm font-medium text-green-800 dark:text-green-300 mb-2">
-                  <TrendingUp className="h-4 w-4 inline mr-2" />
-                  How payouts work:
-                </p>
-                <ul className="text-xs text-green-700 dark:text-green-400 space-y-1 list-disc list-inside">
+          <div className="bg-green-50/50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <div className="flex gap-3">
+              <TrendingUp className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+              <div className="text-sm text-green-800 dark:text-green-300">
+                <p className="font-semibold mb-2">How payouts work:</p>
+                <ul className="text-green-700 dark:text-green-400 space-y-1 list-disc list-inside">
                   <li>When booking is completed, provider earnings are marked as "pending"</li>
                   <li>Once provider reaches minimum payout (₹{minimumPayout}), you can process their payout</li>
                   <li>Payouts are grouped by provider - you can process individual or bulk payouts</li>
                 </ul>
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
 
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={fetchSettings}
-                disabled={loading || saving}
-              >
-                Reset
-              </Button>
-              <Button
-                onClick={handleSaveSettings}
-                disabled={saving}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 px-8"
-              >
-                {saving ? "Saving..." : "Save Settings"}
-              </Button>
+      {/* Info Card */}
+      <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+        <CardContent className="pt-6">
+          <div className="flex gap-3 sm:gap-4">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg shrink-0">
+              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div className="text-sm text-blue-800 dark:text-blue-300">
+              <p className="font-semibold mb-2">Settings apply to new bookings</p>
+              <p className="text-blue-700 dark:text-blue-400 leading-relaxed">
+                Changes to platform fee percentage will only apply to new bookings. Existing bookings
+                will continue to use the fee percentage that was set at the time of booking.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row sm:justify-end gap-2 sm:gap-3 pt-4 border-t">
+        <Button
+          variant="outline"
+          onClick={fetchSettings}
+          disabled={loading || saving}
+          className="w-full sm:w-auto"
+        >
+          Reset
+        </Button>
+        <Button
+          onClick={handleSaveSettings}
+          disabled={saving}
+          className="w-full sm:w-auto"
+        >
+          {saving ? "Saving..." : "Save Settings"}
+        </Button>
+      </div>
     </div>
   );
 }

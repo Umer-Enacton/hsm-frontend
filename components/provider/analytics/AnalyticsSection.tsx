@@ -146,21 +146,21 @@ export function AnalyticsSection({ businessId }: AnalyticsSectionProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Analytics</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-xl sm:text-2xl font-bold">Analytics</h2>
+          <p className="text-muted-foreground text-sm">
             Track your performance and revenue trends
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Select
             value={period}
             onValueChange={(v: PeriodType) => setPeriod(v)}
           >
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-[140px] sm:w-[160px]">
               <Calendar className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Select period" />
             </SelectTrigger>
@@ -186,9 +186,9 @@ export function AnalyticsSection({ businessId }: AnalyticsSectionProps) {
       </div>
 
       {/* Charts Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Revenue Chart - Full Width on Mobile, 2 Columns on Large */}
-        <div className="lg:col-span-2">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
+        {/* Revenue Chart - Full Width */}
+        <div className="lg:col-span-2 w-full">
           {revenueData && (
             <RevenueChart
               data={revenueData.chartData}
@@ -200,7 +200,7 @@ export function AnalyticsSection({ businessId }: AnalyticsSectionProps) {
         </div>
 
         {/* Services Chart */}
-        <div>
+        <div className="w-full">
           {servicesData && (
             <ServicesChart
               data={servicesData.services}
@@ -210,7 +210,7 @@ export function AnalyticsSection({ businessId }: AnalyticsSectionProps) {
         </div>
 
         {/* Status Chart */}
-        <div>
+        <div className="w-full">
           {statusData && (
             <StatusChart
               data={statusData.statusBreakdown}

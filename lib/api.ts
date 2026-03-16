@@ -152,6 +152,14 @@ export const API_ENDPOINTS = {
   ADMIN_PAYOUTS: "/admin/payouts",
   ADMIN_PAYOUTS_BY_PROVIDER: "/admin/payouts/by-provider",
 
+  // Admin Analytics
+  ADMIN_ANALYTICS_REVENUE: (period: string) => `/admin/analytics/revenue?period=${period}`,
+  ADMIN_ANALYTICS_CATEGORIES: (period: string) => `/admin/analytics/categories?period=${period}`,
+  ADMIN_ANALYTICS_STATUS: (period: string) => `/admin/analytics/status?period=${period}`,
+  ADMIN_ANALYTICS_PROVIDERS: (period: string) => `/admin/analytics/providers?period=${period}`,
+  ADMIN_ANALYTICS_PAYMENT_STATUS: (period: string) => `/admin/analytics/payment-status?period=${period}`,
+  ADMIN_ANALYTICS_AVERAGE_ORDER_VALUE: (period: string) => `/admin/analytics/average-order-value?period=${period}`,
+
   // Provider Analytics
   PROVIDER_ANALYTICS_REVENUE: "/provider/analytics/revenue",
   PROVIDER_ANALYTICS_SERVICES: "/provider/analytics/services",
@@ -175,6 +183,16 @@ export const API_ENDPOINTS = {
     REFUND: (paymentId: string | number) =>
       `/payment/refund/${paymentId}`,
   },
+
+  // Notifications
+  NOTIFICATIONS: "/notifications",
+  NOTIFICATIONS_UNREAD_COUNT: "/notifications/unread-count",
+  NOTIFICATIONS_MARK_READ: "/notifications/mark-read",
+  NOTIFICATION_DELETE: (id: string | number) => `/notifications/${id}`,
+
+  // Device Tokens (FCM)
+  DEVICE_TOKEN_REGISTER: "/device-tokens/register",
+  DEVICE_TOKEN_UNREGISTER: "/device-tokens/unregister",
 } as const;
 
 /**

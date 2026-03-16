@@ -16,6 +16,7 @@ import {
   LoadingState,
   ErrorState,
 } from "@/components/admin/shared";
+import { AnalyticsSection } from "@/components/admin/analytics";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -134,7 +135,10 @@ export default function AdminRevenuePage() {
         />
       </div>
 
-      {/* Revenue Breakdown */}
+      {/* Analytics Section with Charts */}
+      <AnalyticsSection defaultPeriod="30d" />
+
+      {/* Revenue Breakdown - Monthly Table */}
       <Card className="shadow-lg">
         <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950 dark:to-indigo-950">
           <CardTitle className="flex items-center gap-2">

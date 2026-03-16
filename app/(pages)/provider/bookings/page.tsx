@@ -571,29 +571,59 @@ export default function ProviderBookingsPage() {
 
       {/* Status Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full max-w-4xl grid-cols-7 h-10">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
-          <TabsTrigger value="reschedule_pending">
-            Reschedule
-            {stats.reschedulePending > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                {stats.reschedulePending}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
-          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-          <TabsTrigger value="rejected">
-            Rejected
-            {stats.rejected > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                {stats.rejected}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
+        {/* Mobile: Horizontal scrollable tabs */}
+        <div className="md:hidden overflow-x-auto pb-2 -mb-2">
+          <TabsList className="inline-flex w-full min-w-max gap-1 h-10">
+            <TabsTrigger value="all" className="whitespace-nowrap">All</TabsTrigger>
+            <TabsTrigger value="pending" className="whitespace-nowrap">Pending</TabsTrigger>
+            <TabsTrigger value="confirmed" className="whitespace-nowrap">Confirmed</TabsTrigger>
+            <TabsTrigger value="reschedule_pending" className="whitespace-nowrap">
+              Reschedule
+              {stats.reschedulePending > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.reschedulePending}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="whitespace-nowrap">Completed</TabsTrigger>
+            <TabsTrigger value="cancelled" className="whitespace-nowrap">Cancelled</TabsTrigger>
+            <TabsTrigger value="rejected" className="whitespace-nowrap">
+              Rejected
+              {stats.rejected > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.rejected}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        {/* Desktop: Grid layout tabs */}
+        <div className="hidden md:block">
+          <TabsList className="grid w-full max-w-4xl grid-cols-7 h-10">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
+            <TabsTrigger value="reschedule_pending">
+              Reschedule
+              {stats.reschedulePending > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.reschedulePending}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+            <TabsTrigger value="rejected">
+              Rejected
+              {stats.rejected > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.rejected}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </div>
       </Tabs>
 
       {/* Results count */}

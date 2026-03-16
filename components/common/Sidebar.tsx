@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -139,8 +140,14 @@ export function Sidebar({
           )}
         >
           {logo ?? (
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
-              {appName.charAt(0)}
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden">
+              <Image
+                src="/homefixcareicon-removebg-preview-removebg-preview.png"
+                alt="HomeFixCare"
+                width={32}
+                height={32}
+                className="h-8 w-8 object-cover"
+              />
             </div>
           )}
           {!collapsed && (

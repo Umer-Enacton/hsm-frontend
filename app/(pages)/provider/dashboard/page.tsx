@@ -177,9 +177,9 @@ export default function ProviderDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
             Welcome back! Here's what's happening with your business.
           </p>
@@ -188,7 +188,7 @@ export default function ProviderDashboardPage() {
           variant="outline"
           size="sm"
           onClick={handleRefresh}
-          className="gap-2"
+          className="gap-2 whitespace-nowrap"
         >
           <RefreshCw className="h-4 w-4" />
           Refresh
@@ -197,10 +197,7 @@ export default function ProviderDashboardPage() {
 
       {/* Verification Alert - only show if NOT verified */}
       {business && !business.isVerified && (
-        <VerificationAlert
-          isVerified={false}
-          businessName={business.name}
-        />
+        <VerificationAlert isVerified={false} businessName={business.name} />
       )}
 
       {/* Payment Details Warning - only show if no payment details */}
@@ -420,3 +417,14 @@ export default function ProviderDashboardPage() {
     </div>
   );
 }
+// ⏰ Cron routes registered BEFORE auth middleware
+// 🔒 Global auth middleware registered
+// 🚀 Server is running on http://localhost:8000
+// [2026-03-16 03:26:23] 🧹 Starting periodic cleanup service
+//    ├─ Interval: 30 seconds
+//    ├─ Lock duration: 1 minute
+//    └─ Mode: development
+// [2026-03-16 03:26:23] ✅ Cleanup service started
+
+// [2026-03-16 03:26:23] ❌ Cleanup failed after 29ms: Failed query: select "id", "user_id", "service_id", "slot_id", "address_id", "booking_date", "amount", "razorpay_order_id", "status", "expires_at", "created_at", "completed_at", "failure_reason", "is_reschedule", "reschedule_booking_id" from "payment_intents" where ("payment_intents"."status" = $1 and "payment_intents"."expires_at" < $2)
+// params: pending,2026-03-16T03:26:23.482Z

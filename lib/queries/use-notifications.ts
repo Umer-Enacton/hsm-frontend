@@ -1,0 +1,177 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api, API_ENDPOINTS } from '@/lib/api';
+import { toast } from 'sonner';
+import { onMessageListener } from '@/lib/firebase';
+
+export interface Notification {
+  id: number;
+  userId: number;
+  type: string;
+  title: string;
+  message: string;
+  data: Record<string, any> | null;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt: string;
+}
+
+interface NotificationsResponse {
+  notifications: Notification[];
+  unreadCount: number;
+}
+
+/**
+ * Query key factory for notifications
+ */
+export const notificationKeys = {
+  all: ['notifications'] as const,
+  lists: () => [...notificationKeys.all, 'list'] as const,
+  list: (filters: { limit?: number; offset?: number }) =>
+    [...notificationKeys.lists(), filters] as const,
+  unreadCount: () => [...notificationKeys.all, 'unreadCount'] as const,
+};
+
+/**
+ * Fetch notifications with TanStack Query
+ */
+export function useNotifications(options?: { limit?: number; offset?: number }) {
+  const queryClient = useQueryClient();
+  const { limit = 20, offset = 0 } = options || {};
+
+  const query = useQuery<NotificationsResponse>({
+    queryKey: notificationKeys.list({ limit, offset }),
+    queryFn: async () => {
+      const response = await api.get<NotificationsResponse>(
+        `${API_ENDPOINTS.NOTIFICATIONS}?limit=${limit}&offset=${offset}`
+      );
+      return response;
+    },
+    staleTime: 1000 * 30, // Consider data fresh for 30 seconds
+    refetchOnWindowFocus: true,
+  });
+
+  const unreadCountQuery = useQuery<{ count: number }>({
+    queryKey: notificationKeys.unreadCount(),
+    queryFn: async () => {
+      const response = await api.get<{ count: number }>(API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT);
+      return response;
+    },
+    staleTime: 1000 * 15, // Unread count refreshes every 15 seconds
+    refetchInterval: 15000, // Poll every 15 seconds
+    refetchOnWindowFocus: true,
+  });
+
+  // Mark notification(s) as read mutation
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationIds?: number[]) => {
+      await api.put(API_ENDPOINTS.NOTIFICATIONS_MARK_READ, {
+        notificationIds: notificationIds || [],
+      });
+    },
+    onSuccess: () => {
+      // Invalidate both notifications list and unread count
+      queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
+    },
+  });
+
+  // Delete notification mutation
+  const deleteNotificationMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(API_ENDPOINTS.NOTIFICATION_DELETE(id));
+    },
+    onSuccess: () => {
+      // Invalidate both notifications list and unread count
+      queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
+    },
+  });
+
+  // Mark all as read mutation
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      await api.put(API_ENDPOINTS.NOTIFICATIONS_MARK_READ, {
+        notificationIds: [],
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
+    },
+  });
+
+  // Listen for FCM messages and refresh notifications
+  useFCMMessageListener(queryClient);
+
+  return {
+    notifications: query.data?.notifications || [],
+    unreadCount: unreadCountQuery.data?.count || 0,
+    isLoading: query.isLoading || unreadCountQuery.isLoading,
+    refetch: query.refetch,
+    refetchUnreadCount: unreadCountQuery.refetch,
+    markAsRead: markAsReadMutation.mutate,
+    markAllAsRead: markAllAsReadMutation.mutate,
+    deleteNotification: deleteNotificationMutation.mutate,
+  };
+}
+
+/**
+ * Hook to listen for FCM foreground messages and refresh notifications
+ */
+function useFCMMessageListener(queryClient: ReturnType<typeof useQueryClient>) {
+  useEffect(() => {
+    let unsubscribed = false;
+    let unsubscribeFn: (() => void) | null = null;
+
+    const setupListener = async () => {
+      try {
+        // onMessageListener returns a function that takes a callback
+        const setupHandler = onMessageListener();
+
+        if (unsubscribed) return;
+
+        // Set up the message handler
+        unsubscribeFn = setupHandler((payload: any) => {
+          if (unsubscribed || !payload) return;
+
+          console.log('📱 FCM: Foreground message received, refreshing notifications');
+
+          // Show toast notification
+          if (payload.notification) {
+            toast(payload.notification.title || 'New Notification', {
+              description: payload.notification.body,
+              duration: 5000,
+              action: payload.data?.actionUrl ? {
+                label: 'View',
+                onClick: () => {
+                  window.location.href = payload.data.actionUrl;
+                },
+              } : undefined,
+            });
+          }
+
+          // IMMEDIATELY refresh notifications from server
+          queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
+          queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
+        });
+
+        console.log('✅ FCM message listener set up successfully');
+      } catch (error) {
+        console.error('❌ Failed to setup FCM listener:', error);
+      }
+    };
+
+    setupListener();
+
+    return () => {
+      console.log('🧹 Cleaning up FCM message listener');
+      unsubscribed = true;
+      if (unsubscribeFn) {
+        unsubscribeFn();
+      }
+    };
+  }, [queryClient]);
+}

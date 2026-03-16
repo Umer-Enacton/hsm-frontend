@@ -284,16 +284,16 @@ export default function CustomerBookingsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">My Bookings</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">My Bookings</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Manage your service bookings
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/customer/services">
-            <Button variant="default" size="sm">
+            <Button variant="default" size="sm" className="whitespace-nowrap">
               Browse Services
             </Button>
           </Link>
@@ -371,29 +371,59 @@ export default function CustomerBookingsPage() {
 
       {/* Status Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full max-w-4xl grid-cols-7 h-10">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
-          <TabsTrigger value="reschedule_pending">
-            Reschedule
-            {stats.reschedulePending > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                {stats.reschedulePending}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
-          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-          <TabsTrigger value="rejected">
-            Rejected
-            {stats.rejected > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                {stats.rejected}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
+        {/* Mobile: Horizontal scrollable tabs */}
+        <div className="md:hidden overflow-x-auto pb-2 -mb-2">
+          <TabsList className="inline-flex w-full min-w-max gap-1 h-10">
+            <TabsTrigger value="all" className="whitespace-nowrap">All</TabsTrigger>
+            <TabsTrigger value="pending" className="whitespace-nowrap">Pending</TabsTrigger>
+            <TabsTrigger value="confirmed" className="whitespace-nowrap">Confirmed</TabsTrigger>
+            <TabsTrigger value="reschedule_pending" className="whitespace-nowrap">
+              Reschedule
+              {stats.reschedulePending > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.reschedulePending}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="whitespace-nowrap">Completed</TabsTrigger>
+            <TabsTrigger value="cancelled" className="whitespace-nowrap">Cancelled</TabsTrigger>
+            <TabsTrigger value="rejected" className="whitespace-nowrap">
+              Rejected
+              {stats.rejected > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.rejected}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        {/* Desktop: Grid layout tabs */}
+        <div className="hidden md:block">
+          <TabsList className="grid w-full max-w-4xl grid-cols-7 h-10">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
+            <TabsTrigger value="reschedule_pending">
+              Reschedule
+              {stats.reschedulePending > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.reschedulePending}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+            <TabsTrigger value="rejected">
+              Rejected
+              {stats.rejected > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.rejected}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </div>
       </Tabs>
 
       {/* Results count */}

@@ -27,6 +27,9 @@ import {
   Clock,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useNotifications } from "@/lib/queries/use-notifications";
+import { formatDistanceToNow } from "date-fns";
+import { usePathname } from "next/navigation";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -50,8 +53,6 @@ export interface HeaderProps {
   showSearch?: boolean;
   searchPlaceholder?: string;
   onSearch?: (value: string) => void;
-  notifications?: Notification[];
-  onMarkAllRead?: () => void;
   user?: HeaderUser;
   onProfileClick?: () => void;
   onSettingsClick?: () => void;
@@ -63,25 +64,54 @@ export interface HeaderProps {
 
 // ─── Notifications ────────────────────────────────────────────────────────────
 
-function NotificationsMenu({
-  notifications = [],
-  onMarkAllRead,
-}: {
-  notifications: Notification[];
-  onMarkAllRead?: () => void;
-}) {
-  const unread = notifications.filter((n) => !n.read).length;
+function NotificationsMenu() {
+  const { notifications, unreadCount, markAsRead } = useNotifications();
+  const pathname = usePathname();
+
+  const handleMarkAllRead = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await markAsRead([]);
+  };
+
+  const handleNotificationClick = async (notification: any, e: React.MouseEvent) => {
+    // Prevent default to avoid closing dropdown immediately
+    e.preventDefault();
+    e.stopPropagation();
+
+    // If already read, do nothing
+    if (notification.isRead) {
+      return;
+    }
+
+    // Mark as read
+    await markAsRead([notification.id]);
+
+    // Navigate only if not already on the target page
+    const actionUrl = notification.data?.actionUrl;
+    if (actionUrl) {
+      // Check if already on this page (compare pathnames)
+      const currentPath = pathname;
+      const targetPath = new URL(actionUrl, window.location.origin).pathname;
+
+      if (currentPath !== targetPath) {
+        window.location.href = actionUrl;
+      }
+      // If already on the page, do nothing - no refresh needed
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-4 w-4" />
-          {unread > 0 && (
+          {unreadCount > 0 && (
             <Badge
               variant="destructive"
               className="absolute -right-1 -top-1 h-4 w-4 p-0 text-[10px] flex items-center justify-center"
             >
-              {unread > 9 ? "9+" : unread}
+              {unreadCount > 9 ? "9+" : unreadCount}
             </Badge>
           )}
         </Button>
@@ -89,12 +119,12 @@ function NotificationsMenu({
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex items-center justify-between">
           <span>Notifications</span>
-          {unread > 0 && (
+          {unreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
               className="h-auto p-0 text-xs text-muted-foreground"
-              onClick={onMarkAllRead}
+              onClick={handleMarkAllRead}
             >
               Mark all read
             </Button>
@@ -109,24 +139,25 @@ function NotificationsMenu({
           notifications.slice(0, 5).map((n) => (
             <DropdownMenuItem
               key={n.id}
-              className="flex flex-col items-start gap-0.5 py-3"
+              className={`flex flex-col items-start gap-1 py-3 hover:bg-muted ${
+                !n.isRead ? "cursor-pointer" : "cursor-default opacity-70"
+              }`}
+              onClick={(e) => handleNotificationClick(n, e)}
             >
               <div className="flex w-full items-center gap-2">
-                {!n.read && (
+                {!n.isRead && (
                   <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                 )}
-                <span className={cn("text-sm font-medium", n.read && "ml-3.5")}>
+                <span className={cn("text-sm font-medium", n.isRead && "ml-3.5")}>
                   {n.title}
                 </span>
-                {n.time && (
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    {n.time}
-                  </span>
-                )}
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+                </span>
               </div>
-              {n.description && (
-                <p className="ml-3.5 text-xs text-muted-foreground line-clamp-1">
-                  {n.description}
+              {n.message && (
+                <p className="ml-3.5 text-xs text-muted-foreground">
+                  {n.message}
                 </p>
               )}
             </DropdownMenuItem>
@@ -255,8 +286,6 @@ export function Header({
   showSearch = false,
   searchPlaceholder = "Search…",
   onSearch,
-  notifications = [],
-  onMarkAllRead,
   user,
   onProfileClick,
   onSettingsClick,
@@ -294,10 +323,7 @@ export function Header({
         )}
         {actions}
         <ThemeToggle />
-        <NotificationsMenu
-          notifications={notifications}
-          onMarkAllRead={onMarkAllRead}
-        />
+        <NotificationsMenu />
         <UserMenu
           user={user}
           onProfileClick={onProfileClick}

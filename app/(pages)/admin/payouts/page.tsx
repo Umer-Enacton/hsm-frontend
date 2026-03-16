@@ -11,8 +11,8 @@ import {
   User,
   Building2,
   Calendar,
-  Download,
   Users,
+  CreditCard,
 } from "lucide-react";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import {
@@ -281,7 +281,7 @@ export default function AdminPayoutsPage() {
 
       {/* Summary Cards */}
       {summary && (
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -349,76 +349,40 @@ export default function AdminPayoutsPage() {
         </div>
       )}
 
-      {/* NEW: Provider-Grouped Payouts Section */}
+      {/* Provider-Grouped Payouts Section */}
       {allProviderPayouts.length > 0 && (
-        <Card className="shadow-lg border-2 border-primary/20">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" />
-                Provider-Level Payouts
-                <Badge variant="secondary" className="ml-2">
-                  {allProviderPayouts.length} provider
-                  {allProviderPayouts.length !== 1 ? "s" : ""}
-                </Badge>
-              </div>
-              {/* Filter Buttons */}
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant={providerFilter === "all" ? "default" : "outline"}
-                  className={`cursor-pointer ${
-                    providerFilter === "all"
-                      ? "bg-blue-600 hover:bg-blue-700"
-                      : "hover:bg-blue-50"
-                  }`}
-                  onClick={() => setProviderFilter("all")}
-                >
-                  All ({allProviderPayouts.length})
-                </Badge>
-                <Badge
-                  variant={providerFilter === "ready" ? "default" : "outline"}
-                  className={`cursor-pointer ${
-                    providerFilter === "ready"
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "hover:bg-green-50"
-                  }`}
-                  onClick={() => setProviderFilter("ready")}
-                >
-                  Ready ({providersReadyToPay.length})
-                </Badge>
-                <Badge
-                  variant={providerFilter === "waiting" ? "default" : "outline"}
-                  className={`cursor-pointer ${
-                    providerFilter === "waiting"
-                      ? "bg-amber-600 hover:bg-amber-700"
-                      : "hover:bg-amber-50"
-                  }`}
-                  onClick={() => setProviderFilter("waiting")}
-                >
-                  Waiting ({providersWaiting.length})
-                </Badge>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                  <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  Provider-Level Payouts
+                  <div className="text-sm font-normal text-muted-foreground">
+                    {allProviderPayouts.length} provider
+                    {allProviderPayouts.length !== 1 ? "s" : ""}
+                  </div>
+                </div>
               </div>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-4">
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <p className="text-sm text-muted-foreground">
                 Process all pending payouts for a provider at once. This ensures
                 providers receive their full accumulated amount.
               </p>
               {providersReadyToPay.length > 1 && (
-                <Button
-                  onClick={handlePayAllReady}
-                  disabled={processing}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                >
+                <Button onClick={handlePayAllReady} disabled={processing} className="w-full sm:w-auto">
                   <Wallet className="h-4 w-4 mr-2" />
                   Pay All Ready ({providersReadyToPay.length})
                 </Button>
               )}
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {providerPayouts.length === 0 ? (
                 <div className="col-span-full text-center py-8 text-muted-foreground">
                   {providerFilter === "ready" && (
@@ -443,84 +407,82 @@ export default function AdminPayoutsPage() {
                 </div>
               ) : (
                 providerPayouts.map((provider) => (
-                  <Card
+                  <div
                     key={provider.providerId}
-                    className={`transition-all ${
+                    className={`group relative bg-card border rounded-lg p-4 transition-all ${
                       !provider.canProcessPayout
-                        ? "bg-muted/50 opacity-60"
-                        : "hover:shadow-lg hover:-translate-y-1"
+                        ? "bg-muted/30 opacity-60"
+                        : "hover:border-primary/50 hover:shadow-sm"
                     }`}
                   >
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        {/* Provider Info */}
-                        <div className="flex items-start gap-3">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold">
-                            {provider.providerName.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold truncate">
-                              {provider.providerName}
-                            </h3>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {provider.businessName}
-                            </p>
-                          </div>
+                    <div className="space-y-3">
+                      {/* Provider Info */}
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold">
+                          {provider.providerName.charAt(0).toUpperCase()}
                         </div>
-
-                        {/* Stats */}
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">
-                              Total Pending
-                            </p>
-                            <p className="text-lg font-bold text-orange-600">
-                              {formatCurrency(provider.totalPending)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Bookings</p>
-                            <p className="text-lg font-semibold">
-                              {provider.bookingCount}
-                            </p>
-                          </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold truncate">
+                            {provider.providerName}
+                          </h3>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {provider.businessName}
+                          </p>
                         </div>
-
-                        {/* Threshold Status */}
-                        {provider.canProcessPayout ? (
-                          <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 dark:bg-green-950/40 px-3 py-1 rounded-full">
-                            <CheckCircle className="h-4 w-4" />
-                            Ready to pay
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-3 py-1 rounded-full">
-                            <Clock className="h-4 w-4" />
-                            {formatCurrency(
-                              provider.minimumPayoutAmount -
-                                provider.totalPending,
-                            )}{" "}
-                            below threshold
-                          </div>
-                        )}
-
-                        {/* Pay Button */}
-                        <Button
-                          onClick={() => handlePayProvider(provider)}
-                          disabled={!provider.canProcessPayout || processing}
-                          className={`w-full ${
-                            provider.canProcessPayout
-                              ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                              : "bg-muted text-muted-foreground cursor-not-allowed"
-                          }`}
-                        >
-                          {processing &&
-                          selectedProvider?.providerId === provider.providerId
-                            ? "Processing..."
-                            : `Pay ${formatCurrency(provider.totalPending)}`}
-                        </Button>
                       </div>
-                    </CardContent>
-                  </Card>
+
+                      {/* Stats */}
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">
+                            Total Pending
+                          </p>
+                          <p className="text-lg font-bold text-orange-600">
+                            {formatCurrency(provider.totalPending)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Bookings</p>
+                          <p className="text-lg font-semibold">
+                            {provider.bookingCount}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Threshold Status */}
+                      {provider.canProcessPayout ? (
+                        <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 dark:bg-green-950/40 px-3 py-1.5 rounded-lg">
+                          <CheckCircle className="h-4 w-4" />
+                          Ready to pay
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-3 py-1.5 rounded-lg">
+                          <Clock className="h-4 w-4" />
+                          {formatCurrency(
+                            provider.minimumPayoutAmount -
+                              provider.totalPending,
+                          )}{" "}
+                          below threshold
+                        </div>
+                      )}
+
+                      {/* Pay Button */}
+                      <Button
+                        onClick={() => handlePayProvider(provider)}
+                        disabled={!provider.canProcessPayout || processing}
+                        className={`w-full ${
+                          provider.canProcessPayout
+                            ? ""
+                            : "bg-muted text-muted-foreground cursor-not-allowed"
+                        }`}
+                      >
+                        {processing &&
+                        selectedProvider?.providerId === provider.providerId
+                          ? "Processing..."
+                          : `Pay ${formatCurrency(provider.totalPending)}`}
+                      </Button>
+                    </div>
+                  </div>
                 ))
               )}
             </div>
@@ -530,11 +492,11 @@ export default function AdminPayoutsPage() {
 
       {/* Empty State - No Pending Payouts */}
       {allProviderPayouts.length === 0 && summary && (
-        <Card className="border-dashed border-2">
+        <Card>
           <CardContent className="py-12">
             <div className="text-center">
-              <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-950/40 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="h-16 w-16 rounded-full bg-green-50 dark:bg-green-950/40 flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="text-lg font-semibold mb-2">All Caught Up!</h3>
               <p className="text-muted-foreground mb-4">
@@ -542,7 +504,7 @@ export default function AdminPayoutsPage() {
                 paid.
               </p>
               {summary.totalPaidAmount > 0 && (
-                <div className="inline-flex items-center gap-2 text-sm bg-green-50 dark:bg-green-950/40 px-4 py-2 rounded-full">
+                <div className="inline-flex items-center gap-2 text-sm bg-green-50 dark:bg-green-950/40 px-4 py-2 rounded-lg">
                   <IndianRupee className="h-4 w-4 text-green-600" />
                   <span className="font-semibold text-green-600">
                     {formatCurrency(summary.totalPaidAmount)}
@@ -557,18 +519,20 @@ export default function AdminPayoutsPage() {
         </Card>
       )}
 
-      {/* Payout History - Merged Card */}
+      {/* Payout History */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3">
-              <span>Payout History</span>
-              <Badge variant="outline" className="text-xs">
-                Read-only
-              </Badge>
-              <span className="text-sm font-normal text-muted-foreground">
-                {payouts.length} record{payouts.length !== 1 ? "s" : ""}
-              </span>
+              <div className="p-2 bg-muted rounded-lg">
+                <CreditCard className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                Payout History
+                <div className="text-sm font-normal text-muted-foreground">
+                  Read-only records ({payouts.length})
+                </div>
+              </div>
             </CardTitle>
             <Select
               value={statusFilter}
@@ -586,9 +550,7 @@ export default function AdminPayoutsPage() {
           </div>
           {allProviderPayouts.length > 0 && (
             <p className="text-xs text-muted-foreground mt-2">
-              Use the{" "}
-              <span className="font-semibold">Provider-Level Payouts</span>{" "}
-              section above to process payments.
+              Use the <span className="font-semibold">Provider-Level Payouts</span> section above to process payments.
             </p>
           )}
         </CardHeader>
@@ -603,7 +565,7 @@ export default function AdminPayoutsPage() {
               {payouts.map((payout) => (
                 <div
                   key={payout.paymentId}
-                  className="p-4 rounded-lg border bg-muted/30"
+                  className="bg-card border rounded-lg p-4 hover:border-primary/50 hover:shadow-sm transition-all"
                 >
                   <div className="flex items-start gap-4">
                     <div className="flex-1 min-w-0">
@@ -677,26 +639,26 @@ export default function AdminPayoutsPage() {
 
           {selectedProvider && (
             <div className="py-4 space-y-4">
-              <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-3">
-                <div className="flex justify-between">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Provider:</span>
                   <span className="font-medium">
                     {selectedProvider.providerName}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Business:</span>
                   <span className="font-medium">
                     {selectedProvider.businessName}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Total Bookings:</span>
                   <span className="font-medium">
                     {selectedProvider.bookingCount}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Total Amount:</span>
                   <span className="font-bold text-green-600">
                     {formatCurrency(selectedProvider.totalPending)}
@@ -704,7 +666,7 @@ export default function AdminPayoutsPage() {
                 </div>
               </div>
 
-              <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-300">
+              <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-300">
                 <AlertCircle className="h-4 w-4 inline mr-2" />
                 This will mark ALL {selectedProvider.bookingCount} pending
                 payouts for this provider as paid.
@@ -723,7 +685,6 @@ export default function AdminPayoutsPage() {
             <Button
               onClick={confirmPayProvider}
               disabled={processing}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
             >
               {processing
                 ? "Processing..."
@@ -744,18 +705,18 @@ export default function AdminPayoutsPage() {
           </DialogHeader>
 
           <div className="py-4 space-y-4">
-            <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-3">
-              <div className="flex justify-between">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+              <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Total Providers:</span>
                 <span className="font-medium">{providersReadyToPay.length}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Total Bookings:</span>
                 <span className="font-medium">
                   {providersReadyToPay.reduce((sum, p) => sum + p.bookingCount, 0)}
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Total Amount:</span>
                 <span className="font-bold text-green-600 text-lg">
                   {formatCurrency(
@@ -780,7 +741,7 @@ export default function AdminPayoutsPage() {
               </div>
             </div>
 
-            <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-300">
+            <div className="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-300">
               <AlertCircle className="h-4 w-4 inline mr-2" />
               This will process payments for {providersReadyToPay.length} provider{providersReadyToPay.length > 1 ? "s" : ""}. Make sure you have transferred the money to their accounts before confirming.
             </div>
@@ -797,7 +758,6 @@ export default function AdminPayoutsPage() {
             <Button
               onClick={confirmPayAllReady}
               disabled={processing}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
             >
               {processing
                 ? "Processing..."
