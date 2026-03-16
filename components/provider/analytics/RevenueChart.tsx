@@ -149,7 +149,7 @@ export function RevenueChart({
                           <p className="font-medium">{payload[0].payload.date}</p>
                           {payload.map((entry) => (
                             <p key={entry.dataKey} style={{ color: entry.color }}>
-                              {entry.name}: {entry.dataKey === "revenue" ? formatCurrency(entry.value) : entry.value}
+                              {entry.name}: {entry.dataKey === "revenue" ? formatCurrency(Number(entry.value ?? 0)) : entry.value ?? 0}
                             </p>
                           ))}
                         </div>

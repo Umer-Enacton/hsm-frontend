@@ -117,7 +117,7 @@ export function Stage4PaymentDetails({
 
   const handleSetActive = async (id: number) => {
     try {
-      await api.put(API_ENDPOINTS.PAYMENT_DETAILS_SET_ACTIVE(id));
+      await api.put(API_ENDPOINTS.PAYMENT_DETAILS_SET_ACTIVE(id), {});
       toast.success("Payment method activated");
       fetchPaymentDetails();
     } catch (error: any) {

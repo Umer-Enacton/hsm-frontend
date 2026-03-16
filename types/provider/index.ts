@@ -46,6 +46,8 @@ export interface Business {
   providerName?: string; // Provider's personal name
   providerEmail?: string; // Provider's personal email
   providerPhone?: string; // Provider's personal phone
+  // Payment details tracking
+  hasPaymentDetails?: boolean; // True if provider has added payment methods
 }
 
 /**

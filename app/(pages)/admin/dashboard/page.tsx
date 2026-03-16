@@ -206,7 +206,6 @@ export default function AdminDashboardPage() {
           icon={DollarSign}
           trend="up"
           className="border-purple-200 dark:border-purple-800"
-          description="Your 5% commission"
         />
         <StatCard
           title="Pending Payouts"
@@ -221,7 +220,6 @@ export default function AdminDashboardPage() {
           value={formatCurrency(stats?.payouts.minimumThreshold || 30000)}
           icon={Clock}
           trend="neutral"
-          description="Provider threshold"
         />
       </div>
 

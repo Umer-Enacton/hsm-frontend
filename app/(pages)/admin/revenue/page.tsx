@@ -96,11 +96,12 @@ export default function AdminRevenuePage() {
         description="Track your platform fee earnings from all bookings. For every ₹500 booking, you receive ₹25 as platform commission."
         onRefresh={() => fetchRevenueData(true)}
         isRefreshing={isRefreshing}
-        action={{
-          label: "Export Report",
-          icon: Download,
-          onClick: exportReport,
-        }}
+        actions={
+          <Button onClick={exportReport} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
+        }
       />
 
       {/* Revenue Stats */}
