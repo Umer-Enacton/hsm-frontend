@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: "Home Service Management Platform",
   manifest: "/manifest.json",
   icons: {
-    icon: "/homefixcare-removebg-preview-removebg-preview.png",
+    icon: "/homefixcareicon-removebg-preview-removebg-preview.ico",
     shortcut: "/homefixcareicon.jpeg",
     apple: "/homefixcareicon.jpeg",
   },

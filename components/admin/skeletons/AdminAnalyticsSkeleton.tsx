@@ -1,20 +1,29 @@
-// Admin Analytics Skeleton
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+
 export function AdminAnalyticsSkeleton() {
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <div className="h-8 w-32 bg-muted/30 rounded animate-pulse" />
-          <div className="h-4 w-48 bg-muted/20 rounded animate-pulse" />
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-48" />
         </div>
-        <div className="h-9 w-24 bg-muted/30 rounded animate-pulse" />
+        <Skeleton className="h-9 w-24 rounded-md" />
       </div>
 
       {/* Charts Grid */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="h-72 bg-muted/20 rounded-lg animate-pulse" />
+          <Card key={i}>
+            <CardHeader>
+              <Skeleton className="h-5 w-36" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-48 w-full rounded-lg" />
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>

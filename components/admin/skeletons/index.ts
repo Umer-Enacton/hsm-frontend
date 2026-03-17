@@ -1,4 +1,5 @@
 export { AdminPaymentsSkeleton } from "./AdminPaymentsSkeleton";
+export { AdminPayoutsSkeleton } from "./AdminPayoutsSkeleton";
 export { AdminProfileSkeleton } from "./AdminProfileSkeleton";
 export { AdminSettingsSkeleton } from "./AdminSettingsSkeleton";
 export { AdminDashboardSkeleton } from "./AdminDashboardSkeleton";
