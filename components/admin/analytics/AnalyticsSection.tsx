@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Loader2 } from "lucide-react";
 import { PeriodSelector } from "./PeriodSelector";
 import { AdminRevenueChart } from "./AdminRevenueChart";
 import { CategoryChart } from "./CategoryChart";
@@ -11,9 +10,11 @@ import { StatusChart } from "./StatusChart";
 import { TopProvidersChart } from "./TopProvidersChart";
 import { PaymentStatusChart } from "./PaymentStatusChart";
 import { AverageOrderValueChart } from "./AverageOrderValueChart";
+import { AdminAnalyticsSkeleton } from "@/components/admin/skeletons";
 
 interface AnalyticsSectionProps {
   defaultPeriod?: string;
+  enabled?: boolean; // If false, won't fetch until enabled becomes true
 }
 
 interface RevenueResponse {
@@ -78,23 +79,19 @@ interface ProvidersResponse {
     percentage: string;
   }>;
   totalBookings: number;
+  totalRevenue: number;
   totalPlatformFees: number;
 }
 
 interface PaymentStatusResponse {
   period: string;
-  totalPayments: number;
-  statusBreakdown: Array<{
+  totalBookings: number;
+  paymentStatuses: Array<{
     status: string;
-    statusLabel: string;
     count: number;
-    amount: number;
-    platformFees: number;
     percentage: string;
-    fill: string;
   }>;
-  totalAmount: number;
-  totalPlatformFees: number;
+  totalRevenue: number;
 }
 
 interface AverageOrderValueResponse {
@@ -107,10 +104,14 @@ interface AverageOrderValueResponse {
   }>;
 }
 
-export function AnalyticsSection({
-  defaultPeriod = "30d",
-}: AnalyticsSectionProps) {
+export function AnalyticsSection({ defaultPeriod = "7d", enabled = true }: AnalyticsSectionProps) {
   const [period, setPeriod] = useState(defaultPeriod);
+  const queryClient = useQueryClient();
+
+  // Invalidate all analytics queries when period changes
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["admin", "analytics"] });
+  }, [period, queryClient]);
 
   // Fetch all analytics data in parallel
   const {
@@ -121,24 +122,28 @@ export function AnalyticsSection({
     queryKey: ["admin", "analytics", "revenue", period],
     queryFn: () =>
       api.get<RevenueResponse>(`/admin/analytics/revenue?period=${period}`),
+    enabled,
   });
 
   const { data: categoryData, isLoading: isLoadingCategory } = useQuery({
     queryKey: ["admin", "analytics", "categories", period],
     queryFn: () =>
       api.get<CategoryResponse>(`/admin/analytics/categories?period=${period}`),
+    enabled,
   });
 
   const { data: statusData, isLoading: isLoadingStatus } = useQuery({
     queryKey: ["admin", "analytics", "status", period],
     queryFn: () =>
       api.get<StatusResponse>(`/admin/analytics/status?period=${period}`),
+    enabled,
   });
 
   const { data: providersData, isLoading: isLoadingProviders } = useQuery({
     queryKey: ["admin", "analytics", "providers", period],
     queryFn: () =>
       api.get<ProvidersResponse>(`/admin/analytics/providers?period=${period}`),
+    enabled,
   });
 
   const { data: paymentStatusData, isLoading: isLoadingPaymentStatus } =
@@ -148,6 +153,7 @@ export function AnalyticsSection({
         api.get<PaymentStatusResponse>(
           `/admin/analytics/payment-status?period=${period}`,
         ),
+      enabled,
     });
 
   const { data: avgOrderValueData, isLoading: isLoadingAvgOrderValue } =
@@ -157,6 +163,7 @@ export function AnalyticsSection({
         api.get<AverageOrderValueResponse>(
           `/admin/analytics/average-order-value?period=${period}`,
         ),
+      enabled,
     });
 
   const isLoading =
@@ -171,12 +178,7 @@ export function AnalyticsSection({
     (!revenueData && !categoryData && !statusData && !providersData);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <span className="ml-2 text-muted-foreground">Loading analytics...</span>
-      </div>
-    );
+    return <AdminAnalyticsSkeleton />;
   }
 
   if (hasError) {
@@ -188,31 +190,83 @@ export function AnalyticsSection({
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Period Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h2 className="text-xl sm:text-2xl font-semibold">Analytics Overview</h2>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold">Analytics Overview</h2>
+          <p className="text-sm text-muted-foreground">
+            Platform performance metrics and trends
+          </p>
+        </div>
         <PeriodSelector value={period} onChange={setPeriod} />
       </div>
 
-      {/* Revenue & Bookings Chart */}
-      {revenueData && (
-        <AdminRevenueChart
-          data={revenueData.chartData}
-          period={revenueData.period}
-          totalPlatformFees={revenueData.summary.platformFees}
-          totalBookings={revenueData.summary.totalBookings}
-        />
-      )}
+      {/* Charts Grid */}
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+        {/* Revenue Chart */}
+        <div className="lg:col-span-2">
+          {revenueData && (
+            <AdminRevenueChart
+              data={revenueData.chartData}
+              period={revenueData.period}
+              totalPlatformFees={revenueData.summary.platformFees}
+              totalBookings={revenueData.summary.totalBookings}
+            />
+          )}
+        </div>
 
-      {/* Four Column Layout - Category, Status, Payment Status & Avg Order Value */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {categoryData && (
+        {/* Category Chart */}
+        {categoryData?.categories && categoryData.categories.length > 0 && (
           <CategoryChart
             data={categoryData.categories}
             totalPlatformFees={categoryData.totalPlatformFees}
           />
         )}
+
+        {/* Status Chart */}
+        {statusData?.statusBreakdown && statusData.statusBreakdown.length > 0 && (
+          <StatusChart
+            data={statusData.statusBreakdown}
+            totalPlatformFees={statusData.totalPlatformFees}
+          />
+        )}
+
+        {/* Top Providers Chart */}
+        {providersData?.providers && providersData.providers.length > 0 && (
+          <TopProvidersChart
+            data={providersData.providers}
+            totalPlatformFees={providersData.totalPlatformFees}
+          />
+        )}
+
+        {/* Payment Status Chart */}
+        {paymentStatusData?.paymentStatuses && paymentStatusData.paymentStatuses.length > 0 && (
+          <PaymentStatusChart
+            data={paymentStatusData.paymentStatuses.map((item) => ({
+              ...item,
+              statusLabel: item.status.charAt(0).toUpperCase() + item.status.slice(1),
+              amount: 0, // API doesn't provide this
+              platformFees: 0, // API doesn't provide this
+              fill:
+                item.status === "paid"
+                  ? "#22c55e"
+                  : item.status === "pending"
+                    ? "#f59e0b"
+                    : item.status === "failed"
+                      ? "#ef4444"
+                      : "#6366f1",
+            }))}
+            totalPayments={paymentStatusData.paymentStatuses.reduce(
+              (sum, item) => sum + item.count,
+              0,
+            )}
+            totalAmount={paymentStatusData.totalRevenue || 0}
+            totalPlatformFees={0}
+          />
+        )}
+
+        {/* Average Order Value Chart */}
         {avgOrderValueData && (
           <AverageOrderValueChart
             data={avgOrderValueData.chartData}
@@ -220,29 +274,7 @@ export function AnalyticsSection({
             overallAvg={avgOrderValueData.overallAvg}
           />
         )}
-        {/* {statusData && (
-          <StatusChart
-            data={statusData.statusBreakdown}
-            totalPlatformFees={statusData.totalPlatformFees}
-          />
-        )} */}
-        {paymentStatusData && (
-          <PaymentStatusChart
-            data={paymentStatusData.statusBreakdown}
-            totalPayments={paymentStatusData.totalPayments}
-            totalAmount={paymentStatusData.totalAmount}
-            totalPlatformFees={paymentStatusData.totalPlatformFees}
-          />
-        )}
       </div>
-
-      {/* Top Providers Chart */}
-      {providersData && (
-        <TopProvidersChart
-          data={providersData.providers}
-          totalPlatformFees={providersData.totalPlatformFees}
-        />
-      )}
     </div>
   );
 }

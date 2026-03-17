@@ -24,12 +24,15 @@ export interface StatusChartProps {
 }
 
 export function StatusChart({ data, totalPlatformFees }: StatusChartProps) {
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value == null || isNaN(value)) {
+      return '₹0';
+    }
     if (value >= 100000) {
       return `₹${(value / 100000).toFixed(1)}L`;
     }
     if (value >= 1000) {
-      return `₹${(value / 1000).toFixed(1)}K`;
+      return `₹${(value / 100000).toFixed(1)}K`;
     }
     return `₹${value.toFixed(0)}`;
   };

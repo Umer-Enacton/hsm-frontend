@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Star, Calendar, User, MessageSquare, Eye, EyeOff, Trash2, Reply, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,10 +42,10 @@ export interface ReviewData {
 interface ReviewCardProps {
   review: ReviewData;
   serviceName?: string;
-  onUpdate?: () => void;
 }
 
-export function ReviewCard({ review, serviceName, onUpdate }: ReviewCardProps) {
+export function ReviewCard({ review, serviceName }: ReviewCardProps) {
+  const queryClient = useQueryClient();
   const [showReplyDialog, setShowReplyDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
@@ -79,7 +80,7 @@ export function ReviewCard({ review, serviceName, onUpdate }: ReviewCardProps) {
         {}
       );
       toast.success(review.isVisible ? "Review hidden from customers" : "Review is now visible");
-      onUpdate?.();
+      queryClient.invalidateQueries({ queryKey: ['provider', 'reviews'] });
     } catch (error) {
       console.error("Error toggling visibility:", error);
       toast.error("Failed to update review visibility");
@@ -95,19 +96,18 @@ export function ReviewCard({ review, serviceName, onUpdate }: ReviewCardProps) {
         API_ENDPOINTS.DELETE_REVIEW(review.id)
       );
       toast.success("Review deleted successfully");
-      onUpdate?.();
+      queryClient.invalidateQueries({ queryKey: ['provider', 'reviews'] });
     } catch (error) {
       console.error("Error deleting review:", error);
       toast.error("Failed to delete review");
     } finally {
       setIsDeleting(false);
-      setShowDeleteDialog(false);
     }
   };
 
-  const handleReplyAdded = () => {
+  const handleReplySubmit = () => {
     setShowReplyDialog(false);
-    onUpdate?.();
+    queryClient.invalidateQueries({ queryKey: ['provider', 'reviews'] });
   };
 
   const comments = review.comments || "";
@@ -261,7 +261,7 @@ export function ReviewCard({ review, serviceName, onUpdate }: ReviewCardProps) {
         existingReply={review.providerReply}
         open={showReplyDialog}
         onOpenChange={setShowReplyDialog}
-        onReplyAdded={handleReplyAdded}
+        onReplyAdded={handleReplySubmit}
       />
 
       {/* Delete Confirmation Dialog */}

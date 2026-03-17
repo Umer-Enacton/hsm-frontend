@@ -71,5 +71,11 @@ export const queryKeys = {
       all: ["provider", "revenue"] as const,
       stats: () => [...queryKeys.provider.revenue.all, "stats"] as const,
     },
+    analytics: {
+      all: ["provider", "analytics"] as const,
+      revenue: (period: string) => [...queryKeys.provider.analytics.all, "revenue", period] as const,
+      services: (period: string) => [...queryKeys.provider.analytics.all, "services", period] as const,
+      status: (period: string) => [...queryKeys.provider.analytics.all, "status", period] as const,
+    },
   },
 } as const;

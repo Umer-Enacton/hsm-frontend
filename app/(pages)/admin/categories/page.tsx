@@ -16,6 +16,7 @@ import { EditCategoryDialog } from "./components/EditCategoryDialog";
 import { DeleteCategoryDialog } from "./components/DeleteCategoryDialog";
 import type { Category, CategoryFormData } from "@/types/category";
 import { AdminPageHeader, LoadingState, ErrorState } from "@/components/admin/shared";
+import { AdminCategoriesSkeleton } from "@/components/admin/skeletons";
 
 // Pagination constants
 const DEFAULT_PAGE_SIZE = 12;
@@ -145,7 +146,7 @@ export default function CategoriesPage() {
   }, [categories, currentPage, pageSize]);
 
   if (isLoading) {
-    return <LoadingState message="Loading categories..." />;
+    return <AdminCategoriesSkeleton />;
   }
 
   if (error) {

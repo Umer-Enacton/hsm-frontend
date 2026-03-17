@@ -4,3 +4,5 @@ export { BusinessProfileSkeleton } from "./BusinessProfileSkeleton";
 export { ProviderDashboardSkeleton } from "./ProviderDashboardSkeleton";
 export { ProviderServicesSkeleton } from "./ProviderServicesSkeleton";
 export { ProviderReviewsSkeleton } from "./ProviderReviewsSkeleton";
+export { ProviderPaymentsSkeleton } from "./ProviderPaymentsSkeleton";
+export { ProviderProfileSkeleton } from "./ProviderProfileSkeleton";

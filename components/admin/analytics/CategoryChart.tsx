@@ -46,7 +46,10 @@ export function CategoryChart({ data, totalPlatformFees }: CategoryChartProps) {
     color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
   }));
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value == null || isNaN(value)) {
+      return '₹0';
+    }
     if (value >= 100000) {
       return `₹${(value / 100000).toFixed(1)}L`;
     }

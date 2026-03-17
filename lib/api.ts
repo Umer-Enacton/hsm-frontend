@@ -68,6 +68,7 @@ export const API_ENDPOINTS = {
   USER_PROFILE: "/user/profile",
   USERS: "/users",
   UPDATE_USER: "/users",
+  CHANGE_PASSWORD: "/user/change-password",
 
   // Business
   BUSINESSES: "/businesses",

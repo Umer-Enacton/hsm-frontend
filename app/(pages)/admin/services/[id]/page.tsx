@@ -30,6 +30,7 @@ import {
   ErrorState,
   StatusBadge,
 } from "@/components/admin/shared";
+import { AdminServiceDetailSkeleton } from "@/components/admin/skeletons";
 import { cn } from "@/lib/utils";
 
 interface ServiceDetails {
@@ -226,7 +227,7 @@ export default function ServiceDetailsPage() {
   };
 
   if (isLoading) {
-    return <LoadingState message="Loading service details..." />;
+    return <AdminServiceDetailSkeleton />;
   }
 
   if (error || !service) {

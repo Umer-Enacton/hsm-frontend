@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import {
   ProfileHeader,
   ProfileTabs,
@@ -14,6 +13,7 @@ import {
 import { isAuthenticated } from "@/lib/auth-utils";
 import type { User } from "@/types/auth";
 import { useProfile, useUpdateProfile, useUploadAvatar } from "@/lib/queries";
+import { ProviderProfileSkeleton } from "@/components/provider/skeletons";
 
 export default function ProviderProfilePage() {
   const router = useRouter();
@@ -36,12 +36,7 @@ export default function ProviderProfilePage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96 gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading profile...</p>
-      </div>
-    );
+    return <ProviderProfileSkeleton />;
   }
 
   if (error || !user) {
@@ -75,7 +70,7 @@ export default function ProviderProfilePage() {
       <ProfileHeader user={user} />
 
       {/* Tabs */}
-      <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} showAddresses={false} />
 
       {/* Tab Content */}
       <div className="mt-6">

@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { api, API_ENDPOINTS } from "@/lib/api";
+import { AdminSettingsSkeleton } from "@/components/admin/skeletons";
 
 export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -76,14 +77,7 @@ export default function AdminSettingsPage() {
   const example = calculateExample(500);
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-16">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-          <p className="text-muted-foreground">Loading settings...</p>
-        </div>
-      </div>
-    );
+    return <AdminSettingsSkeleton />;
   }
 
   return (

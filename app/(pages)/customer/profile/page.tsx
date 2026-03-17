@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { isAuthenticated } from "@/lib/auth-utils";
@@ -14,7 +14,6 @@ import {
   PasswordChangeForm,
   type ProfileTab,
 } from "@/components/profile";
-import { ProfileSkeleton } from "@/components/customer/skeletons/ProfileSkeleton";
 import {
   useProfile,
   useAddresses,
@@ -37,6 +36,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAllStates, getCitiesByState } from "@/lib/data/india-locations";
+import { CustomerProfileSkeleton } from "@/components/customer/skeletons";
 
 const ADDRESS_TYPES = ["home", "work", "other"] as const;
 type ViewMode = "list" | "grid";
@@ -165,12 +165,7 @@ export default function CustomerProfilePage() {
   };
 
   if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96 gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading profile...</p>
-      </div>
-    );
+    return <CustomerProfileSkeleton />;
   }
 
   if (error || !user) {

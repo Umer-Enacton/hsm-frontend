@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { AdminPageHeader, LoadingState, ErrorState, StatusBadge } from "@/components/admin/shared";
+import { AdminBookingsSkeleton } from "@/components/admin/skeletons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -152,7 +153,7 @@ export default function AdminBookingsPage() {
   };
 
   if (isLoading) {
-    return <LoadingState message="Loading bookings..." />;
+    return <AdminBookingsSkeleton />;
   }
 
   if (error && bookings.length === 0) {

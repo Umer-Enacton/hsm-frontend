@@ -3,3 +3,4 @@ export { CustomerBookingsSkeleton } from "./CustomerBookingsSkeleton";
 export { BookingDetailsSkeleton } from "./BookingDetailsSkeleton";
 export { ServiceDetailSkeleton } from "./ServiceDetailSkeleton";
 export { ProfileSkeleton } from "./ProfileSkeleton";
+export { CustomerProfileSkeleton } from "./CustomerProfileSkeleton";

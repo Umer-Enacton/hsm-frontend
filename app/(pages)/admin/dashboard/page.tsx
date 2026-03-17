@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Users,
   Wrench,
@@ -11,18 +12,20 @@ import {
   Clock,
   Wallet,
   IndianRupee,
+  RefreshCw,
 } from "lucide-react";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import {
   AdminPageHeader,
   StatCard,
-  LoadingState,
   ErrorState,
 } from "@/components/admin/shared";
 import { AnalyticsSection } from "@/components/admin/analytics";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
+import { AdminDashboardSkeleton } from "@/components/admin/skeletons";
+import { useAdminAnalytics } from "@/lib/queries";
 
 interface DashboardStats {
   users: {
@@ -63,13 +66,54 @@ interface Activity {
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const formatCurrency = (amountInPaise: number) => {
+  // TanStack Query for dashboard stats
+  const {
+    data: stats,
+    isLoading: isLoadingStats,
+    error: statsError,
+    refetch: refetchStats,
+  } = useQuery<DashboardStats>({
+    queryKey: ["admin", "dashboard", "stats"],
+    queryFn: () => api.get<DashboardStats>(API_ENDPOINTS.ADMIN_DASHBOARD_STATS),
+    staleTime: 1000 * 60, // 1 minute
+  });
+
+  // TanStack Query for analytics
+  const { isLoading: isLoadingAnalytics } = useAdminAnalytics("7d");
+
+  // Combined loading state - show skeleton if either stats OR analytics are loading
+  const isLoading = isLoadingStats || isLoadingAnalytics;
+
+  // Computed activities from stats
+  const activities = useMemo(() => {
+    if (!stats) return [];
+    return [
+      {
+        id: "1",
+        type: "booking" as const,
+        message: `${stats.bookings.completed} bookings completed this month`,
+        timestamp: "Today",
+      },
+      {
+        id: "2",
+        type: "payment" as const,
+        message: `${stats.revenue.paymentCount} payments processed`,
+        timestamp: "Today",
+      },
+      {
+        id: "3",
+        type: "business" as const,
+        message: `${stats.businesses.pending} businesses pending verification`,
+        timestamp: "This week",
+      },
+    ];
+  }, [stats]);
+
+  const formatCurrency = (amountInPaise: number | null | undefined) => {
+    if (amountInPaise == null || isNaN(amountInPaise)) {
+      return "₹0.00";
+    }
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
@@ -77,55 +121,6 @@ export default function AdminDashboardPage() {
       maximumFractionDigits: 2,
     }).format(amountInPaise / 100);
   };
-
-  const fetchDashboardData = async (showRefreshLoading = false) => {
-    try {
-      if (showRefreshLoading) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
-      setError(null);
-
-      // Use the new dashboard stats endpoint
-      const statsData: DashboardStats = await api.get(
-        API_ENDPOINTS.ADMIN_DASHBOARD_STATS,
-      );
-      setStats(statsData);
-
-      // Mock activity data for now
-      setActivities([
-        {
-          id: "1",
-          type: "booking",
-          message: `${statsData.bookings.completed} bookings completed this month`,
-          timestamp: "Today",
-        },
-        {
-          id: "2",
-          type: "payment",
-          message: `${statsData.revenue.paymentCount} payments processed`,
-          timestamp: "Today",
-        },
-        {
-          id: "3",
-          type: "business",
-          message: `${statsData.businesses.pending} businesses pending verification`,
-          timestamp: "This week",
-        },
-      ]);
-    } catch (err: any) {
-      console.error("Failed to fetch dashboard data:", err);
-      setError(err.message || "Failed to load dashboard data");
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
 
   const getActivityColor = (type: Activity["type"]) => {
     switch (type) {
@@ -142,12 +137,14 @@ export default function AdminDashboardPage() {
     }
   };
 
-  if (isLoading) {
-    return <LoadingState message="Loading dashboard..." />;
+  // Show error state only if stats failed to load
+  if (statsError && !stats && !isLoadingStats) {
+    return <ErrorState message={statsError.message || "Failed to load dashboard"} onRetry={() => refetchStats()} />;
   }
 
-  if (error && !stats) {
-    return <ErrorState message={error} onRetry={() => fetchDashboardData()} />;
+  // Show full skeleton while EITHER stats OR analytics are loading
+  if (isLoading) {
+    return <AdminDashboardSkeleton />;
   }
 
   return (
@@ -156,8 +153,8 @@ export default function AdminDashboardPage() {
       <AdminPageHeader
         title="Dashboard"
         description="Welcome to the HSM Admin Dashboard. Monitor your platform at a glance."
-        onRefresh={() => fetchDashboardData(true)}
-        isRefreshing={isRefreshing}
+        onRefresh={() => refetchStats()}
+        isRefreshing={isLoadingStats}
       />
 
       {/* Main Stats Grid */}

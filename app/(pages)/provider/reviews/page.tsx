@@ -1,77 +1,34 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw, MessageSquare, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ProviderReviewsSkeleton } from "@/components/provider/skeletons";
 import { ProviderReviewsManager } from "@/components/provider/reviews";
-import { getProviderBusiness } from "@/lib/provider/api";
+import { useProviderBusiness } from "@/lib/queries/use-provider-dashboard";
+import { getUserData } from "@/lib/auth-utils";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queries/query-keys";
 
 export default function ProviderReviewsPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [businessId, setBusinessId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
+  const [userData] = useState(() => getUserData());
 
-  useEffect(() => {
-    loadBusiness();
-  }, []);
+  const { data: business, isLoading: isLoadingBusiness } = useProviderBusiness(userData?.id);
+  const businessId = business?.id;
 
-  const loadBusiness = async () => {
-    setIsLoading(true);
-    try {
-      const { getUserData } = await import("@/lib/auth-utils");
-      const userData = getUserData();
-
-      if (!userData || !userData.id) {
-        toast.error("Please login to continue");
-        router.push("/login");
-        return;
-      }
-
-      const business = await getProviderBusiness(userData.id);
-      if (!business) {
-        toast.error("Business profile not found");
-        router.push("/onboarding");
-        return;
-      }
-
-      setBusinessId(business.id);
-    } catch (error: any) {
-      console.error("Error loading business:", error);
-      toast.error("Failed to load business information");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    // Force re-render by toggling a state
-    setBusinessId((prev) => {
-      setTimeout(() => setBusinessId(prev), 100);
-      return prev;
-    });
-    setTimeout(() => setIsRefreshing(false), 500);
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.provider.business.all });
+    queryClient.invalidateQueries({ queryKey: ['provider', 'reviews'] });
+    queryClient.invalidateQueries({ queryKey: ['provider', 'services', 'business'] });
     toast.success("Reviews refreshed");
   };
 
-  if (isLoading) {
+  if (isLoadingBusiness || !businessId) {
     return <ProviderReviewsSkeleton />;
-  }
-
-  if (!businessId) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <MessageSquare className="h-12 w-12 text-muted-foreground/30 mb-4" />
-        <p className="text-muted-foreground">Unable to load business information</p>
-        <Button variant="outline" className="mt-4" onClick={loadBusiness}>
-          Retry
-        </Button>
-      </div>
-    );
   }
 
   return (
@@ -90,10 +47,9 @@ export default function ProviderReviewsPage() {
             onClick={handleRefresh}
             variant="outline"
             size="icon"
-            disabled={isRefreshing}
             title="Refresh"
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
       </div>

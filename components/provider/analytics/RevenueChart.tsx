@@ -30,6 +30,10 @@ export function RevenueChart({
   totalRevenue,
   totalBookings,
 }: RevenueChartProps) {
+  // Calculate proper tick values for bookings Y-axis
+  const maxBookings = Math.max(...data.map(d => d.bookings), 5); // At least 5
+  const bookingTicks = Array.from({ length: maxBookings + 1 }, (_, i) => i);
+
   // Format date for display
   const formatDate = (dateStr: string) => {
     // Check if date is in YYYY-MM format (monthly) or YYYY-MM-DD format (daily)
@@ -129,6 +133,7 @@ export function RevenueChart({
                   axisLine={false}
                   tickMargin={8}
                   tickFormatter={formatCurrency}
+                  domain={[0, 'auto']}
                   tick={{ fill: "#22c55e", fontSize: 10 }}
                   width={50}
                 />
@@ -137,9 +142,12 @@ export function RevenueChart({
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
-                  tickFormatter={(value) => value.toString()}
+                  ticks={bookingTicks}
+                  tickFormatter={(value) => Math.round(value).toString()}
+                  domain={[0, maxBookings]}
                   tick={{ fill: "#3b82f6", fontSize: 10 }}
                   width={30}
+                  interval="preserveStartEnd"
                 />
                 <Tooltip
                   content={({ active, payload }) => {

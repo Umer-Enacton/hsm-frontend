@@ -13,6 +13,7 @@ import { ViewUserDialog } from "./components/ViewUserDialog";
 import { DeleteUserDialog } from "./components/DeleteUserDialog";
 import type { AppUser, UserFilters as UserFiltersType } from "@/types/user";
 import { AdminPageHeader, LoadingState, ErrorState } from "@/components/admin/shared";
+import { AdminUsersSkeleton } from "@/components/admin/skeletons";
 
 // Pagination constants
 const DEFAULT_PAGE_SIZE = 10;
@@ -141,7 +142,7 @@ export default function UsersPage() {
   }, [filteredUsers, currentPage, pageSize]);
 
   if (isLoading) {
-    return <LoadingState message="Loading users..." />;
+    return <AdminUsersSkeleton />;
   }
 
   if (error) {

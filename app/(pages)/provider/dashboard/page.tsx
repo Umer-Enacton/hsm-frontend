@@ -32,6 +32,7 @@ import {
 } from "@/lib/queries/use-provider-dashboard";
 import { useProviderBookings } from "@/lib/queries/use-provider-bookings";
 import { useProviderRevenueStats } from "@/lib/queries/use-provider-revenue";
+import { useProviderAnalytics } from "@/lib/queries/use-provider-analytics";
 import { queryKeys } from "@/lib/queries/query-keys";
 import { cn } from "@/lib/utils";
 import type { ProviderBooking } from "@/types/provider";
@@ -41,12 +42,13 @@ export default function ProviderDashboardPage() {
   const queryClient = useQueryClient();
   const [userData] = useState(() => getUserData());
 
-  // TanStack Query hooks
+  // TanStack Query hooks - all run in parallel
   const { data: business } = useProviderBusiness(userData?.id);
   const { data: bookings = [] } = useProviderBookings();
   const { data: services = [] } = useProviderServices(business?.id);
   const { data: revenueStats, isLoading: isLoadingRevenue } =
     useProviderRevenueStats();
+  const { isLoading: isLoadingAnalytics } = useProviderAnalytics();
 
   // Helper function to get booking date safely
   const getBookingDate = (b: ProviderBooking) => {
@@ -119,7 +121,7 @@ export default function ProviderDashboardPage() {
     };
   }, [bookings, revenueStats]);
 
-  const isLoading = !business || isLoadingRevenue;
+  const isLoading = !business || isLoadingRevenue || isLoadingAnalytics;
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({
@@ -135,6 +137,7 @@ export default function ProviderDashboardPage() {
       queryKey: queryKeys.provider.dashboard.all,
     });
     queryClient.invalidateQueries({ queryKey: queryKeys.provider.revenue.all });
+    queryClient.invalidateQueries({ queryKey: queryKeys.provider.analytics.all });
   };
 
   const formatRating = (rating: number) => {
@@ -417,14 +420,4 @@ export default function ProviderDashboardPage() {
     </div>
   );
 }
-// ⏰ Cron routes registered BEFORE auth middleware
-// 🔒 Global auth middleware registered
-// 🚀 Server is running on http://localhost:8000
-// [2026-03-16 03:26:23] 🧹 Starting periodic cleanup service
-//    ├─ Interval: 30 seconds
-//    ├─ Lock duration: 1 minute
-//    └─ Mode: development
-// [2026-03-16 03:26:23] ✅ Cleanup service started
 
-// [2026-03-16 03:26:23] ❌ Cleanup failed after 29ms: Failed query: select "id", "user_id", "service_id", "slot_id", "address_id", "booking_date", "amount", "razorpay_order_id", "status", "expires_at", "created_at", "completed_at", "failure_reason", "is_reschedule", "reschedule_booking_id" from "payment_intents" where ("payment_intents"."status" = $1 and "payment_intents"."expires_at" < $2)
-// params: pending,2026-03-16T03:26:23.482Z

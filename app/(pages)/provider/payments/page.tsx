@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { api, API_ENDPOINTS } from "@/lib/api";
+import { ProviderPaymentsSkeleton } from "@/components/provider/skeletons";
 
 export default function ProviderPaymentsPage() {
   const [loading, setLoading] = useState(true);
@@ -119,9 +120,10 @@ export default function ProviderPaymentsPage() {
 
     try {
       setSaving(true);
-      const payload = paymentType === "upi"
-        ? { paymentType: "upi", upiId }
-        : { paymentType: "bank", bankAccount, ifscCode, accountHolderName };
+      const payload =
+        paymentType === "upi"
+          ? { paymentType: "upi", upiId }
+          : { paymentType: "bank", bankAccount, ifscCode, accountHolderName };
 
       if (editingId) {
         await api.put(`${API_ENDPOINTS.PAYMENT_DETAILS}/${editingId}`, payload);
@@ -172,7 +174,9 @@ export default function ProviderPaymentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Payment Details</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Payment Details
+          </h1>
           <p className="text-muted-foreground">
             Manage your payment methods to receive earnings
           </p>
@@ -192,14 +196,11 @@ export default function ProviderPaymentsPage() {
                   Payment Details Required
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  You must add payment details to receive bookings and earnings. Without payment details,
-                  customers cannot book your services.
+                  You must add payment details to receive bookings and earnings.
+                  Without payment details, customers cannot book your services.
                 </p>
               </div>
-              <Button
-                size="sm"
-                onClick={() => openAddDialog("upi")}
-              >
+              <Button size="sm" onClick={() => openAddDialog("upi")}>
                 Add Now
               </Button>
             </div>
@@ -243,12 +244,7 @@ export default function ProviderPaymentsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-            <p className="text-muted-foreground">Loading payment details...</p>
-          </div>
-        </div>
+        <ProviderPaymentsSkeleton />
       ) : paymentDetails.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
@@ -355,36 +351,37 @@ export default function ProviderPaymentsPage() {
       )}
 
       {/* Info Card */}
-      <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg shrink-0">
-              <IndianRupee className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+      {/* <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+          <CardContent className="pt-6">
+            <div className="flex gap-4">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg shrink-0">
+                <IndianRupee className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="text-sm text-blue-800 dark:text-blue-300">
+                <p className="font-semibold mb-2">How payments work?</p>
+                <p className="text-blue-700 dark:text-blue-400 leading-relaxed">
+                  When a customer books your service, the payment is automatically split. You receive
+                  your 95% share directly to your UPI ID or bank account, while the platform keeps 5% as the service fee.
+                </p>
+              </div>
             </div>
-            <div className="text-sm text-blue-800 dark:text-blue-300">
-              <p className="font-semibold mb-2">How payments work?</p>
-              <p className="text-blue-700 dark:text-blue-400 leading-relaxed">
-                When a customer books your service, the payment is automatically split. You receive
-                your 95% share directly to your UPI ID or bank account, while the platform keeps 5% as the service fee.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card> */}
 
       {/* Add/Edit Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingId ? "Edit" : "Add"} {paymentType === "upi" ? "UPI ID" : "Bank Account"}
+              {editingId ? "Edit" : "Add"}{" "}
+              {paymentType === "upi" ? "UPI ID" : "Bank Account"}
             </DialogTitle>
             <DialogDescription>
               {editingId
                 ? "Update your payment details"
                 : paymentType === "upi"
-                ? "Enter your UPI ID to receive payments directly"
-                : "Enter your bank account details for direct transfers"}
+                  ? "Enter your UPI ID to receive payments directly"
+                  : "Enter your bank account details for direct transfers"}
             </DialogDescription>
           </DialogHeader>
 
@@ -442,15 +439,12 @@ export default function ProviderPaymentsPage() {
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={closeDialog}
-              disabled={saving}
-            >
+            <Button variant="outline" onClick={closeDialog} disabled={saving}>
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : editingId ? "Update" : "Add"} {paymentType === "upi" ? "UPI ID" : "Bank Details"}
+              {saving ? "Saving..." : editingId ? "Update" : "Add"}{" "}
+              {paymentType === "upi" ? "UPI ID" : "Bank Details"}
             </Button>
           </DialogFooter>
         </DialogContent>

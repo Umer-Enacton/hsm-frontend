@@ -13,6 +13,7 @@ import {
   EmptyState,
   StatusBadge,
 } from "@/components/admin/shared";
+import { AdminServicesSkeleton } from "@/components/admin/skeletons";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -240,7 +241,7 @@ export default function AdminServicesPage() {
   };
 
   if (isLoading) {
-    return <LoadingState message="Loading services..." />;
+    return <AdminServicesSkeleton />;
   }
 
   if (error && !services.length) {

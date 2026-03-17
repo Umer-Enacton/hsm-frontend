@@ -21,6 +21,7 @@ import {
   ErrorState,
   EmptyState,
 } from "@/components/admin/shared";
+import { AdminBusinessSkeleton } from "@/components/admin/skeletons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -188,7 +189,7 @@ export default function AdminBusinessPage() {
   };
 
   if (isLoading) {
-    return <LoadingState message="Loading businesses..." />;
+    return <AdminBusinessSkeleton />;
   }
 
   if (!businesses.length) {

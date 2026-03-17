@@ -29,20 +29,32 @@ export function AverageOrderValueChart({
 }: AverageOrderValueChartProps) {
   // Format date for display
   const formatDate = (dateStr: string) => {
-    const isMonthly = dateStr.length === 7;
-    if (isMonthly) {
-      const [year, month] = dateStr.split('-');
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const shortYear = year.slice(-2);
-      return `${monthNames[parseInt(month) - 1]} '${shortYear}`;
-    } else {
-      const date = new Date(dateStr + 'T00:00:00');
-      return date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+    if (!dateStr) return "Unknown";
+
+    try {
+      const isMonthly = dateStr.length === 7;
+      if (isMonthly) {
+        const [year, month] = dateStr.split('-');
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const shortYear = year.slice(-2);
+        return `${monthNames[parseInt(month) - 1]} '${shortYear}`;
+      } else {
+        const date = new Date(dateStr + 'T00:00:00');
+        if (isNaN(date.getTime())) {
+          return dateStr; // Fallback to original string if parsing fails
+        }
+        return date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+      }
+    } catch (e) {
+      return dateStr; // Fallback on any error
     }
   };
 
   // Format currency
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | undefined | null) => {
+    if (value == null || isNaN(value)) {
+      return '₹0';
+    }
     if (value >= 100000) {
       return `₹${(value / 100000).toFixed(1)}L`;
     }
@@ -52,10 +64,11 @@ export function AverageOrderValueChart({
     return `₹${value.toFixed(0)}`;
   };
 
-  // Calculate trend
-  const hasTrend = data.length >= 2;
-  const firstAvg = data.find(d => d.avgOrderValue > 0)?.avgOrderValue || 0;
-  const lastAvg = [...data].reverse().find(d => d.avgOrderValue > 0)?.avgOrderValue || 0;
+  // Calculate trend - only use periods with actual bookings
+  const validData = data.filter(d => d.avgOrderValue > 0 && d.bookingCount > 0);
+  const hasTrend = validData.length >= 2;
+  const firstAvg = validData[0]?.avgOrderValue || 0;
+  const lastAvg = validData[validData.length - 1]?.avgOrderValue || 0;
   const trend = hasTrend && firstAvg > 0
     ? ((lastAvg - firstAvg) / firstAvg) * 100
     : 0;
@@ -149,20 +162,25 @@ export function AverageOrderValueChart({
         </div>
 
         {/* Min/Max Stats */}
-        {data.length > 0 && (
+        {validData.length > 0 && (
           <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2 sm:mt-3">
             <div>
               <p className="text-[10px] sm:text-xs text-muted-foreground">Highest</p>
               <p className="text-xs sm:text-sm font-semibold text-green-600">
-                {formatCurrency(Math.max(...data.map(d => d.avgOrderValue)))}
+                {formatCurrency(Math.max(...validData.map(d => d.avgOrderValue)))}
               </p>
             </div>
             <div>
               <p className="text-[10px] sm:text-xs text-muted-foreground">Lowest</p>
               <p className="text-xs sm:text-sm font-semibold text-orange-600">
-                {formatCurrency(Math.min(...data.filter(d => d.avgOrderValue > 0).map(d => d.avgOrderValue)) || 0)}
+                {formatCurrency(Math.min(...validData.map(d => d.avgOrderValue)))}
               </p>
             </div>
+          </div>
+        )}
+        {validData.length === 0 && (
+          <div className="text-center text-xs text-muted-foreground py-2">
+            No order data available for this period
           </div>
         )}
       </CardContent>

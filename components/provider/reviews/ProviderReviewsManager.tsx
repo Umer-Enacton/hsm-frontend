@@ -1,24 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { Loader2, Star, TrendingUp, MessageSquare, Eye, EyeOff, Filter } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Star, TrendingUp, MessageSquare, Eye, EyeOff, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { api, API_ENDPOINTS } from "@/lib/api";
-import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { ReviewCard, ReviewData } from "./ReviewCard";
 import { ReviewFilters, ReviewFiltersData } from "./ReviewFilters";
-import { cn } from "@/lib/utils";
+import { useProviderReviews, Service } from "@/lib/queries/use-provider-reviews";
 
 interface ProviderReviewsManagerProps {
   businessId: number;
-}
-
-interface Service {
-  id: number;
-  name: string;
 }
 
 interface Stats {
@@ -30,93 +22,31 @@ interface Stats {
 }
 
 export function ProviderReviewsManager({ businessId }: ProviderReviewsManagerProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [reviews, setReviews] = useState<ReviewData[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
   const [filters, setFilters] = useState<ReviewFiltersData>({});
-  const [stats, setStats] = useState<Stats>({
-    totalReviews: 0,
-    averageRating: 0,
-    visibleReviews: 0,
-    hiddenReviews: 0,
-    totalReplies: 0,
-  });
 
-  useEffect(() => {
-    loadData();
-  }, [businessId]);
+  const { reviews, services, isLoading } = useProviderReviews(businessId, filters);
 
-  useEffect(() => {
-    if (services.length > 0) {
-      loadReviews();
-    }
-  }, [filters, services]);
-
-  const loadData = async () => {
-    try {
-      setIsLoading(true);
-      await Promise.all([loadServices(), loadReviews()]);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      toast.error("Failed to load reviews");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadServices = async () => {
-    try {
-      const response = await api.get<{ services: Service[] }>(
-        API_ENDPOINTS.SERVICES_BY_BUSINESS(businessId)
-      );
-      setServices(response.services || []);
-    } catch (error) {
-      console.error("Error loading services:", error);
-    }
-  };
-
-  const loadReviews = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (filters.rating) params.append("rating", filters.rating);
-      if (filters.serviceId) params.append("serviceId", filters.serviceId);
-      if (filters.isVisible !== undefined) params.append("isVisible", filters.isVisible.toString());
-      if (filters.search) params.append("search", filters.search);
-
-      const queryString = params.toString();
-      const url = API_ENDPOINTS.FEEDBACK_BUSINESS(businessId) + (queryString ? `?${queryString}` : "");
-
-      const response = await api.get<{ feedback: ReviewData[] }>(url);
-      const reviewsData = response.feedback || [];
-      setReviews(reviewsData);
-      calculateStats(reviewsData);
-    } catch (error) {
-      console.error("Error loading reviews:", error);
-      toast.error("Failed to load reviews");
-    }
-  };
-
-  const calculateStats = (reviewsData: ReviewData[]) => {
-    const totalReviews = reviewsData.length;
-    const visibleReviews = reviewsData.filter((r) => r.isVisible).length;
+  const stats = useMemo(() => {
+    const totalReviews = reviews.length;
+    const visibleReviews = reviews.filter((r) => r.isVisible).length;
     const hiddenReviews = totalReviews - visibleReviews;
-    const totalReplies = reviewsData.filter((r) => r.providerReply).length;
+    const totalReplies = reviews.filter((r) => r.providerReply).length;
     const averageRating =
       totalReviews > 0
-        ? reviewsData.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
         : 0;
 
-    setStats({
+    return {
       totalReviews,
       averageRating,
       visibleReviews,
       hiddenReviews,
       totalReplies,
-    });
-  };
+    };
+  }, [reviews]);
 
   const getServiceName = (serviceId: number) => {
-    const service = services.find((s) => s.id === serviceId);
+    const service = services.find((s: Service) => s.id === serviceId);
     return service?.name || `Service ${serviceId}`;
   };
 
@@ -143,14 +73,6 @@ export function ProviderReviewsManager({ businessId }: ProviderReviewsManagerPro
     });
     return distribution;
   }, [reviews]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -308,7 +230,7 @@ export function ProviderReviewsManager({ businessId }: ProviderReviewsManagerPro
 
       {/* Reviews List */}
       <div className="space-y-4">
-        {reviews.length === 0 ? (
+        {reviews.length === 0 && !isLoading ? (
           <Card>
             <CardContent className="py-12 text-center">
               <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
@@ -325,7 +247,6 @@ export function ProviderReviewsManager({ businessId }: ProviderReviewsManagerPro
               key={review.id}
               review={review}
               serviceName={getServiceName(review.serviceId)}
-              onUpdate={loadReviews}
             />
           ))
         )}

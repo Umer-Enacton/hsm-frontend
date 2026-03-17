@@ -47,7 +47,10 @@ export function AdminRevenueChart({
   };
 
   // Format currency
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value == null || isNaN(value)) {
+      return '₹0';
+    }
     const rupees = value;
     if (rupees >= 100000) {
       return `₹${(rupees / 100000).toFixed(1)}L`;

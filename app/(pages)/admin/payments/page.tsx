@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { AdminPaymentsSkeleton } from "@/components/admin/skeletons";
 import {
   Dialog,
   DialogContent,
@@ -244,12 +245,7 @@ export default function AdminPaymentsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-            <p className="text-muted-foreground">Loading payment details...</p>
-          </div>
-        </div>
+        <AdminPaymentsSkeleton />
       ) : paymentDetails.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">

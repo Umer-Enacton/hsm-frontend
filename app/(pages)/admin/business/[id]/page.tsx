@@ -36,6 +36,7 @@ import {
   ErrorState,
   StatusBadge,
 } from "@/components/admin/shared";
+import { AdminBusinessDetailSkeleton } from "@/components/admin/skeletons";
 import type { Business } from "@/types/provider";
 
 interface Service {
@@ -228,7 +229,7 @@ export default function BusinessDetailsPage() {
   };
 
   if (isLoading) {
-    return <LoadingState message="Loading business details..." />;
+    return <AdminBusinessDetailSkeleton />;
   }
 
   if (error || !business) {

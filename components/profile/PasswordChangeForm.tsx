@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { api, API_ENDPOINTS } from "@/lib/api";
 import { passwordValidators } from "@/lib/profile-api";
 import type { PasswordChangeData, PasswordFormErrors } from "@/types/profile";
 
@@ -91,8 +92,12 @@ export function PasswordChangeForm({
     setIsSubmitting(true);
 
     try {
-      // TODO: Call backend password change endpoint when available
-      // await changePassword(formData);
+      // Call backend change password endpoint
+      await api.put(API_ENDPOINTS.CHANGE_PASSWORD, {
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      });
+
       toast.success("Password changed successfully");
       setFormData({
         currentPassword: "",
@@ -103,7 +108,13 @@ export function PasswordChangeForm({
       setErrors({});
       onChange?.();
     } catch (error: any) {
-      toast.error(error.message || "Failed to change password");
+      console.error("Password change error:", error);
+      const errorMessage = error?.message || "Failed to change password";
+      toast.error(errorMessage);
+      // Set error on current password if it was incorrect
+      if (errorMessage.includes("incorrect") || errorMessage.includes("wrong")) {
+        setErrors({ currentPassword: "Current password is incorrect" });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -281,10 +292,6 @@ export function PasswordChangeForm({
             )}
           </Button>
         </div>
-
-        <p className="text-xs text-muted-foreground">
-          Note: Password change functionality will be available once the backend endpoint is implemented.
-        </p>
       </div>
     </form>
   );

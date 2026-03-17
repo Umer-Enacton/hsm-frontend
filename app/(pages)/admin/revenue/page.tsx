@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   DollarSign,
   TrendingUp,
@@ -16,10 +16,12 @@ import {
   LoadingState,
   ErrorState,
 } from "@/components/admin/shared";
+import { AdminRevenueSkeleton } from "@/components/admin/skeletons";
 import { AnalyticsSection } from "@/components/admin/analytics";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAdminAnalytics } from "@/lib/queries";
 
 interface RevenueStats {
   totalRevenue: number;
@@ -35,34 +37,23 @@ interface RevenueStats {
 }
 
 export default function AdminRevenuePage() {
-  const [stats, setStats] = useState<RevenueStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  // TanStack Query for revenue stats
+  const {
+    data: stats,
+    isLoading: isLoadingStats,
+    error: statsError,
+    refetch: refetchStats,
+  } = useQuery<RevenueStats>({
+    queryKey: ["admin", "revenue", "stats"],
+    queryFn: () => api.get<RevenueStats>(API_ENDPOINTS.ADMIN_REVENUE),
+    staleTime: 1000 * 60,
+  });
 
-  const fetchRevenueData = async (showRefreshLoading = false) => {
-    try {
-      if (showRefreshLoading) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
-      setError(null);
+  // TanStack Query for analytics
+  const { isLoading: isLoadingAnalytics } = useAdminAnalytics("7d");
 
-      const response: any = await api.get(API_ENDPOINTS.ADMIN_REVENUE);
-      setStats(response);
-    } catch (err: any) {
-      console.error("Failed to fetch revenue data:", err);
-      setError(err.message || "Failed to load revenue data");
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRevenueData();
-  }, []);
+  // Combined loading state
+  const isLoading = isLoadingStats || isLoadingAnalytics;
 
   const exportReport = () => {
     // TODO: Implement CSV export
@@ -70,11 +61,11 @@ export default function AdminRevenuePage() {
   };
 
   if (isLoading) {
-    return <LoadingState message="Loading revenue data..." />;
+    return <AdminRevenueSkeleton />;
   }
 
-  if (error && !stats) {
-    return <ErrorState message={error} onRetry={() => fetchRevenueData()} />;
+  if (statsError && !stats) {
+    return <ErrorState message={statsError.message || "Failed to load revenue data"} onRetry={() => refetchStats()} />;
   }
 
   const formatCurrency = (amount: number) => {
@@ -94,8 +85,8 @@ export default function AdminRevenuePage() {
       <AdminPageHeader
         title="Platform Revenue (5% Commission)"
         description="Track your platform fee earnings from all bookings. For every ₹500 booking, you receive ₹25 as platform commission."
-        onRefresh={() => fetchRevenueData(true)}
-        isRefreshing={isRefreshing}
+        onRefresh={() => refetchStats()}
+        isRefreshing={isLoadingStats}
         actions={
           <Button onClick={exportReport} variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
