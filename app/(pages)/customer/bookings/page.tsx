@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import React from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Calendar,
   Clock,
@@ -38,6 +39,7 @@ import { BookingActions } from "@/components/customer/bookings/BookingActions";
 import { CustomerBookingsSkeleton } from "@/components/customer/skeletons/CustomerBookingsSkeleton";
 import { useBookings } from "@/lib/queries/use-bookings";
 import { useService } from "@/lib/queries/use-services";
+import { api } from "@/lib/api";
 import type { CustomerBooking, Address, Slot, ServiceDetails } from "@/types/customer";
 
 // Local types for UI-specific data structures
@@ -55,6 +57,9 @@ interface BookingStats {
 type BookingService = CustomerBooking["service"];
 
 export default function CustomerBookingsPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   // Use React Query for bookings data
   const {
     data: bookingsData,
@@ -69,6 +74,120 @@ export default function CustomerBookingsPage() {
     "all" | "pending" | "confirmed" | "reschedule_pending" | "completed" | "cancelled" | "rejected"
   >("all");
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
+  const [pendingExpandId, setPendingExpandId] = useState<number | null>(null);
+  const [processedInitialParams, setProcessedInitialParams] = useState(false);
+
+  // Sync tab to URL
+  const updateTab = (newTab: string) => {
+    setActiveTab(newTab as any);
+    const params = new URLSearchParams(searchParams.toString());
+    if (newTab === "all") {
+      params.delete("tab");
+    } else {
+      params.set("tab", newTab);
+    }
+    router.replace(`/customer/bookings?${params.toString()}`, { scroll: false });
+  };
+
+  // Switch to the correct tab and expand booking (finds in loaded data, no API call)
+  const switchToBookingTabAndExpand = (bookingId: number) => {
+    const bookings = bookingsData?.bookings || [];
+    const booking = bookings.find((b) => b.id === bookingId);
+
+    console.log("🔍 Customer: switchToBookingTabAndExpand called", { bookingId, currentTab: activeTab, found: !!booking });
+
+    if (booking) {
+      const bookingStatus = booking.status;
+      console.log("📋 Customer booking status from loaded data:", { bookingId, bookingStatus });
+
+      if (["pending", "confirmed", "reschedule_pending", "completed", "cancelled", "rejected"].includes(bookingStatus)) {
+        if (activeTab === bookingStatus) {
+          // Already on correct tab, expand directly
+          console.log("✅ Customer: Already on correct tab, expanding directly");
+          setExpandedRowId(bookingId);
+          setPendingExpandId(null);
+        } else {
+          // Need to switch tab first
+          console.log("🔄 Customer: Switching tab from", activeTab, "to", bookingStatus);
+          updateTab(bookingStatus);
+          // Will expand after tab change (watched by effect below)
+          setPendingExpandId(bookingId);
+        }
+      } else {
+        // Unknown status, just expand in current tab
+        console.log("⚠️ Customer: Unknown status, expanding in current tab");
+        setExpandedRowId(bookingId);
+      }
+    } else {
+      // Booking not in loaded data, just expand (might be in different page/pagination)
+      console.log("⚠️ Customer: Booking not in loaded data, expanding anyway");
+      setExpandedRowId(bookingId);
+    }
+  };
+
+  // Handle URL query params on mount
+  useEffect(() => {
+    if (processedInitialParams) return;
+
+    const expandParam = searchParams.get("expand");
+    console.log("📋 Customer: URL params effect", { expandParam, processedInitialParams });
+
+    if (expandParam) {
+      const bookingId = parseInt(expandParam, 10);
+      if (!isNaN(bookingId)) {
+        console.log("✅ Customer: Setting pendingExpandId from URL:", bookingId);
+        setPendingExpandId(bookingId);
+      }
+    }
+
+    setProcessedInitialParams(true);
+  }, [searchParams, processedInitialParams]);
+
+  // Expand booking after data is loaded (for URL params on mount)
+  useEffect(() => {
+    if (!isLoading && pendingExpandId && processedInitialParams) {
+      const bookings = bookingsData?.bookings || [];
+      const bookingExists = bookings.some((b) => b.id === pendingExpandId);
+
+      if (bookingExists) {
+        console.log("📋 Customer: Data loaded, calling switchToBookingTabAndExpand for:", pendingExpandId);
+        switchToBookingTabAndExpand(pendingExpandId);
+        // DON'T clear pendingExpandId here - let tab switch watcher do it after tab changes
+      } else {
+        // Booking not in loaded data, just expand anyway
+        console.log("⚠️ Customer: Booking not found in loaded data:", pendingExpandId);
+        setExpandedRowId(pendingExpandId);
+        setPendingExpandId(null);
+      }
+    }
+  }, [isLoading, bookingsData, pendingExpandId, processedInitialParams]);
+
+  // Listen for custom event when already on page (from notification click)
+  useEffect(() => {
+    const handleNotificationClick = (event: CustomEvent<{ expand?: number }>) => {
+      const { expand } = event.detail;
+      if (expand) {
+        console.log("📌 Customer: notification click event, bookingId:", expand);
+        switchToBookingTabAndExpand(expand);
+      }
+    };
+
+    window.addEventListener("booking-notification-click", handleNotificationClick as EventListener);
+    return () => {
+      window.removeEventListener("booking-notification-click", handleNotificationClick as EventListener);
+    };
+  }, [bookingsData]); // Re-bind when bookings data changes
+
+  // Expand booking after tab has changed (handles notification clicks within page)
+  useEffect(() => {
+    console.log("👀 Customer: Tab switch watcher running", { activeTab, pendingExpandId });
+    if (pendingExpandId && activeTab !== "all") {
+      // Tab has changed from "all" to specific status tab, now expand
+      setExpandedRowId(pendingExpandId);
+      setPendingExpandId(null);
+      console.log("✅ Customer: Expanded booking after tab switch:", pendingExpandId, "in tab:", activeTab);
+    }
+  }, [activeTab, pendingExpandId]);
 
   const bookings = bookingsData?.bookings || [];
   const total = bookingsData?.total || 0;
@@ -370,7 +489,7 @@ export default function CustomerBookingsPage() {
       </div>
 
       {/* Status Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs value={activeTab} onValueChange={(v) => updateTab(v)}>
         {/* Mobile: Horizontal scrollable tabs */}
         <div className="md:hidden overflow-x-auto pb-2 -mb-2">
           <TabsList className="inline-flex w-full min-w-max gap-1 h-10">

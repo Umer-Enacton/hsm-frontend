@@ -1,24 +1,122 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import Link from "next/link";
-import { Calendar, MapPin, Star, Search, ChevronRight, Clock, CheckCircle, Home } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Star,
+  Search,
+  ChevronRight,
+  Clock,
+  CheckCircle,
+  TrendingUp,
+  Wallet,
+  IndianRupee,
+  BarChart3,
+  ArrowRight,
+  Shield,
+  Zap,
+} from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useRecentBookings, useBookingStats, useFeaturedServices } from "@/lib/queries";
+import {
+  useRecentBookings,
+  useBookingStats,
+  useFeaturedServices,
+} from "@/lib/queries";
 import type { CustomerBooking, CustomerService } from "@/types/customer";
 import { CustomerDashboardSkeleton } from "@/components/customer/skeletons/CustomerDashboardSkeleton";
+import { getCustomerBookings } from "@/lib/customer/api";
+import { useQuery } from "@tanstack/react-query";
+
+const COLORS = ["#8b5cf6", "#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#ec4899"];
 
 export default function CustomerDashboardPage() {
   const router = useRouter();
 
-  // All three queries run in parallel automatically
+  // All queries run in parallel
   const { data: recentBookings = [], isLoading: isLoadingBookings } = useRecentBookings();
   const { data: stats = { totalBookings: 0, pendingBookings: 0, completedBookings: 0 }, isLoading: isLoadingStats } = useBookingStats();
   const { data: featuredServices = [], isLoading: isLoadingServices } = useFeaturedServices();
 
+  // Fetch all bookings for analytics
+  const { data: allBookingsData } = useQuery({
+    queryKey: ["customer", "bookings", "all"],
+    queryFn: () => getCustomerBookings(),
+    staleTime: 60 * 1000,
+  });
+
+  const allBookings = allBookingsData?.bookings || [];
   const isLoading = isLoadingBookings || isLoadingStats || isLoadingServices;
+
+  // Calculate analytics from booking data
+  const analytics = useMemo(() => {
+    const monthlySpending: Record<string, number> = {};
+    const serviceCounts: Record<string, number> = {};
+    let totalSpent = 0;
+    const last6Months: string[] = [];
+
+    // Generate last 6 months keys
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const key = date.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+      last6Months.push(key);
+      monthlySpending[key] = 0;
+    }
+
+    // Process bookings
+    allBookings.forEach((booking: CustomerBooking) => {
+      const bookingDate = new Date(booking.bookingDate);
+      const monthKey = bookingDate.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+
+      // Add to spending (only completed bookings)
+      if (booking.status === "completed" && booking.totalPrice) {
+        const amount = booking.totalPrice;
+        totalSpent += amount;
+        if (monthlySpending[monthKey] !== undefined) {
+          monthlySpending[monthKey] += amount;
+        }
+      }
+
+      // Count by service name (since category isn't available in booking data)
+      const serviceName = booking.service?.name || "Other Service";
+      serviceCounts[serviceName] = (serviceCounts[serviceName] || 0) + 1;
+    });
+
+    // Convert to chart arrays
+    const spendingChartData = last6Months.map((month) => ({
+      month,
+      spending: monthlySpending[month] || 0,
+    }));
+
+    const serviceChartData = Object.entries(serviceCounts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+
+    return {
+      spendingChartData,
+      serviceChartData,
+      totalSpent,
+      avgSpendingPerBooking: stats.completedBookings > 0 ? totalSpent / stats.completedBookings : 0,
+    };
+  }, [allBookings, stats.completedBookings]);
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
@@ -40,17 +138,17 @@ export default function CustomerDashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome Back! 👋</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Welcome Back! 👋</h1>
         <p className="text-muted-foreground">
           Find and book home services from verified providers
         </p>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -89,6 +187,146 @@ export default function CustomerDashboardPage() {
             <p className="text-xs text-muted-foreground">Successfully completed</p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Spent
+            </CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl font-bold flex items-center gap-1">
+              <IndianRupee className="h-4 w-4" />
+              {analytics.totalSpent.toLocaleString("en-IN")}
+            </div>
+            <p className="text-xs text-muted-foreground">All time spending</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Analytics Section */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Spending Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-purple-600" />
+              Spending Overview (6 Months)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={analytics.spendingChartData}>
+                <defs>
+                  <linearGradient id="colorSpending" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: "#64748b", fontSize: 10 }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `₹${value}`}
+                  tick={{ fill: "#8b5cf6", fontSize: 10 }}
+                  width={50}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-background border rounded-lg shadow-lg p-2 text-xs">
+                          <p className="font-medium">{payload[0].payload.month}</p>
+                          <p className="text-purple-600">
+                            ₹{payload[0].value?.toLocaleString("en-IN") || 0}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="spending"
+                  stroke="#8b5cf6"
+                  strokeWidth={2}
+                  fill="url(#colorSpending)"
+                  fillOpacity={1}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Services Breakdown */}
+        {analytics.serviceChartData.length > 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-blue-600" />
+                Most Booked Services
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <ResponsiveContainer width="40%" height={180}>
+                  <PieChart>
+                    <Pie
+                      data={analytics.serviceChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={60}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {analytics.serviceChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex-1 space-y-2">
+                  {analytics.serviceChartData.map((item, index) => (
+                    <div key={item.name} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                        <span className="text-muted-foreground truncate max-w-[120px]" title={item.name}>{item.name}</span>
+                      </div>
+                      <span className="font-semibold">{item.value} booking{item.value > 1 ? 's' : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-gray-400" />
+                No Bookings Yet
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center py-8">
+              <p className="text-sm text-muted-foreground text-center">
+                Book your first service to see category breakdown
+              </p>
+              <Link href="/customer/services" className="mt-3">
+                <Button size="sm">Browse Services</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Recent Bookings */}
@@ -140,6 +378,12 @@ export default function CustomerDashboardPage() {
                       <MapPin className="h-4 w-4 text-muted-foreground" />
                       <span className="line-clamp-1">{booking.address?.street || ""}, {booking.address?.city || ""}</span>
                     </div>
+                    {booking.totalPrice && (
+                      <div className="flex items-center gap-2">
+                        <Wallet className="h-4 w-4 text-green-600" />
+                        <span className="font-semibold text-green-600">₹{booking.totalPrice.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -170,7 +414,7 @@ export default function CustomerDashboardPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {featuredServices.map((service) => (
               <Card
                 key={service.id}
@@ -185,6 +429,7 @@ export default function CustomerDashboardPage() {
                     </div>
                     {service.provider.isVerified && (
                       <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/20">
+                        <Shield className="h-3 w-3 mr-1" />
                         Verified
                       </Badge>
                     )}
@@ -207,13 +452,51 @@ export default function CustomerDashboardPage() {
                       <p className="text-xs text-muted-foreground">per service</p>
                     </div>
                   </div>
-                  <Button className="w-full mt-4">Book Now</Button>
+                  <Button className="w-full mt-4">
+                    Book Now
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </div>
+
+      {/* Trust Badges */}
+      <Card className="bg-muted/30">
+        <CardContent className="py-6">
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-purple-100 dark:bg-purple-950/30 rounded-lg">
+                <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Verified Providers</h3>
+                <p className="text-sm text-muted-foreground">All providers are verified</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-blue-100 dark:bg-blue-950/30 rounded-lg">
+                <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Expert Professionals</h3>
+                <p className="text-sm text-muted-foreground">Skilled & experienced team</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-green-100 dark:bg-green-950/30 rounded-lg">
+                <Wallet className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Best Prices</h3>
+                <p className="text-sm text-muted-foreground">Competitive market rates</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

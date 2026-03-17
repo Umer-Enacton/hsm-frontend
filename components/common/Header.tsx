@@ -29,7 +29,7 @@ import {
 import { useTheme } from "next-themes";
 import { useNotifications } from "@/lib/queries/use-notifications";
 import { formatDistanceToNow } from "date-fns";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -67,6 +67,7 @@ export interface HeaderProps {
 function NotificationsMenu() {
   const { notifications, unreadCount, markAsRead } = useNotifications();
   const pathname = usePathname();
+  const router = useRouter();
 
   const handleMarkAllRead = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -79,25 +80,32 @@ function NotificationsMenu() {
     e.preventDefault();
     e.stopPropagation();
 
-    // If already read, do nothing
-    if (notification.isRead) {
-      return;
+    // Mark as read (even if already on target page)
+    if (!notification.isRead) {
+      await markAsRead([notification.id]);
     }
 
-    // Mark as read
-    await markAsRead([notification.id]);
-
-    // Navigate only if not already on the target page
+    // Get booking info from notification
     const actionUrl = notification.data?.actionUrl;
-    if (actionUrl) {
-      // Check if already on this page (compare pathnames)
-      const currentPath = pathname;
-      const targetPath = new URL(actionUrl, window.location.origin).pathname;
+    const bookingId = notification.data?.bookingId;
 
-      if (currentPath !== targetPath) {
-        window.location.href = actionUrl;
-      }
-      // If already on the page, do nothing - no refresh needed
+    if (!actionUrl) return;
+
+    const targetPath = new URL(actionUrl, window.location.origin).pathname;
+
+    // Check if already on this page
+    if (pathname === targetPath) {
+      // Already on page - just trigger event to switch tab + expand
+      console.log("📌 Same page notification click, bookingId:", bookingId);
+      window.dispatchEvent(new CustomEvent("booking-notification-click", {
+        detail: { expand: bookingId ? parseInt(bookingId, 10) : null }
+      }));
+    } else {
+      // Different page - smooth navigation using Next.js router
+      const queryString = bookingId ? `?expand=${bookingId}` : "";
+      const fullPath = `${targetPath}${queryString}`;
+      console.log("📌 Navigating to:", fullPath);
+      router.push(fullPath);
     }
   };
 
@@ -139,8 +147,8 @@ function NotificationsMenu() {
           notifications.slice(0, 5).map((n) => (
             <DropdownMenuItem
               key={n.id}
-              className={`flex flex-col items-start gap-1 py-3 hover:bg-muted ${
-                !n.isRead ? "cursor-pointer" : "cursor-default opacity-70"
+              className={`flex flex-col items-start gap-1 py-3 hover:bg-muted cursor-pointer${
+                !n.isRead ? "" : " opacity-70"
               }`}
               onClick={(e) => handleNotificationClick(n, e)}
             >

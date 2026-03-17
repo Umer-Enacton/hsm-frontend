@@ -228,34 +228,39 @@ export function CustomerHeader({
                     {notifications.slice(0, 5).map((n) => (
                       <DropdownMenuItem
                         key={n.id}
-                        className={`flex flex-col items-start gap-1 py-3 hover:bg-muted ${
-                          !n.isRead
-                            ? "cursor-pointer"
-                            : "cursor-default opacity-70"
+                        className={`flex flex-col items-start gap-1 py-3 hover:bg-muted cursor-pointer${
+                          !n.isRead ? "" : " opacity-70"
                         }`}
                         onClick={async (e) => {
                           e.preventDefault();
                           e.stopPropagation();
 
-                          // If already read, do nothing
-                          if (n.isRead) {
-                            return;
+                          // Mark as read (even if already on target page)
+                          if (!n.isRead) {
+                            await markAsRead([n.id]);
                           }
 
-                          // Mark as read
-                          await markAsRead([n.id]);
+                          // Get booking info from notification
+                          const actionUrl = n.data?.actionUrl;
+                          const bookingId = n.data?.bookingId;
 
-                          // Navigate only if not already on the target page
-                          if (n.data?.actionUrl) {
-                            const currentPath = pathname;
-                            const targetPath = new URL(
-                              n.data.actionUrl,
-                              window.location.origin,
-                            ).pathname;
+                          if (!actionUrl) return;
 
-                            if (currentPath !== targetPath) {
-                              window.location.href = n.data.actionUrl;
-                            }
+                          const targetPath = new URL(actionUrl, window.location.origin).pathname;
+
+                          // Check if already on this page
+                          if (pathname === targetPath) {
+                            // Already on page - just trigger event to switch tab + expand
+                            console.log("📌 Customer: Same page notification click, bookingId:", bookingId);
+                            window.dispatchEvent(new CustomEvent("booking-notification-click", {
+                              detail: { expand: bookingId ? parseInt(bookingId, 10) : null }
+                            }));
+                          } else {
+                            // Different page - smooth navigation using Next.js router
+                            const queryString = bookingId ? `?expand=${bookingId}` : "";
+                            const fullPath = `${targetPath}${queryString}`;
+                            console.log("📌 Customer: Navigating to:", fullPath);
+                            router.push(fullPath);
                           }
                         }}
                       >

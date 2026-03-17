@@ -1,6 +1,9 @@
 "use client";
 import React from "react";
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { api } from "@/lib/api";
+import { API_ENDPOINTS } from "@/lib/api";
 import {
   Loader2,
   Calendar,
@@ -78,6 +81,9 @@ interface BookingStats {
 }
 
 export default function ProviderBookingsPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   // TanStack Query hooks
   const {
     data: bookings = [],
@@ -118,6 +124,8 @@ export default function ProviderBookingsPage() {
     | "rejected"
   >("all");
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
+  const [pendingExpandId, setPendingExpandId] = useState<number | null>(null);
+  const [processedInitialParams, setProcessedInitialParams] = useState(false);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [selectedBookingForReschedule, setSelectedBookingForReschedule] =
     useState<ProviderBooking | null>(null);
@@ -129,6 +137,101 @@ export default function ProviderBookingsPage() {
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(
     null,
   );
+
+  // Sync tab to URL
+  const updateTab = (newTab: string) => {
+    setActiveTab(newTab as any);
+    const params = new URLSearchParams(searchParams.toString());
+    if (newTab === "all") {
+      params.delete("tab");
+    } else {
+      params.set("tab", newTab);
+    }
+    router.replace(`/provider/bookings?${params.toString()}`, { scroll: false });
+  };
+
+  // Find booking by ID and switch to its tab + expand
+  const switchToBookingTabAndExpand = (bookingId: number) => {
+    // Find the booking in the already-loaded bookings
+    const booking = bookings.find((b) => b.id === bookingId);
+
+    if (booking) {
+      const bookingStatus = booking.status;
+      console.log("📋 Found booking in loaded data:", { bookingId, bookingStatus });
+
+      // Switch to the tab based on booking's status
+      if (["pending", "confirmed", "reschedule_pending", "completed", "cancelled", "rejected"].includes(bookingStatus)) {
+        updateTab(bookingStatus);
+        // Store for expansion after tab switch
+        setPendingExpandId(bookingId);
+      } else {
+        // If status is unknown or "all", just expand in current tab
+        setExpandedRowId(bookingId);
+      }
+    } else {
+      console.warn("⚠️ Booking not found in loaded data:", bookingId);
+      // Still expand even if not found
+      setExpandedRowId(bookingId);
+    }
+  };
+
+  // Handle URL query params on mount
+  useEffect(() => {
+    if (processedInitialParams) return;
+
+    const expandParam = searchParams.get("expand");
+
+    if (expandParam) {
+      const bookingId = parseInt(expandParam, 10);
+      if (!isNaN(bookingId) && !isLoading) {
+        // Wait for bookings to load, then find and switch tab
+        switchToBookingTabAndExpand(bookingId);
+      }
+    }
+
+    setProcessedInitialParams(true);
+  }, [isLoading, bookings]);
+
+  // Expand booking after tab switch - watches activeTab and pendingExpandId
+  useEffect(() => {
+    if (pendingExpandId && !isLoading) {
+      // Get filtered bookings for current tab
+      const filteredBookings = activeTab === "all"
+        ? bookings
+        : bookings.filter((b) => b.status === activeTab);
+
+      const bookingInFiltered = filteredBookings.some((b) => b.id === pendingExpandId);
+
+      console.log("🔍 Checking expand after tab switch:", {
+        pendingExpandId,
+        activeTab,
+        filteredCount: filteredBookings.length,
+        bookingInFiltered,
+      });
+
+      if (bookingInFiltered) {
+        // Found the booking in filtered list - expand it!
+        setExpandedRowId(pendingExpandId);
+        setPendingExpandId(null);
+        console.log("✅ Expanded booking:", pendingExpandId, "in tab:", activeTab);
+      }
+    }
+  }, [activeTab, pendingExpandId, isLoading, bookings]);
+
+  // Listen for custom event when already on page
+  useEffect(() => {
+    const handleNotificationClick = (event: CustomEvent<{ expand?: number }>) => {
+      const { expand } = event.detail;
+      if (expand) {
+        switchToBookingTabAndExpand(expand);
+      }
+    };
+
+    window.addEventListener("booking-notification-click", handleNotificationClick as EventListener);
+    return () => {
+      window.removeEventListener("booking-notification-click", handleNotificationClick as EventListener);
+    };
+  }, [bookings, isLoading]);
 
   // Action handlers using mutations with confirmation dialogs
   const handleAccept = () => {
@@ -570,7 +673,7 @@ export default function ProviderBookingsPage() {
       )}
 
       {/* Status Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs value={activeTab} onValueChange={(v) => updateTab(v)}>
         {/* Mobile: Horizontal scrollable tabs */}
         <div className="md:hidden overflow-x-auto pb-2 -mb-2">
           <TabsList className="inline-flex w-full min-w-max gap-1 h-10">

@@ -13,6 +13,7 @@ import {
   Calendar,
   Users,
   CreditCard,
+  Copy,
 } from "lucide-react";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import {
@@ -92,6 +93,7 @@ interface ProviderPayout {
   providerId: number;
   providerName: string;
   providerEmail: string;
+  providerPhone: string | null;
   businessName: string;
   businessId: number;
   totalPending: number;
@@ -99,6 +101,14 @@ interface ProviderPayout {
   paymentIds: number[];
   canProcessPayout: boolean;
   minimumPayoutAmount: number;
+  // Provider payment details for manual transfer
+  paymentDetails?: {
+    upiId?: string | null;
+    bankAccount?: string | null;
+    bankAccountMasked?: string | null;
+    ifscCode?: string | null;
+    accountHolderName?: string | null;
+  };
 }
 
 interface ProviderPayoutsResponse {
@@ -450,6 +460,62 @@ export default function AdminPayoutsPage() {
                         </div>
                       </div>
 
+                      {/* Payment Details for Manual Transfer */}
+                      {provider.canProcessPayout && provider.paymentDetails && (
+                        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                          <div className="flex items-center gap-2 text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
+                            <Wallet className="h-4 w-4" />
+                            Payment Details for Transfer
+                          </div>
+                          {provider.paymentDetails.upiId ? (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">
+                                <span className="text-muted-foreground">UPI:</span>{" "}
+                                <span className="font-mono font-medium">{provider.paymentDetails.upiId}</span>
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-2"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(provider.paymentDetails.upiId || "");
+                                  toast.success("UPI ID copied!");
+                                }}
+                              >
+                                Copy
+                              </Button>
+                            </div>
+                          ) : provider.paymentDetails.bankAccount && (
+                            <div className="space-y-1 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Account:</span>
+                                <span className="font-mono font-medium">{provider.paymentDetails.bankAccountMasked}</span>
+                              </div>
+                              {provider.paymentDetails.ifscCode && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">IFSC:</span>
+                                  <span className="font-mono">{provider.paymentDetails.ifscCode}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Holder:</span>
+                                <span className="text-medium">{provider.paymentDetails.accountHolderName}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* No Payment Details Warning */}
+                      {provider.canProcessPayout && !provider.paymentDetails && (
+                        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm">
+                          <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
+                            <AlertCircle className="h-4 w-4" />
+                            <span>Provider hasn't added payment details yet</span>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Threshold Status */}
                       {provider.canProcessPayout ? (
                         <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 dark:bg-green-950/40 px-3 py-1.5 rounded-lg">
@@ -480,7 +546,7 @@ export default function AdminPayoutsPage() {
                         {processing &&
                         selectedProvider?.providerId === provider.providerId
                           ? "Processing..."
-                          : `Pay ${formatCurrency(provider.totalPending)}`}
+                          : `Mark as Paid`}
                       </Button>
                     </div>
                   </div>
@@ -630,11 +696,11 @@ export default function AdminPayoutsPage() {
 
       {/* Provider Payment Confirmation Dialog */}
       <Dialog open={providerDialogOpen} onOpenChange={setProviderDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirm Provider Payment</DialogTitle>
+            <DialogTitle>Confirm Mark as Paid (MANUAL)</DialogTitle>
             <DialogDescription>
-              Pay all pending payouts for {selectedProvider?.providerName}
+              Mark all pending payouts for {selectedProvider?.providerName} as paid
             </DialogDescription>
           </DialogHeader>
 
@@ -667,10 +733,60 @@ export default function AdminPayoutsPage() {
                 </div>
               </div>
 
-              <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-300">
+              {/* Payment Details for Manual Transfer */}
+              {selectedProvider.paymentDetails && (
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-blue-800 dark:text-blue-300">
+                    <Wallet className="h-4 w-4" />
+                    Transfer Money To:
+                  </div>
+                  {selectedProvider.paymentDetails.upiId ? (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">UPI ID:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-medium">{selectedProvider.paymentDetails.upiId}</span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2"
+                          onClick={() => {
+                            navigator.clipboard.writeText(selectedProvider.paymentDetails.upiId || "");
+                            toast.success("UPI ID copied! Paste in your UPI app.");
+                          }}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : selectedProvider.paymentDetails.bankAccount && (
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Bank Account:</span>
+                        <span className="font-mono">{selectedProvider.paymentDetails.bankAccountMasked}</span>
+                      </div>
+                      {selectedProvider.paymentDetails.ifscCode && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">IFSC Code:</span>
+                          <span className="font-mono">{selectedProvider.paymentDetails.ifscCode}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">A/c Holder:</span>
+                        <span className="font-medium">{selectedProvider.paymentDetails.accountHolderName}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-300">
                 <AlertCircle className="h-4 w-4 inline mr-2" />
-                This will mark ALL {selectedProvider.bookingCount} pending
-                payouts for this provider as paid.
+                <strong>IMPORTANT:</strong> Mark as "Paid" <strong>ONLY AFTER</strong> you manually transfer ₹{(selectedProvider.totalPending / 100).toFixed(2)} to the provider via UPI/bank.
+              </div>
+
+              <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-300">
+                <CheckCircle className="h-4 w-4 inline mr-2" />
+                This will mark {selectedProvider.bookingCount} pending payouts as paid in the system.
               </div>
             </div>
           )}
@@ -686,10 +802,11 @@ export default function AdminPayoutsPage() {
             <Button
               onClick={confirmPayProvider}
               disabled={processing}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
             >
               {processing
                 ? "Processing..."
-                : `Confirm Pay ${formatCurrency(selectedProvider?.totalPending || 0)}`}
+                : `Confirm Mark as Paid`}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -38,8 +38,8 @@ export function useFeaturedServices() {
       const data = await getServices();
       const services = Array.isArray(data?.data) ? data.data : [];
 
+      // Show all services, sorted by rating (0 rating is ok)
       return services
-        .filter((s) => s.provider?.rating)
         .sort((a, b) => (b.provider?.rating || 0) - (a.provider?.rating || 0))
         .slice(0, 6);
     },

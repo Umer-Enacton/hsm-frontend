@@ -141,13 +141,41 @@ function useFCMMessageListener(queryClient: ReturnType<typeof useQueryClient>) {
 
           // Show toast notification
           if (payload.notification) {
+            const actionUrl = payload.data?.actionUrl;
+            const bookingId = payload.data?.bookingId;
+            const status = payload.data?.status;
+
+            let finalUrl = actionUrl;
+            if (actionUrl && bookingId) {
+              const url = new URL(actionUrl, window.location.origin);
+
+              // Add tab parameter based on status
+              if (status) {
+                const statusMap: Record<string, string> = {
+                  pending: "pending",
+                  confirmed: "confirmed",
+                  reschedule_pending: "reschedule_pending",
+                  completed: "completed",
+                  cancelled: "cancelled",
+                  rejected: "rejected",
+                };
+                if (statusMap[status]) {
+                  url.searchParams.set("tab", statusMap[status]);
+                }
+              }
+
+              // Add expand parameter for specific booking
+              url.searchParams.set("expand", bookingId.toString());
+              finalUrl = url.toString();
+            }
+
             toast(payload.notification.title || 'New Notification', {
               description: payload.notification.body,
               duration: 5000,
-              action: payload.data?.actionUrl ? {
+              action: finalUrl ? {
                 label: 'View',
                 onClick: () => {
-                  window.location.href = payload.data.actionUrl;
+                  window.location.href = finalUrl;
                 },
               } : undefined,
             });

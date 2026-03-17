@@ -31,6 +31,10 @@ export function AdminRevenueChart({
   totalPlatformFees,
   totalBookings,
 }: AdminRevenueChartProps) {
+  // Calculate proper tick values for bookings Y-axis (whole numbers only)
+  const maxBookings = Math.max(...data.map(d => d.bookings), 5); // At least 5
+  const bookingTicks = Array.from({ length: Math.min(maxBookings + 1, 10) }, (_, i) => i);
+
   // Format date for display
   const formatDate = (dateStr: string) => {
     const isMonthly = dateStr.length === 7;
@@ -136,8 +140,12 @@ export function AdminRevenueChart({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) => value.toString()}
-              tick={{ fill: "#3b82f6", fontSize: 11 }}
+              ticks={bookingTicks}
+              tickFormatter={(value) => Math.round(value).toString()}
+              domain={[0, maxBookings]}
+              tick={{ fill: "#3b82f6", fontSize: 10 }}
+              width={35}
+              interval="preserveStartEnd"
             />
             <Tooltip
               content={({ active, payload }) => {
