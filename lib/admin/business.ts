@@ -171,3 +171,77 @@ export async function getBusinessStats(): Promise<BusinessStats> {
     };
   }
 }
+
+/**
+ * Block business (admin action)
+ * Blocks a verified business with a reason - provider cannot receive new bookings
+ */
+export async function blockBusiness(
+  businessId: number,
+  reason: string
+): Promise<{ message: string; business: Business }> {
+  try {
+    return await api.put<{ message: string; business: Business }>(
+      API_ENDPOINTS.ADMIN_BLOCK_BUSINESS(businessId),
+      { reason }
+    );
+  } catch (error) {
+    console.error("Error blocking business:", error);
+    throw error;
+  }
+}
+
+/**
+ * Unblock business (admin action)
+ * Unblocks a business - provider can receive new bookings again
+ */
+export async function unblockBusiness(
+  businessId: number
+): Promise<{ message: string; business: Business }> {
+  try {
+    return await api.put<{ message: string; business: Business }>(
+      API_ENDPOINTS.ADMIN_UNBLOCK_BUSINESS(businessId),
+      {}
+    );
+  } catch (error) {
+    console.error("Error unblocking business:", error);
+    throw error;
+  }
+}
+
+/**
+ * Deactivate service (admin action)
+ * Deactivates a specific service with a reason - customers cannot book this service
+ */
+export async function deactivateService(
+  serviceId: number,
+  reason: string
+): Promise<{ message: string; service: any }> {
+  try {
+    return await api.put<{ message: string; service: any }>(
+      API_ENDPOINTS.ADMIN_DEACTIVATE_SERVICE(serviceId),
+      { reason }
+    );
+  } catch (error) {
+    console.error("Error deactivating service:", error);
+    throw error;
+  }
+}
+
+/**
+ * Activate service (admin action)
+ * Reactivates a deactivated service - customers can book again
+ */
+export async function activateService(
+  serviceId: number
+): Promise<{ message: string; service: any }> {
+  try {
+    return await api.put<{ message: string; service: any }>(
+      API_ENDPOINTS.ADMIN_ACTIVATE_SERVICE(serviceId),
+      {}
+    );
+  } catch (error) {
+    console.error("Error activating service:", error);
+    throw error;
+  }
+}

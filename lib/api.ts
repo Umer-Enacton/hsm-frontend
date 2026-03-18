@@ -194,6 +194,16 @@ export const API_ENDPOINTS = {
   // Device Tokens (FCM)
   DEVICE_TOKEN_REGISTER: "/device-tokens/register",
   DEVICE_TOKEN_UNREGISTER: "/device-tokens/unregister",
+
+  // Provider Status (blocking/deactivation info)
+  PROVIDER_STATUS: "/provider/status",
+
+  // Admin - Business/Service Management
+  ADMIN_SERVICES: "/admin/services",
+  ADMIN_BLOCK_BUSINESS: (id: string | number) => `/admin/business/${id}/block`,
+  ADMIN_UNBLOCK_BUSINESS: (id: string | number) => `/admin/business/${id}/unblock`,
+  ADMIN_DEACTIVATE_SERVICE: (id: string | number) => `/admin/services/${id}/deactivate`,
+  ADMIN_ACTIVATE_SERVICE: (id: string | number) => `/admin/services/${id}/activate`,
 } as const;
 
 /**

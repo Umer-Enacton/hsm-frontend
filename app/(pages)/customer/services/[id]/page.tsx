@@ -931,10 +931,10 @@ export default function ServiceDetailsPage({
                                     disabled={isBooked}
                                     className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
                                       isSelected
-                                        ? "bg-black text-white border-black"
+                                        ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
                                         : isBooked
-                                          ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed opacity-60"
-                                          : "bg-green-100 text-green-700 border-green-500 hover:bg-green-200 hover:border-green-600"
+                                          ? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 border-gray-300 dark:border-gray-700 cursor-not-allowed opacity-60"
+                                          : "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400 border-green-500 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-900 hover:border-green-600 dark:hover:border-green-600"
                                     }`}
                                     title={
                                       isBooked

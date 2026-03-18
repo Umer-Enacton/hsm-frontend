@@ -22,6 +22,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
 
 interface PaymentModalProps {
   orderData: PaymentOrderResponse; // Required: order data from parent
@@ -49,6 +50,7 @@ export function PaymentModal({
   onSuccess,
   onCancel,
 }: PaymentModalProps) {
+  const { theme } = useTheme();
   const [step, setStep] = useState<PaymentStep>("ready"); // Start at "ready" since order already created
   const [error, setError] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(60); // 1 minute in seconds
@@ -223,6 +225,8 @@ export function PaymentModal({
   const getRazorpayOptions = (): RazorpayOptions | null => {
     if (!orderData) return null;
 
+    const isDark = theme === "dark";
+
     return {
       key: orderData.keyId,
       amount: orderData.amount,
@@ -240,7 +244,7 @@ export function PaymentModal({
         service_name: serviceName,
       },
       theme: {
-        color: "#000000",
+        color: isDark ? "#334155" : "#000000", // Dark slate for dark mode, black for light mode
       },
       modal: {
         ondismiss: () => {
@@ -267,9 +271,9 @@ export function PaymentModal({
     // Success state
     if (step === "success") {
       return (
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full text-center">
           <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2 text-green-700">
+          <h3 className="text-xl font-semibold mb-2 text-green-700 dark:text-green-400">
             Payment Successful!
           </h3>
           <p className="text-muted-foreground mb-4">
@@ -285,9 +289,9 @@ export function PaymentModal({
     // Expired state
     if (step === "expired") {
       return (
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center">
-          <Clock className="h-16 w-16 text-slate-950 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2 text-slate-700">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full text-center">
+          <Clock className="h-16 w-16 text-slate-950 dark:text-slate-300 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold mb-2 text-slate-700 dark:text-slate-300">
             Session Expired
           </h3>
           <p className="text-muted-foreground mb-6">
@@ -296,7 +300,7 @@ export function PaymentModal({
           </p>
           <button
             onClick={onCancel}
-            className="w-full border border-gray-300 py-3 rounded-xl hover:bg-gray-50 transition font-medium"
+            className="w-full border border-gray-300 dark:border-gray-600 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium"
           >
             Close
           </button>
@@ -307,9 +311,9 @@ export function PaymentModal({
     // Failed state
     if (step === "failed") {
       return (
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full text-center">
           <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2 text-gray-900">
+          <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
             Payment Failed
           </h3>
           {error && <p className="text-muted-foreground mb-6">{error}</p>}
@@ -319,7 +323,7 @@ export function PaymentModal({
                 // Reset and allow parent to retry
                 onCancel?.();
               }}
-              className="flex-1 bg-purple-600 text-white py-3 rounded-xl hover:bg-purple-700 transition font-medium"
+              className="flex-1 bg-purple-600 dark:bg-purple-700 text-white py-3 rounded-xl hover:bg-purple-700 dark:hover:bg-purple-800 transition font-medium"
             >
               Close
             </button>
@@ -331,7 +335,7 @@ export function PaymentModal({
     // Processing state
     if (step === "processing") {
       return (
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full text-center">
           <Loader2 className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Confirming Payment</h3>
           <p className="text-muted-foreground">Please wait...</p>
@@ -341,12 +345,12 @@ export function PaymentModal({
 
     // Payment ready state (main UI)
     return (
-      <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full">
         {/* Header with timer */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="h-10 w-10 bg-black rounded-full flex items-center justify-center">
-              <IndianRupee className="h-5 w-5 text-white" />
+            <div className="h-10 w-10 bg-black dark:bg-white rounded-full flex items-center justify-center">
+              <IndianRupee className="h-5 w-5 text-white dark:text-black" />
             </div>
             <div>
               <h2 className="text-lg font-bold">Complete Payment</h2>
@@ -359,10 +363,10 @@ export function PaymentModal({
             <div
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
                 timeRemaining < 20
-                  ? "bg-red-100 text-red-700 animate-pulse"
+                  ? "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 animate-pulse"
                   : timeRemaining < 40
-                    ? "bg-orange-100 text-orange-700"
-                    : "bg-blue-100 text-blue-700"
+                    ? "bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-400"
+                    : "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400"
               }`}
             >
               <Clock className="h-3.5 w-3.5" />
@@ -373,9 +377,9 @@ export function PaymentModal({
 
         {/* Warning about time limit */}
         {step === "ready" && timeRemaining < 30 && (
-          <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-orange-800">
+          <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 rounded-lg flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-orange-800 dark:text-orange-300">
               {timeRemaining < 15
                 ? "Hurry! Your session is about to expire."
                 : "Your session will expire soon. Complete payment to keep your slot."}
@@ -391,7 +395,7 @@ export function PaymentModal({
         </div>
 
         {/* Booking Summary */}
-        <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-4 space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">Service</span>
             <span className="font-medium text-sm">{serviceName}</span>
@@ -410,10 +414,10 @@ export function PaymentModal({
               <span className="font-medium text-sm">{slotTime}</span>
             </div>
           )}
-          <div className="border-t border-gray-200 pt-3 mt-3">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
             <div className="flex justify-between items-center">
               <span className="font-semibold">Total Amount</span>
-              <span className="text-xl font-bold text-purple-600">
+              <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
                 ₹{orderData ? formatAmount(orderData.amount) : servicePrice}
               </span>
             </div>
@@ -445,7 +449,7 @@ export function PaymentModal({
               // Close the modal
               onCancel?.();
             }}
-            className="w-full bg-black text-white py-4 rounded-xl hover:bg-gray-800 transition font-semibold text-lg shadow-lg hover:shadow-xl"
+            className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl hover:bg-gray-800 dark:hover:bg-gray-200 transition font-semibold text-lg shadow-lg hover:shadow-xl"
           >
             Pay ₹{formatAmount(orderData.amount)}
           </RazorpayCheckoutButton>
@@ -470,7 +474,7 @@ export function PaymentModal({
             }
             onCancel?.();
           }}
-          className="w-full mt-3 border border-gray-300 py-3 rounded-xl hover:bg-gray-50 transition font-medium text-gray-700"
+          className="w-full mt-3 border border-gray-300 dark:border-gray-600 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium text-gray-700 dark:text-gray-300"
         >
           Cancel Payment
         </button>
@@ -481,7 +485,7 @@ export function PaymentModal({
   // Use Portal to render modal at document.body level for proper z-index
   return typeof document !== "undefined"
     ? createPortal(
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/70 dark:bg-black/90 flex items-center justify-center z-50 p-4">
           {renderModalContent()}
         </div>,
         document.body

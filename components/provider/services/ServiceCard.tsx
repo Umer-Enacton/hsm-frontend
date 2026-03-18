@@ -48,14 +48,14 @@ export function ServiceCard({
   const getStatusBadge = () => {
     if (service.isActive) {
       return (
-        <Badge className="bg-white/90 backdrop-blur-sm text-green-700 hover:bg-white border-green-200 shadow-sm">
+        <Badge className="bg-white/90 dark:bg-green-950/90 backdrop-blur-sm text-green-700 dark:text-green-400 hover:bg-white dark:hover:bg-green-900 border-green-200 dark:border-green-700 shadow-sm">
           <CheckCircle className="h-3 w-3 mr-1" />
           Active
         </Badge>
       );
     }
     return (
-      <Badge className="bg-white/90 backdrop-blur-sm text-gray-700 hover:bg-white border-gray-200 shadow-sm">
+      <Badge className="bg-white/90 dark:bg-gray-800 backdrop-blur-sm text-gray-700 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-700 border-gray-200 dark:border-gray-600 shadow-sm">
         <XCircle className="h-3 w-3 mr-1" />
         Inactive
       </Badge>
@@ -87,9 +87,9 @@ export function ServiceCard({
   };
 
   return (
-    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-gray-200 p-0 gap-0">
+    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-card p-0 gap-0">
       {/* Image Section with Overlay */}
-      <div className="relative h-40 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+      <div className="relative h-40 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 overflow-hidden">
         {service.image ? (
           <img
             src={service.image}
@@ -98,12 +98,12 @@ export function ServiceCard({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <ImageIcon className="h-12 w-12 text-gray-300" />
+            <ImageIcon className="h-12 w-12 text-gray-300 dark:text-gray-600" />
           </div>
         )}
 
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent dark:from-black/80 dark:via-black/40" />
 
         {/* Floating Status Badge */}
         <div className="absolute top-3 right-3">{getStatusBadge()}</div>
@@ -129,23 +129,23 @@ export function ServiceCard({
         <div className="grid grid-cols-2 gap-4">
           {/* Price */}
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
-              <IndianRupee className="h-4 w-4 text-gray-600" />
+            <div className="h-8 w-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+              <IndianRupee className="h-4 w-4 text-gray-600 dark:text-gray-400" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Price</p>
-              <p className="font-semibold text-gray-900">{service.price}</p>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">{service.price}</p>
             </div>
           </div>
 
           {/* Duration */}
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
-              <Clock className="h-4 w-4 text-gray-600" />
+            <div className="h-8 w-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+              <Clock className="h-4 w-4 text-gray-600 dark:text-gray-400" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Duration</p>
-              <p className="font-medium text-gray-900 text-sm">
+              <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">
                 {formatDuration(service.duration || service.EstimateDuration)}
               </p>
             </div>
@@ -153,13 +153,13 @@ export function ServiceCard({
         </div>
 
         {/* Rating Section */}
-        <div className="flex items-center gap-2 py-3 border-t border-gray-100">
-          <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full">
+        <div className="flex items-center gap-2 py-3 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/50 px-3 py-1.5 rounded-full">
             <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-            <span className="font-semibold text-sm text-gray-900">
+            <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
               {Number(service.rating || 0).toFixed(1)}
             </span>
-            <span className="text-xs text-gray-600">
+            <span className="text-xs text-gray-600 dark:text-gray-400">
               ({service.totalReviews || 0} reviews)
             </span>
           </div>
@@ -174,8 +174,8 @@ export function ServiceCard({
             className={cn(
               "flex-1",
               service.isActive
-                ? "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
-                : "bg-gray-900 text-white hover:bg-gray-800",
+                ? "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400"
+                : "bg-gray-900 dark:bg-gray-700 text-white hover:bg-gray-800 dark:hover:bg-gray-600",
             )}
           >
             {service.isActive ? (
@@ -196,7 +196,7 @@ export function ServiceCard({
               <Button
                 variant="outline"
                 size="sm"
-                className="px-3 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                className="px-3 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
@@ -206,14 +206,14 @@ export function ServiceCard({
                 onClick={() => onEdit(service)}
                 className="cursor-pointer"
               >
-                <Edit className="h-4 w-4 mr-2 text-gray-600" />
+                <Edit className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400" />
                 <span>Edit Service</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onViewReviews && onViewReviews(service)}
                 className="cursor-pointer"
               >
-                <MessageSquare className="h-4 w-4 mr-2 text-gray-600" />
+                <MessageSquare className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400" />
                 <span>View Reviews</span>
                 {(service.totalReviews || 0) > 0 && (
                   <Badge variant="secondary" className="ml-auto text-xs">
@@ -224,7 +224,7 @@ export function ServiceCard({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => onDelete(service.id)}
-                className="text-red-600 cursor-pointer"
+                className="text-red-600 dark:text-red-400 cursor-pointer"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 <span>Delete</span>

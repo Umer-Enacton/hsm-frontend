@@ -128,9 +128,14 @@ export function RescheduleButton({
     return days;
   };
 
-  // Check if slot is booked
+  // Check if slot is booked - check both status field and isAvailable boolean
   const isSlotBooked = (slot: Slot) => {
-    return slot.status === "booked" || slot.isAvailable === false;
+    // Check explicit status field
+    const statusBooked = slot.status === "booked";
+    // Check isAvailable boolean (false means booked)
+    const availableFalse = slot.isAvailable === false;
+    // Check if undefined/null - treat as available (better UX to show available)
+    return statusBooked || availableFalse;
   };
 
   // Smart slot filtering - exclude past slots for today and current slot
@@ -177,7 +182,16 @@ export function RescheduleButton({
         `${API_ENDPOINTS.SLOTS_PUBLIC(businessId)}?${queryParams.toString()}`,
       );
 
-      const slotsArray = response.slots || [];
+      let slotsArray = response.slots || [];
+
+      // IMPORTANT: Ensure all slots have isAvailable and status fields
+      // If backend doesn't provide them, default to available
+      slotsArray = slotsArray.map(slot => ({
+        ...slot,
+        isAvailable: slot.isAvailable ?? true,
+        status: slot.status ?? "available"
+      }));
+
       setSlots(slotsArray);
     } catch (error) {
       console.error("Error loading slots:", error);
@@ -205,7 +219,21 @@ export function RescheduleButton({
         `${API_ENDPOINTS.SLOTS_PUBLIC(businessId)}?${queryParams.toString()}`,
       );
 
-      const slotsArray = response.slots || [];
+      let slotsArray = response.slots || [];
+
+      // IMPORTANT: Ensure all slots have isAvailable and status fields
+      slotsArray = slotsArray.map(slot => ({
+        ...slot,
+        isAvailable: slot.isAvailable ?? true,
+        status: slot.status ?? "available"
+      }));
+
+      // Debug: log slot availability
+      console.log(
+        `📊 [RescheduleButton] Slot availability for ${dateStr}:`,
+        slotsArray.map(s => ({ id: s.id, time: s.startTime, available: s.isAvailable, status: s.status }))
+      );
+
       setSlots(slotsArray);
     } catch (error) {
       console.error("Error loading slots:", error);
@@ -341,15 +369,15 @@ export function RescheduleButton({
   const SlotLegend = () => (
     <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground py-2 flex-wrap">
       <div className="flex items-center gap-1.5">
-        <div className="w-4 h-4 rounded bg-green-100 border-2 border-green-500" />
+        <div className="w-4 h-4 rounded bg-green-100 dark:bg-green-950 border-2 border-green-500 dark:border-green-700" />
         <span>Available</span>
       </div>
       <div className="flex items-center gap-1.5">
-        <div className="w-4 h-4 rounded bg-black" />
+        <div className="w-4 h-4 rounded bg-black dark:bg-white" />
         <span>Selected</span>
       </div>
       <div className="flex items-center gap-1.5">
-        <div className="w-4 h-4 rounded border border-amber-300 bg-amber-50 opacity-60" />
+        <div className="w-4 h-4 rounded border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/50 opacity-60" />
         <span>Current</span>
       </div>
       <div className="flex items-center gap-1.5">
@@ -453,12 +481,12 @@ export function RescheduleButton({
                         disabled={isDisabled}
                         className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all relative ${
                           isSelected
-                            ? "bg-black text-white shadow-lg"
+                            ? "bg-black dark:bg-white text-white dark:text-black shadow-lg"
                             : isCurrent
-                              ? "border-amber-300 bg-amber-50 opacity-60 cursor-not-allowed"
+                              ? "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/50 opacity-60 cursor-not-allowed"
                               : booked
                                 ? "border-border bg-muted opacity-50 cursor-not-allowed"
-                                : "bg-green-100 border-2 border-green-500"
+                                : "bg-green-100 dark:bg-green-950 border-2 border-green-500 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-900"
                         }`}
                       >
                         {formatTime(slot.startTime)}
@@ -568,7 +596,7 @@ export function RescheduleButton({
             selectedReasons.length === 0 ||
             isRescheduling
           }
-          className="bg-black hover:gray-900 text-white"
+          className="bg-black dark:bg-white hover:bg-gray-900 dark:hover:bg-gray-200 text-white dark:text-black"
         >
           {isRescheduling ? (
             <>

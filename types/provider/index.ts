@@ -48,6 +48,10 @@ export interface Business {
   providerPhone?: string; // Provider's personal phone
   // Payment details tracking
   hasPaymentDetails?: boolean; // True if provider has added payment methods
+  // Blocking status (admin can block businesses)
+  isBlocked?: boolean;
+  blockedReason?: string | null;
+  blockedAt?: string | null;
 }
 
 /**
@@ -146,6 +150,7 @@ export enum OnboardingStage {
 export interface Service {
   id: number;
   businessId: number;
+  businessProfileId?: number; // Alternative field name
   name: string;
   description?: string;
   price: number;
@@ -157,6 +162,9 @@ export interface Service {
   totalReviews?: number;
   createdAt?: string;
   updatedAt?: string;
+  // Deactivation status (admin can deactivate services)
+  deactivationReason?: string | null;
+  deactivatedAt?: string | null;
 }
 
 /**

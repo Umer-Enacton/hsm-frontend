@@ -11,7 +11,8 @@ import {
   handleLogout,
 } from "@/lib/auth-utils";
 import { UserRole, type User } from "@/types/auth";
-import { getApiBaseUrl, getAuthHeaders } from "@/lib/api";
+import { getApiBaseUrl, getAuthHeaders, api, API_ENDPOINTS } from "@/lib/api";
+import { WarningModal, type WarningData } from "@/components/common/WarningModal";
 
 export default function CustomerLayout({
   children,
@@ -23,6 +24,8 @@ export default function CustomerLayout({
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<WarningData | null>(null);
+  const [hasAddresses, setHasAddresses] = useState(false);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -127,6 +130,70 @@ export default function CustomerLayout({
     };
   }, [router, pathname]);
 
+  // Check if customer has addresses
+  useEffect(() => {
+    if (!user) return;
+
+    const checkAddresses = async () => {
+      try {
+        const response: any = await api.get(API_ENDPOINTS.ADDRESSES);
+        const addresses = response.addresses || response.data || response || [];
+        setHasAddresses(Array.isArray(addresses) && addresses.length > 0);
+      } catch (error) {
+        console.error("Error checking addresses:", error);
+        setHasAddresses(false);
+      }
+    };
+
+    checkAddresses();
+  }, [user]);
+
+  // Show warning if no addresses
+  useEffect(() => {
+    // Don't show on profile or address page itself
+    if (pathname?.includes('/profile') || pathname?.includes('/address')) {
+      setWarning(null);
+      return;
+    }
+
+    if (!user || hasAddresses) {
+      setWarning(null);
+      return;
+    }
+
+    // Check if warning was dismissed
+    const getDismissedWarnings = (): Set<string> => {
+      if (typeof window === 'undefined') return new Set();
+      const stored = localStorage.getItem('dismissed_warnings');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    };
+
+    const dismissed = getDismissedWarnings();
+    if (!dismissed.has('no_address')) {
+      setWarning({
+        type: 'no_address',
+        title: 'No Address Found',
+        message: 'Add your address to book services. We need your location to find providers near you.',
+        icon: 'location',
+        actionLabel: 'Add Address',
+        actionHref: '/customer/profile',
+      });
+    }
+  }, [user, hasAddresses, pathname]);
+
+  const handleWarningDismiss = () => {
+    if (!warning) return;
+
+    // Save dismissed warning to localStorage
+    if (typeof window !== 'undefined') {
+      const dismissed = JSON.parse(localStorage.getItem('dismissed_warnings') || '[]');
+      dismissed.push(warning.type);
+      localStorage.setItem('dismissed_warnings', JSON.stringify(dismissed));
+    }
+
+    setWarning(null);
+  };
+
   const onLogout = async () => {
     try {
       await handleLogout("/login");
@@ -179,6 +246,8 @@ export default function CustomerLayout({
       <main className="container max-w-7xl mx-auto px-4 py-8">
         {children}
       </main>
+      {/* Warning modal for no address */}
+      {warning && <WarningModal warning={warning} onDismiss={handleWarningDismiss} />}
     </div>
   );
 }

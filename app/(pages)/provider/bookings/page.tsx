@@ -147,7 +147,9 @@ export default function ProviderBookingsPage() {
     } else {
       params.set("tab", newTab);
     }
-    router.replace(`/provider/bookings?${params.toString()}`, { scroll: false });
+    router.replace(`/provider/bookings?${params.toString()}`, {
+      scroll: false,
+    });
   };
 
   // Find booking by ID and switch to its tab + expand
@@ -157,10 +159,22 @@ export default function ProviderBookingsPage() {
 
     if (booking) {
       const bookingStatus = booking.status;
-      console.log("📋 Found booking in loaded data:", { bookingId, bookingStatus });
+      console.log("📋 Found booking in loaded data:", {
+        bookingId,
+        bookingStatus,
+      });
 
       // Switch to the tab based on booking's status
-      if (["pending", "confirmed", "reschedule_pending", "completed", "cancelled", "rejected"].includes(bookingStatus)) {
+      if (
+        [
+          "pending",
+          "confirmed",
+          "reschedule_pending",
+          "completed",
+          "cancelled",
+          "rejected",
+        ].includes(bookingStatus)
+      ) {
         updateTab(bookingStatus);
         // Store for expansion after tab switch
         setPendingExpandId(bookingId);
@@ -196,11 +210,14 @@ export default function ProviderBookingsPage() {
   useEffect(() => {
     if (pendingExpandId && !isLoading) {
       // Get filtered bookings for current tab
-      const filteredBookings = activeTab === "all"
-        ? bookings
-        : bookings.filter((b) => b.status === activeTab);
+      const filteredBookings =
+        activeTab === "all"
+          ? bookings
+          : bookings.filter((b) => b.status === activeTab);
 
-      const bookingInFiltered = filteredBookings.some((b) => b.id === pendingExpandId);
+      const bookingInFiltered = filteredBookings.some(
+        (b) => b.id === pendingExpandId,
+      );
 
       console.log("🔍 Checking expand after tab switch:", {
         pendingExpandId,
@@ -213,23 +230,36 @@ export default function ProviderBookingsPage() {
         // Found the booking in filtered list - expand it!
         setExpandedRowId(pendingExpandId);
         setPendingExpandId(null);
-        console.log("✅ Expanded booking:", pendingExpandId, "in tab:", activeTab);
+        console.log(
+          "✅ Expanded booking:",
+          pendingExpandId,
+          "in tab:",
+          activeTab,
+        );
       }
     }
   }, [activeTab, pendingExpandId, isLoading, bookings]);
 
   // Listen for custom event when already on page
   useEffect(() => {
-    const handleNotificationClick = (event: CustomEvent<{ expand?: number }>) => {
+    const handleNotificationClick = (
+      event: CustomEvent<{ expand?: number }>,
+    ) => {
       const { expand } = event.detail;
       if (expand) {
         switchToBookingTabAndExpand(expand);
       }
     };
 
-    window.addEventListener("booking-notification-click", handleNotificationClick as EventListener);
+    window.addEventListener(
+      "booking-notification-click",
+      handleNotificationClick as EventListener,
+    );
     return () => {
-      window.removeEventListener("booking-notification-click", handleNotificationClick as EventListener);
+      window.removeEventListener(
+        "booking-notification-click",
+        handleNotificationClick as EventListener,
+      );
     };
   }, [bookings, isLoading]);
 
@@ -317,7 +347,10 @@ export default function ProviderBookingsPage() {
 
     // Show reschedule fee badge for bookings with reschedule outcome
     if (booking.rescheduleOutcome) {
-      if (booking.rescheduleOutcome === "pending" || booking.rescheduleOutcome === "accepted") {
+      if (
+        booking.rescheduleOutcome === "pending" ||
+        booking.rescheduleOutcome === "accepted"
+      ) {
         return (
           <div className="flex flex-col gap-1">
             {baseBadge}
@@ -331,7 +364,10 @@ export default function ProviderBookingsPage() {
           </div>
         );
       }
-      if (booking.rescheduleOutcome === "rejected" || booking.rescheduleOutcome === "cancelled") {
+      if (
+        booking.rescheduleOutcome === "rejected" ||
+        booking.rescheduleOutcome === "cancelled"
+      ) {
         return (
           <div className="flex flex-col gap-1">
             {baseBadge}
@@ -439,6 +475,16 @@ export default function ProviderBookingsPage() {
             ""
           }
           newTime={formatTime(booking.rescheduleSlotTime || booking.startTime)}
+          previousDate={
+            booking.previousBookingDate
+              ? formatDate(booking.previousBookingDate)
+              : null
+          }
+          previousTime={
+            booking.previousSlotTime
+              ? formatTime(booking.previousSlotTime)
+              : null
+          }
           onActionComplete={refetch}
           variant="expanded"
         />
@@ -653,14 +699,18 @@ export default function ProviderBookingsPage() {
 
       {/* Payment Details Warning */}
       {business && !business.hasPaymentDetails && (
-        <Alert variant="destructive" className="border-orange-500 bg-orange-50 dark:bg-orange-950/40">
+        <Alert
+          variant="destructive"
+          className="border-orange-500 bg-orange-50 dark:bg-orange-950/40"
+        >
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1">
                 <strong className="block mb-1">Payment Details Required</strong>
-                You must add payment details (UPI ID or Bank Account) to receive bookings and earnings.
-                Without payment details, customers cannot book your services.
+                You must add payment details (UPI ID or Bank Account) to receive
+                bookings and earnings. Without payment details, customers cannot
+                book your services.
               </div>
               <Link href="/provider/payments">
                 <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
@@ -677,10 +727,19 @@ export default function ProviderBookingsPage() {
         {/* Mobile: Horizontal scrollable tabs */}
         <div className="md:hidden overflow-x-auto pb-2 -mb-2">
           <TabsList className="inline-flex w-full min-w-max gap-1 h-10">
-            <TabsTrigger value="all" className="whitespace-nowrap">All</TabsTrigger>
-            <TabsTrigger value="pending" className="whitespace-nowrap">Pending</TabsTrigger>
-            <TabsTrigger value="confirmed" className="whitespace-nowrap">Confirmed</TabsTrigger>
-            <TabsTrigger value="reschedule_pending" className="whitespace-nowrap">
+            <TabsTrigger value="all" className="whitespace-nowrap">
+              All
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="whitespace-nowrap">
+              Pending
+            </TabsTrigger>
+            <TabsTrigger value="confirmed" className="whitespace-nowrap">
+              Confirmed
+            </TabsTrigger>
+            <TabsTrigger
+              value="reschedule_pending"
+              className="whitespace-nowrap"
+            >
               Reschedule
               {stats.reschedulePending > 0 && (
                 <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
@@ -688,8 +747,12 @@ export default function ProviderBookingsPage() {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="completed" className="whitespace-nowrap">Completed</TabsTrigger>
-            <TabsTrigger value="cancelled" className="whitespace-nowrap">Cancelled</TabsTrigger>
+            <TabsTrigger value="completed" className="whitespace-nowrap">
+              Completed
+            </TabsTrigger>
+            <TabsTrigger value="cancelled" className="whitespace-nowrap">
+              Cancelled
+            </TabsTrigger>
             <TabsTrigger value="rejected" className="whitespace-nowrap">
               Rejected
               {stats.rejected > 0 && (
@@ -962,7 +1025,7 @@ export default function ProviderBookingsPage() {
                                   <div className="flex items-center gap-2 pb-3 border-b border-purple-200 dark:border-purple-800">
                                     <HistoryIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                     <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">
-                                      Reschedule Request
+                                      Reschedule Re quest
                                     </h4>
                                   </div>
                                   <div className="mt-4 space-y-4">
@@ -974,17 +1037,29 @@ export default function ProviderBookingsPage() {
                                         </label>
                                         <div className="flex items-center gap-3 mt-2">
                                           <div className="flex-1">
-                                            <div className="text-xs text-muted-foreground mb-1">From:</div>
+                                            <div className="text-xs text-muted-foreground mb-1">
+                                              From:
+                                            </div>
                                             <div className="text-sm">
-                                              {formatDate(booking.previousBookingDate)}
+                                              {formatDate(
+                                                booking.previousBookingDate,
+                                              )}
                                               {booking.previousSlotTime && (
-                                                <span> at {formatTime(booking.previousSlotTime)}</span>
+                                                <span>
+                                                  {" "}
+                                                  at{" "}
+                                                  {formatTime(
+                                                    booking.previousSlotTime,
+                                                  )}
+                                                </span>
                                               )}
                                             </div>
                                           </div>
                                           <ChevronRight className="h-4 w-4 text-purple-600 flex-shrink-0" />
                                           <div className="flex-1">
-                                            <div className="text-xs text-purple-700 dark:text-purple-300 font-medium mb-1">To:</div>
+                                            <div className="text-xs text-purple-700 dark:text-purple-300 font-medium mb-1">
+                                              To:
+                                            </div>
                                             <div className="text-sm font-medium text-purple-900 dark:text-purple-100">
                                               {formatDate(
                                                 booking.rescheduleBookingDate ||
@@ -1018,7 +1093,9 @@ export default function ProviderBookingsPage() {
                                     {/* Fee Info */}
                                     <div className="flex items-center gap-2 text-xs text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded px-2 py-1">
                                       <IndianRupee className="h-3 w-3" />
-                                      <span>Customer paid ₹100 reschedule fee</span>
+                                      <span>
+                                        Customer paid ₹100 reschedule fee
+                                      </span>
                                     </div>
                                   </div>
                                 </div>
@@ -1052,6 +1129,49 @@ export default function ProviderBookingsPage() {
                                   </div>
                                 </div>
                               </div>
+
+                              {/* Reschedule History - Show for ALL bookings with reschedule outcome */}
+                              {booking.rescheduleOutcome && booking.previousSlotId && (
+                                <div className="bg-background/50 rounded-xl p-5 border">
+                                  <div className="flex items-center gap-2 pb-3 border-b">
+                                    <HistoryIcon className="h-4 w-4 text-muted-foreground" />
+                                    <h4 className="font-semibold text-sm">
+                                      Reschedule Details
+                                    </h4>
+                                  </div>
+                                  <div className="space-y-3 mt-4">
+                                    <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3">
+                                      <div className="flex items-center gap-2 text-sm">
+                                        <span className="text-muted-foreground">Previous:</span>
+                                        <span className="font-medium">
+                                          {booking.previousBookingDate ? formatDate(booking.previousBookingDate) : "N/A"}
+                                          {booking.previousSlotTime && ` at ${formatTime(booking.previousSlotTime)}`}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-center my-1">
+                                        <ChevronRight className="h-4 w-4 text-purple-600" />
+                                      </div>
+                                      <div className="flex items-center gap-2 text-sm">
+                                        <span className="text-muted-foreground">
+                                          {booking.rescheduleOutcome === "pending" ? "Requested:" :
+                                           booking.rescheduleOutcome === "accepted" ? "Confirmed:" :
+                                           booking.rescheduleOutcome === "rejected" ? "Declined (reverted):" :
+                                           "Cancelled (reverted):"}
+                                        </span>
+                                        <span className="font-medium">
+                                          {formatDate(booking.bookingDate || booking.date)} at {formatTime(booking.startTime)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {booking.rescheduleOutcome === "pending" && "Customer's reschedule request - awaiting your approval"}
+                                      {booking.rescheduleOutcome === "accepted" && "You approved this reschedule request"}
+                                      {booking.rescheduleOutcome === "rejected" && "You declined this request - refunded to customer"}
+                                      {booking.rescheduleOutcome === "cancelled" && "Customer cancelled their reschedule request"}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
 
                               {/* Customer Review (if completed) */}
                               {booking.status === "completed" &&
