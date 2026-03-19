@@ -19,6 +19,8 @@ import {
   DollarSign,
   User,
   IndianRupee,
+  Ban,
+  ShieldCheck,
 } from "lucide-react";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { toast } from "sonner";
@@ -28,8 +30,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   verifyBusiness,
-  unverifyBusiness,
   deleteBusiness,
+  blockBusiness,
+  unblockBusiness,
 } from "@/lib/admin/business";
 import {
   LoadingState,
@@ -37,6 +40,7 @@ import {
   StatusBadge,
 } from "@/components/admin/shared";
 import { AdminBusinessDetailSkeleton } from "@/components/admin/skeletons";
+import { BlockBusinessDialog } from "@/components/admin/BlockBusinessDialog";
 import type { Business } from "@/types/provider";
 
 interface Service {
@@ -76,6 +80,7 @@ export default function BusinessDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isBlockDialogOpen, setIsBlockDialogOpen] = useState(false);
 
   useEffect(() => {
     if (businessId) {
@@ -188,22 +193,38 @@ export default function BusinessDetailsPage() {
     }
   };
 
-  const handleUnverify = async () => {
+  const handleBlock = async () => {
+    setIsBlockDialogOpen(true);
+  };
+
+  const handleUnblock = async () => {
     if (!business) return;
 
     setIsActionLoading(true);
     try {
-      const result = await unverifyBusiness(Number(businessId));
-      toast.success("Business unverified");
-      setBusiness({ ...business, isVerified: false });
+      const result = await unblockBusiness(Number(businessId));
+      toast.success("Business unblocked successfully", {
+        description: `${business.name} can now receive new bookings`,
+      });
+      setBusiness({
+        ...business,
+        isBlocked: false,
+        blockedReason: null,
+        blockedAt: null,
+      });
       window.dispatchEvent(new CustomEvent("business-updated"));
     } catch (error: any) {
-      toast.error("Failed to unverify business", {
+      toast.error("Failed to unblock business", {
         description: error.message || "Please try again",
       });
     } finally {
       setIsActionLoading(false);
     }
+  };
+
+  const handleBlocked = () => {
+    // Refresh business details after blocking
+    fetchBusinessDetails();
   };
 
   const handleDelete = async () => {
@@ -255,20 +276,45 @@ export default function BusinessDetailsPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex flex-wrap items-center justify-end gap-2 flex-1">
-          {business.isVerified ? (
+          {!business.isVerified ? (
             <Button
-              variant="outline"
-              onClick={handleUnverify}
+              onClick={handleVerify}
               disabled={isActionLoading}
               className="text-xs sm:text-sm"
             >
-              <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              Unverify
-            </Button>
-          ) : (
-            <Button onClick={handleVerify} disabled={isActionLoading} className="text-xs sm:text-sm">
               <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
               Verify
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={handleVerify}
+              disabled={isActionLoading}
+              className="text-xs sm:text-sm text-green-600 border-green-600"
+            >
+              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              Verified
+            </Button>
+          )}
+          {business.isBlocked ? (
+            <Button
+              variant="outline"
+              onClick={handleUnblock}
+              disabled={isActionLoading}
+              className="text-xs sm:text-sm text-green-600 hover:text-green-700 border-green-600 hover:bg-green-50"
+            >
+              <ShieldCheck className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              Unblock
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={handleBlock}
+              disabled={isActionLoading}
+              className="text-xs sm:text-sm text-destructive hover:text-destructive border-destructive"
+            >
+              <Ban className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              Block Business
             </Button>
           )}
           <Button
@@ -283,7 +329,7 @@ export default function BusinessDetailsPage() {
         </div>
       </div>
       {/* Cover Image Banner */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden py-0">
         <div className="relative h-36 sm:h-48 bg-muted">
           {business.coverImage || business.logo ? (
             <img
@@ -320,7 +366,13 @@ export default function BusinessDetailsPage() {
 
           {/* Badges - Top Right */}
           <div className="absolute top-2 sm:top-4 right-2 sm:right-4 flex flex-col gap-1 items-end">
-            {business.isVerified ? (
+            {business.isBlocked ? (
+              <Badge className="bg-red-100 text-red-700 border-red-300 px-2 py-1 text-[10px] sm:px-3 sm:py-1.5">
+                <Ban className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                <span className="hidden sm:inline">Blocked</span>
+                <span className="sm:hidden">Blocked</span>
+              </Badge>
+            ) : business.isVerified ? (
               <Badge className="bg-green-100 text-green-700 border-green-300 px-2 py-1 text-[10px] sm:px-3 sm:py-1.5">
                 <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
                 <span className="hidden sm:inline">Verified</span>
@@ -349,7 +401,9 @@ export default function BusinessDetailsPage() {
         <div className="px-3 sm:px-6 pb-3 sm:pb-4 pt-1 sm:pt-2">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold truncate">{business.name}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold truncate">
+                {business.name}
+              </h1>
               {business.rating && (
                 <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
                   <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
@@ -428,7 +482,7 @@ export default function BusinessDetailsPage() {
           </Card>
 
           {/* Business Information Card */}
-          <Card>
+          <Card className="gap-0">
             <CardHeader className="pb-3 sm:pb-6">
               <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-base sm:text-lg">
                 <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -441,7 +495,9 @@ export default function BusinessDetailsPage() {
                   <h4 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
                     Description
                   </h4>
-                  <p className="text-xs sm:text-sm line-clamp-2">{business.description}</p>
+                  <p className="text-xs sm:text-sm line-clamp-2">
+                    {business.description}
+                  </p>
                 </div>
               )}
 
@@ -477,7 +533,9 @@ export default function BusinessDetailsPage() {
                     <h4 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
                       Category
                     </h4>
-                    <Badge variant="outline" className="text-xs">{business.category}</Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {business.category}
+                    </Badge>
                   </div>
                 )}
 
@@ -542,7 +600,7 @@ export default function BusinessDetailsPage() {
 
         {/* Right Column - Services Section (2/3 width) */}
         <div className="lg:col-span-2">
-          <Card className="h-full">
+          <Card className="h-full gap-0">
             <CardHeader className="pb-3 sm:pb-6">
               <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-base sm:text-lg">
                 <Wrench className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -555,8 +613,10 @@ export default function BusinessDetailsPage() {
                   {business.services.map((service) => (
                     <Card
                       key={service.id}
-                      className="group hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
-                      onClick={() => router.push(`/admin/services/${service.id}`)}
+                      className="group p-2.5  hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
+                      onClick={() =>
+                        router.push(`/admin/services/${service.id}`)
+                      }
                     >
                       <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
                         {/* Service Name & Status */}
@@ -639,7 +699,9 @@ export default function BusinessDetailsPage() {
               ) : (
                 <div className="text-center py-12 sm:py-16 text-muted-foreground">
                   <Wrench className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-3 sm:mb-4 opacity-20" />
-                  <p className="text-base sm:text-lg font-medium mb-1">No services yet</p>
+                  <p className="text-base sm:text-lg font-medium mb-1">
+                    No services yet
+                  </p>
                   <p className="text-xs sm:text-sm">
                     This business hasn't added any services.
                   </p>
@@ -649,6 +711,17 @@ export default function BusinessDetailsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Block Business Dialog */}
+      {business && (
+        <BlockBusinessDialog
+          open={isBlockDialogOpen}
+          onOpenChange={setIsBlockDialogOpen}
+          businessId={Number(businessId)}
+          businessName={business.name}
+          onBlocked={handleBlocked}
+        />
+      )}
     </div>
   );
 }

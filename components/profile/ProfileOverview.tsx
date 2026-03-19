@@ -22,7 +22,7 @@ export function ProfileOverview({
     <div className={cn("space-y-6", className)}>
       {/* Account Details Card */}
       <Card>
-        <div className="p-6 space-y-4">
+        <div className="p-6 py-2">
           <h3 className="text-lg font-semibold">Account Details</h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b">
@@ -40,7 +40,11 @@ export function ProfileOverview({
             <div className="flex justify-between items-center py-2">
               <span className="text-sm text-muted-foreground">Role</span>
               <span className="text-sm font-medium capitalize">
-                {user.roleId === 1 ? "Customer" : user.roleId === 2 ? "Provider" : "Admin"}
+                {user.roleId === 1
+                  ? "Customer"
+                  : user.roleId === 2
+                    ? "Provider"
+                    : "Admin"}
               </span>
             </div>
           </div>

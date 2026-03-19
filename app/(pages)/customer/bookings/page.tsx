@@ -18,6 +18,7 @@ import {
   History,
   Info,
   RotateCcw,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,6 +42,7 @@ import { useBookings } from "@/lib/queries/use-bookings";
 import { useService } from "@/lib/queries/use-services";
 import { api } from "@/lib/api";
 import type { CustomerBooking, Address, Slot, ServiceDetails } from "@/types/customer";
+import { ImageLightbox } from "@/components/common";
 
 // Local types for UI-specific data structures
 interface BookingStats {
@@ -76,6 +78,10 @@ export default function CustomerBookingsPage() {
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
   const [pendingExpandId, setPendingExpandId] = useState<number | null>(null);
   const [processedInitialParams, setProcessedInitialParams] = useState(false);
+
+  // Image lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   // Sync tab to URL
   const updateTab = (newTab: string) => {
@@ -996,6 +1002,54 @@ export default function CustomerBookingsPage() {
                           </div>
                           )}
 
+                          {/* Completion Photos (if available) */}
+                          {(booking.beforePhotoUrl || booking.afterPhotoUrl) && (
+                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl p-5 border border-green-200 dark:border-green-800">
+                              <div className="flex items-center gap-2 pb-3 border-b border-green-200 dark:border-green-800">
+                                <ImageIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <h4 className="font-semibold text-sm text-green-900 dark:text-green-100">
+                                  Service Photos
+                                </h4>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4 mt-4">
+                                {booking.beforePhotoUrl && (
+                                  <div>
+                                    <p className="text-xs text-muted-foreground mb-2">Before</p>
+                                    <img
+                                      src={booking.beforePhotoUrl}
+                                      alt="Before service"
+                                      className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                                      onClick={() => {
+                                        setLightboxImage(booking.beforePhotoUrl!);
+                                        setLightboxOpen(true);
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                {booking.afterPhotoUrl && (
+                                  <div>
+                                    <p className="text-xs text-muted-foreground mb-2">After</p>
+                                    <img
+                                      src={booking.afterPhotoUrl}
+                                      alt="After service"
+                                      className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                                      onClick={() => {
+                                        setLightboxImage(booking.afterPhotoUrl!);
+                                        setLightboxOpen(true);
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                              {booking.completionNotes && (
+                                <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-800">
+                                  <p className="text-xs text-muted-foreground mb-1">Provider Notes:</p>
+                                  <p className="text-sm text-green-900 dark:text-green-100">{booking.completionNotes}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           {/* Quick Actions - Using modular BookingActions component */}
                           <div className="mt-6 pt-5 border-t">
                             <BookingActions
@@ -1017,6 +1071,14 @@ export default function CustomerBookingsPage() {
           </Table>
         </div>
       )}
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        imageUrl={lightboxImage}
+        alt="Service photo"
+      />
     </div>
   );
 }

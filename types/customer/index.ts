@@ -102,6 +102,11 @@ export interface CustomerBooking {
   cancelledAt?: string;
   cancellationReason?: string;
   cancelledBy?: "customer" | "provider" | "system";
+  // Completion verification (OTP-based)
+  beforePhotoUrl?: string | null;
+  afterPhotoUrl?: string | null;
+  completionNotes?: string | null;
+  actualCompletionTime?: string | null;
 
   // These ARE included in backend response from updated getCustomerBookings endpoint
   service?: {

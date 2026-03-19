@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { toast } from "sonner";
+import { ServiceActionDialog } from "@/components/admin/ServiceActionDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +80,7 @@ export default function ServiceDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
 
   useEffect(() => {
     if (serviceId) {
@@ -178,25 +180,14 @@ export default function ServiceDetailsPage() {
     }
   };
 
-  const handleToggleStatus = async () => {
-    if (!service) return;
-    setIsActionLoading(true);
-    try {
-      const newStatus = !service.isActive;
-      await api.patch(`${API_ENDPOINTS.SERVICE_BY_ID(serviceId)}`, {
-        isActive: newStatus,
-      });
-      toast.success(
-        `Service ${newStatus ? "activated" : "deactivated"} successfully`,
-      );
-      setService({ ...service, isActive: newStatus });
-    } catch (error: any) {
-      toast.error("Failed to update service status", {
-        description: error.message || "Please try again",
-      });
-    } finally {
-      setIsActionLoading(false);
-    }
+  const handleToggleStatus = () => {
+    // Open dialog for both activate and deactivate
+    setIsActionDialogOpen(true);
+  };
+
+  const handleActionCompleted = () => {
+    setIsActionDialogOpen(false);
+    fetchServiceDetails();
   };
 
   const handleDelete = async () => {
@@ -266,7 +257,11 @@ export default function ServiceDetailsPage() {
               Deactivate
             </Button>
           ) : (
-            <Button onClick={handleToggleStatus} disabled={isActionLoading} className="text-xs sm:text-sm">
+            <Button
+              onClick={handleToggleStatus}
+              disabled={isActionLoading}
+              className="text-xs sm:text-sm"
+            >
               <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
               Activate
             </Button>
@@ -284,7 +279,7 @@ export default function ServiceDetailsPage() {
       </div>
 
       {/* Cover Image Banner */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden p-0">
         <div className="relative h-36 sm:h-56 bg-muted">
           {service.image ? (
             <img
@@ -324,7 +319,9 @@ export default function ServiceDetailsPage() {
             <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 bg-white/90 backdrop-blur-sm rounded-full px-2 sm:px-4 py-1 sm:py-2 shadow-sm">
               <div className="flex items-center gap-0.5 sm:gap-1">
                 <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
-                <span className="font-semibold text-xs sm:text-sm">{ratingValue.toFixed(1)}</span>
+                <span className="font-semibold text-xs sm:text-sm">
+                  {ratingValue.toFixed(1)}
+                </span>
               </div>
             </div>
           )}
@@ -332,7 +329,9 @@ export default function ServiceDetailsPage() {
 
         {/* Service Info */}
         <div className="px-3 sm:px-6 pb-3 sm:pb-4 pt-1 sm:pt-2">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold truncate pr-16">{service.name}</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold truncate pr-16">
+            {service.name}
+          </h1>
           <p className="text-muted-foreground mt-1.5 sm:mt-2 max-w-full text-sm sm:text-base line-clamp-2">
             {service.description || "No description provided"}
           </p>
@@ -367,7 +366,7 @@ export default function ServiceDetailsPage() {
 
           {/* Provider Information Card */}
           {service.provider && (
-            <Card>
+            <Card className="p-0 gap-0">
               <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                   <User className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -389,7 +388,9 @@ export default function ServiceDetailsPage() {
                     )}
                   </Avatar>
                   <div className="flex-1 min-w-0 space-y-1 sm:space-y-1.5">
-                    <p className="font-semibold text-sm sm:text-base truncate">{service.provider.name}</p>
+                    <p className="font-semibold text-sm sm:text-base truncate">
+                      {service.provider.name}
+                    </p>
                     {service.provider.email && (
                       <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
                         <Mail className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
@@ -404,7 +405,9 @@ export default function ServiceDetailsPage() {
                     {service.provider.phone && (
                       <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
                         <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
-                        <span className="truncate">{service.provider.phone}</span>
+                        <span className="truncate">
+                          {service.provider.phone}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -413,7 +416,7 @@ export default function ServiceDetailsPage() {
             </Card>
           )}
           {service.business && (
-            <Card>
+            <Card className="p-0 gap-0">
               <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                   <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -436,7 +439,10 @@ export default function ServiceDetailsPage() {
                       {service.business.name}
                     </h3>
                     {service.business.category && (
-                      <Badge variant="outline" className="mt-1 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
+                      <Badge
+                        variant="outline"
+                        className="mt-1 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5"
+                      >
                         {service.business.category}
                       </Badge>
                     )}
@@ -466,31 +472,41 @@ export default function ServiceDetailsPage() {
         {/* Right Column - Service Details */}
         <div className="space-y-3 sm:space-y-6">
           {/* Service Details Card */}
-          <Card>
+          <Card className="p-0 gap-0">
             <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-              <CardTitle className="text-base sm:text-lg">Service Details</CardTitle>
+              <CardTitle className="text-base sm:text-lg">
+                Service Details
+              </CardTitle>
             </CardHeader>
             <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-3 sm:space-y-4">
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Service ID</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Service ID
+                  </p>
                   <p className="font-mono text-xs sm:text-sm">#{service.id}</p>
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Status</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Status
+                  </p>
                   <StatusBadge
                     status={service.isActive ? "active" : "inactive"}
                   />
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Price</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Price
+                  </p>
                   <div className="flex items-center gap-1 font-semibold text-sm sm:text-base">
                     <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     <span>{service.price}</span>
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Duration</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Duration
+                  </p>
                   <div className="flex items-center gap-1 text-xs sm:text-sm">
                     <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                     <span>{duration} min</span>
@@ -500,7 +516,9 @@ export default function ServiceDetailsPage() {
 
               {ratingValue !== null && ratingValue > 0 && (
                 <div className="pt-2 sm:pt-3 border-t">
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">Rating</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+                    Rating
+                  </p>
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
                     <span className="font-medium text-sm sm:text-base">
@@ -518,7 +536,9 @@ export default function ServiceDetailsPage() {
 
               {service.createdAt && (
                 <div className="pt-2 sm:pt-3 border-t">
-                  <p className="text-xs sm:text-sm text-muted-foreground">Created</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Created
+                  </p>
                   <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
                     <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                     <span>
@@ -552,6 +572,18 @@ export default function ServiceDetailsPage() {
           )} */}
         </div>
       </div>
+
+      {/* Service Action Dialog */}
+      {service && (
+        <ServiceActionDialog
+          open={isActionDialogOpen}
+          onOpenChange={setIsActionDialogOpen}
+          serviceId={Number(serviceId)}
+          serviceName={service.name}
+          isActive={service.isActive ?? true}
+          onActionCompleted={handleActionCompleted}
+        />
+      )}
     </div>
   );
 }

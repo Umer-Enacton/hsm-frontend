@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  IndianRupee,
-  Percent,
-  TrendingUp,
-  Wallet,
-  Info,
-} from "lucide-react";
+import { IndianRupee, Percent, TrendingUp, Wallet, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -85,7 +79,9 @@ export default function AdminSettingsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Platform Settings</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Platform Settings
+          </h1>
           <p className="text-muted-foreground text-sm sm:text-base">
             Configure platform fees and payment settings
           </p>
@@ -105,7 +101,9 @@ export default function AdminSettingsPage() {
                 Your commission from each booking
               </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-bold text-purple-600 self-start sm:self-auto">{platformFee}%</div>
+            <div className="text-2xl sm:text-3xl font-bold text-purple-600 self-start sm:self-auto">
+              {platformFee}%
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -130,11 +128,15 @@ export default function AdminSettingsPage() {
             <p className="text-sm font-medium">Example (₹500 booking):</p>
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">You receive:</span>
-              <span className="font-semibold text-purple-600">₹{example.platformFee}</span>
+              <span className="font-semibold text-purple-600">
+                ₹{example.platformFee}
+              </span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">Provider receives:</span>
-              <span className="font-semibold text-green-600">₹{example.providerShare}</span>
+              <span className="font-semibold text-green-600">
+                ₹{example.providerShare}
+              </span>
             </div>
           </div>
         </CardContent>
@@ -180,9 +182,18 @@ export default function AdminSettingsPage() {
               <div className="text-sm text-green-800 dark:text-green-300">
                 <p className="font-semibold mb-2">How payouts work:</p>
                 <ul className="text-green-700 dark:text-green-400 space-y-1 list-disc list-inside">
-                  <li>When booking is completed, provider earnings are marked as "pending"</li>
-                  <li>Once provider reaches minimum payout (₹{minimumPayout}), you can process their payout</li>
-                  <li>Payouts are grouped by provider - you can process individual or bulk payouts</li>
+                  <li>
+                    When booking is completed, provider earnings are marked as
+                    "pending"
+                  </li>
+                  <li>
+                    Once provider reaches minimum payout (₹{minimumPayout}), you
+                    can process their payout
+                  </li>
+                  <li>
+                    Payouts are grouped by provider - you can process individual
+                    or bulk payouts
+                  </li>
                 </ul>
               </div>
             </div>
@@ -192,16 +203,19 @@ export default function AdminSettingsPage() {
 
       {/* Info Card */}
       <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-        <CardContent className="pt-6">
+        <CardContent className="">
           <div className="flex gap-3 sm:gap-4">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg shrink-0">
               <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="text-sm text-blue-800 dark:text-blue-300">
-              <p className="font-semibold mb-2">Settings apply to new bookings</p>
+              <p className="font-semibold mb-2">
+                Settings apply to new bookings
+              </p>
               <p className="text-blue-700 dark:text-blue-400 leading-relaxed">
-                Changes to platform fee percentage will only apply to new bookings. Existing bookings
-                will continue to use the fee percentage that was set at the time of booking.
+                Changes to platform fee percentage will only apply to new
+                bookings. Existing bookings will continue to use the fee
+                percentage that was set at the time of booking.
               </p>
             </div>
           </div>

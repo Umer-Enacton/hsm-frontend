@@ -17,13 +17,19 @@ const ONBOARDING_PROGRESS_KEY = "provider_onboarding_progress";
 /**
  * Save onboarding progress to localStorage
  */
-function saveOnboardingProgress(stage: OnboardingStage, data: Partial<OnboardingData>) {
+function saveOnboardingProgress(
+  stage: OnboardingStage,
+  data: Partial<OnboardingData>,
+) {
   try {
-    localStorage.setItem(ONBOARDING_PROGRESS_KEY, JSON.stringify({
-      stage,
-      data,
-      timestamp: Date.now(),
-    }));
+    localStorage.setItem(
+      ONBOARDING_PROGRESS_KEY,
+      JSON.stringify({
+        stage,
+        data,
+        timestamp: Date.now(),
+      }),
+    );
   } catch (error) {
     console.error("Error saving onboarding progress:", error);
   }
@@ -32,7 +38,11 @@ function saveOnboardingProgress(stage: OnboardingStage, data: Partial<Onboarding
 /**
  * Get onboarding progress from localStorage
  */
-function getOnboardingProgress(): { stage: OnboardingStage; data: Partial<OnboardingData>; timestamp: number } | null {
+function getOnboardingProgress(): {
+  stage: OnboardingStage;
+  data: Partial<OnboardingData>;
+  timestamp: number;
+} | null {
   try {
     const saved = localStorage.getItem(ONBOARDING_PROGRESS_KEY);
     if (saved) {
@@ -65,8 +75,12 @@ function clearOnboardingProgress() {
 export default function OnboardingPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [existingData, setExistingData] = useState<Partial<OnboardingData> | undefined>(undefined);
-  const [initialStage, setInitialStage] = useState<OnboardingStage>(OnboardingStage.BUSINESS_DETAILS);
+  const [existingData, setExistingData] = useState<
+    Partial<OnboardingData> | undefined
+  >(undefined);
+  const [initialStage, setInitialStage] = useState<OnboardingStage>(
+    OnboardingStage.BUSINESS_DETAILS,
+  );
 
   useEffect(() => {
     const checkExistingData = async () => {
@@ -143,7 +157,10 @@ export default function OnboardingPage() {
   /**
    * Handle stage change - save progress to localStorage
    */
-  const handleStageChange = (stage: OnboardingStage, data: Partial<OnboardingData>) => {
+  const handleStageChange = (
+    stage: OnboardingStage,
+    data: Partial<OnboardingData>,
+  ) => {
     saveOnboardingProgress(stage, data);
   };
 
@@ -152,7 +169,9 @@ export default function OnboardingPage() {
       <div className="flex h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Preparing onboarding...</p>
+          <p className="text-sm text-muted-foreground">
+            Preparing onboarding...
+          </p>
         </div>
       </div>
     );
@@ -164,7 +183,7 @@ export default function OnboardingPage() {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight">
-            Welcome to HSM Provider Portal
+            Welcome to HomeFixCare Provider Portal
           </h1>
           <p className="text-muted-foreground mt-2">
             Let's set up your business profile in just a few steps

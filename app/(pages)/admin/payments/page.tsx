@@ -120,9 +120,10 @@ export default function AdminPaymentsPage() {
 
     try {
       setSaving(true);
-      const payload = paymentType === "upi"
-        ? { paymentType: "upi", upiId }
-        : { paymentType: "bank", bankAccount, ifscCode, accountHolderName };
+      const payload =
+        paymentType === "upi"
+          ? { paymentType: "upi", upiId }
+          : { paymentType: "bank", bankAccount, ifscCode, accountHolderName };
 
       if (editingId) {
         await api.put(`${API_ENDPOINTS.PAYMENT_DETAILS}/${editingId}`, payload);
@@ -173,7 +174,9 @@ export default function AdminPaymentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Payment Settings</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Payment Settings
+          </h1>
           <p className="text-muted-foreground text-sm sm:text-base">
             Manage your payment details for receiving platform fees
           </p>
@@ -193,8 +196,8 @@ export default function AdminPaymentsPage() {
                   System Alert: Payment Details Required
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  You must add payment details to receive platform fees.
-                  Without payment details, the payment system will not work properly.
+                  You must add payment details to receive platform fees. Without
+                  payment details, the payment system will not work properly.
                 </p>
               </div>
               <Button
@@ -211,7 +214,7 @@ export default function AdminPaymentsPage() {
 
       {paymentDetails.length > 0 && !loading && (
         <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
-          <CardContent className="pt-6">
+          <CardContent className="">
             <div className="flex gap-3 sm:gap-4">
               <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg flex-shrink-0">
                 <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -233,11 +236,19 @@ export default function AdminPaymentsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 className="text-xl font-semibold">Saved Payment Methods</h2>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={() => openAddDialog("upi")} className="flex-1 sm:flex-initial">
+          <Button
+            variant="outline"
+            onClick={() => openAddDialog("upi")}
+            className="flex-1 sm:flex-initial"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add UPI
           </Button>
-          <Button variant="outline" onClick={() => openAddDialog("bank")} className="flex-1 sm:flex-initial">
+          <Button
+            variant="outline"
+            onClick={() => openAddDialog("bank")}
+            className="flex-1 sm:flex-initial"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Bank
           </Button>
@@ -352,7 +363,7 @@ export default function AdminPaymentsPage() {
       )}
 
       {/* Info Card */}
-      <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+      {/* <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
         <CardContent className="pt-6">
           <div className="flex gap-4">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg shrink-0">
@@ -367,21 +378,22 @@ export default function AdminPaymentsPage() {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Add/Edit Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingId ? "Edit" : "Add"} {paymentType === "upi" ? "UPI ID" : "Bank Account"}
+              {editingId ? "Edit" : "Add"}{" "}
+              {paymentType === "upi" ? "UPI ID" : "Bank Account"}
             </DialogTitle>
             <DialogDescription>
               {editingId
                 ? "Update your payment details"
                 : paymentType === "upi"
-                ? "Enter your UPI ID to receive platform fees"
-                : "Enter your bank account details for direct transfers"}
+                  ? "Enter your UPI ID to receive platform fees"
+                  : "Enter your bank account details for direct transfers"}
             </DialogDescription>
           </DialogHeader>
 
@@ -439,15 +451,12 @@ export default function AdminPaymentsPage() {
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={closeDialog}
-              disabled={saving}
-            >
+            <Button variant="outline" onClick={closeDialog} disabled={saving}>
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : editingId ? "Update" : "Add"} {paymentType === "upi" ? "UPI ID" : "Bank Details"}
+              {saving ? "Saving..." : editingId ? "Update" : "Add"}{" "}
+              {paymentType === "upi" ? "UPI ID" : "Bank Details"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -11,7 +11,6 @@ import {
   useInitiateCompletion,
   useVerifyCompletionOTP,
   useResendCompletionOTP,
-  useUploadCompletionPhotos,
 } from "@/lib/queries/use-provider-bookings";
 
 interface ServiceCompletionDialogProps {
@@ -27,7 +26,7 @@ interface ServiceCompletionDialogProps {
   onSuccess?: () => void;
 }
 
-type CompletionState = "idle" | "uploading" | "sending" | "otp_sent" | "verifying" | "completed" | "error";
+type CompletionState = "idle" | "otp_sent" | "completed" | "error";
 
 export function ServiceCompletionDialog({
   open,
@@ -38,8 +37,12 @@ export function ServiceCompletionDialog({
   const [state, setState] = useState<CompletionState>("idle");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [notes, setNotes] = useState("");
-  const [beforePhoto, setBeforePhoto] = useState<string | null>(null);
-  const [afterPhoto, setAfterPhoto] = useState<string | null>(null);
+  // Store File objects for preview (not uploaded yet)
+  const [beforePhotoFile, setBeforePhotoFile] = useState<File | null>(null);
+  const [afterPhotoFile, setAfterPhotoFile] = useState<File | null>(null);
+  // Store preview URLs (local blob URLs)
+  const [beforePhotoPreview, setBeforePhotoPreview] = useState<string | null>(null);
+  const [afterPhotoPreview, setAfterPhotoPreview] = useState<string | null>(null);
   const [otpExpiry, setOtpExpiry] = useState<Date | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -47,7 +50,6 @@ export function ServiceCompletionDialog({
   const initiateCompletion = useInitiateCompletion();
   const verifyOTP = useVerifyCompletionOTP();
   const resendOTP = useResendCompletionOTP();
-  const uploadPhotos = useUploadCompletionPhotos();
 
   // Countdown timer for OTP expiry
   useEffect(() => {
@@ -72,138 +74,183 @@ export function ServiceCompletionDialog({
     return () => clearInterval(interval);
   }, [otpExpiry, state]);
 
-  const handleImageUpload = async (file: File, type: "before" | "after") => {
-    try {
-      setState("uploading");
-      const formData = new FormData();
-      formData.append("image", file);
+  // Helper function to upload a single photo
+  const uploadSinglePhoto = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("photo", file);
 
-      const apiUrl = getApiBaseUrl();
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const apiUrl = getApiBaseUrl();
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
-      const response = await fetch(`${apiUrl}/upload/image`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: formData,
-      });
+    const response = await fetch(`${apiUrl}/completion-photo`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
 
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: "Upload failed" }));
+      throw new Error(errorData.message || "Upload failed");
+    }
 
-      const data = await response.json();
-      const url = data.data?.url || data.url;
+    const data = await response.json();
+    return data.data?.url || data.url;
+  };
 
-      if (type === "before") {
-        setBeforePhoto(url);
-      } else {
-        setAfterPhoto(url);
-      }
-      setState(state === "uploading" ? "idle" : state);
-      const photoType = type === "before" ? "Before" : "After";
-      toast.success(`${photoType} photo uploaded`);
-    } catch (error) {
-      setState("idle");
-      toast.error("Failed to upload photo");
+  // Handle file selection - store locally, don't upload yet
+  const handleFileSelect = (file: File, type: "before" | "after") => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB");
+      return;
+    }
+
+    // Create local preview URL
+    const previewUrl = URL.createObjectURL(file);
+
+    if (type === "before") {
+      setBeforePhotoFile(file);
+      setBeforePhotoPreview(previewUrl);
+    } else {
+      setAfterPhotoFile(file);
+      setAfterPhotoPreview(previewUrl);
     }
   };
 
-  const handleSendOTP = async () => {
+  // Handle file removal
+  const handleRemovePhoto = (type: "before" | "after") => {
+    if (type === "before") {
+      if (beforePhotoPreview) URL.revokeObjectURL(beforePhotoPreview);
+      setBeforePhotoFile(null);
+      setBeforePhotoPreview(null);
+    } else {
+      if (afterPhotoPreview) URL.revokeObjectURL(afterPhotoPreview);
+      setAfterPhotoFile(null);
+      setAfterPhotoPreview(null);
+    }
+  };
+
+  const handleSendOTP = () => {
     if (!booking) return;
 
-    setState("sending");
     setErrorMessage("");
 
-    try {
-      // First upload photos if any
-      if (beforePhoto || afterPhoto) {
-        await uploadPhotos.mutateAsync({
-          bookingId: booking.id,
-          beforePhotoUrl: beforePhoto || undefined,
-          afterPhotoUrl: afterPhoto || undefined,
-        });
-      }
-
-      // Then initiate completion with notes
-      const result = await initiateCompletion.mutateAsync({
+    initiateCompletion.mutate(
+      {
         bookingId: booking.id,
         data: {
-          beforePhotoUrl: beforePhoto || undefined,
-          afterPhotoUrl: afterPhoto || undefined,
           completionNotes: notes || undefined,
         },
-      });
-
-      setOtpExpiry(new Date(result.otpExpiry));
-      setState("otp_sent");
-    } catch (error: any) {
-      setErrorMessage(error.message || "Failed to send OTP");
-      setState("error");
-    }
+      },
+      {
+        onSuccess: (result: any) => {
+          setOtpExpiry(new Date(result.otpExpiry));
+          setState("otp_sent");
+        },
+        onError: (error: any) => {
+          setErrorMessage(error.message || "Failed to send OTP");
+          setState("error");
+        },
+      }
+    );
   };
 
   const handleVerifyOTP = async () => {
     if (!booking) return;
 
-    setState("verifying");
     setErrorMessage("");
 
     const otpValue = otp.join("");
     if (otpValue.length !== 6) {
       setErrorMessage("Please enter the complete 6-digit OTP");
-      setState("otp_sent");
       return;
     }
 
     try {
-      const result = await verifyOTP.mutateAsync({
-        bookingId: booking.id,
-        otp: otpValue,
-      });
+      // First upload photos if any selected (this is the last step)
+      let beforePhotoUrl: string | undefined = undefined;
+      let afterPhotoUrl: string | undefined = undefined;
 
-      if (result.success) {
-        setState("completed");
-        setTimeout(() => {
-          onOpenChange(false);
-          onSuccess?.();
-          // Reset state
-          resetState();
-        }, 2000);
-      } else {
-        setErrorMessage(result.message || "Invalid OTP");
-        setState("otp_sent");
-        // Clear OTP on error
-        setOtp(["", "", "", "", "", ""]);
+      if (beforePhotoFile) {
+        beforePhotoUrl = await uploadSinglePhoto(beforePhotoFile);
       }
+      if (afterPhotoFile) {
+        afterPhotoUrl = await uploadSinglePhoto(afterPhotoFile);
+      }
+
+      // Upload photos to booking record
+      if (beforePhotoUrl || afterPhotoUrl) {
+        await api.post(`/booking/${booking.id}/completion-photos`, {
+          beforePhotoUrl,
+          afterPhotoUrl,
+        });
+      }
+
+      // Then verify OTP to complete the booking
+      verifyOTP.mutate(
+        {
+          bookingId: booking.id,
+          otp: otpValue,
+        },
+        {
+          onSuccess: (result: any) => {
+            if (result.success) {
+              setState("completed");
+              setTimeout(() => {
+                onOpenChange(false);
+                onSuccess?.();
+                resetState();
+              }, 2000);
+            } else {
+              setErrorMessage(result.message || "Invalid OTP");
+              setOtp(["", "", "", "", "", ""]);
+            }
+          },
+          onError: (error: any) => {
+            setErrorMessage(error.message || "Failed to verify OTP");
+          },
+        }
+      );
     } catch (error: any) {
-      setErrorMessage(error.message || "Failed to verify OTP");
-      setState("otp_sent");
+      setErrorMessage(error.message || "Failed to upload photos");
     }
   };
 
-  const handleResendOTP = async () => {
+  const handleResendOTP = () => {
     if (!booking) return;
 
-    try {
-      const result = await resendOTP.mutateAsync(booking.id);
-      setOtpExpiry(new Date(result.otpExpiry));
-      setOtp(["", "", "", "", "", ""]);
-      setErrorMessage("");
-      toast.success("New OTP sent");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to resend OTP");
-    }
+    resendOTP.mutate(booking.id, {
+      onSuccess: (result: any) => {
+        setOtpExpiry(new Date(result.otpExpiry));
+        setOtp(["", "", "", "", "", ""]);
+        setErrorMessage("");
+        toast.success("New OTP sent");
+      },
+      onError: (error: any) => {
+        toast.error(error.message || "Failed to resend OTP");
+      },
+    });
   };
 
   const resetState = () => {
+    // Clean up blob URLs to avoid memory leaks
+    if (beforePhotoPreview) URL.revokeObjectURL(beforePhotoPreview);
+    if (afterPhotoPreview) URL.revokeObjectURL(afterPhotoPreview);
+
     setState("idle");
     setOtp(["", "", "", "", "", ""]);
     setNotes("");
-    setBeforePhoto(null);
-    setAfterPhoto(null);
+    setBeforePhotoFile(null);
+    setAfterPhotoFile(null);
+    setBeforePhotoPreview(null);
+    setAfterPhotoPreview(null);
     setOtpExpiry(null);
     setTimeRemaining("");
     setErrorMessage("");
@@ -231,7 +278,9 @@ export function ServiceCompletionDialog({
     }
   };
 
-  const isLoading = state === "uploading" || state === "sending" || state === "verifying";
+  // Direct loading states from mutations
+  const isSending = initiateCompletion.isPending;
+  const isVerifying = verifyOTP.isPending;
 
   return (
     <Dialog open={open} onOpenChange={(open) => {
@@ -247,7 +296,7 @@ export function ServiceCompletionDialog({
             {state === "completed"
               ? "The service has been successfully completed and verified."
               : booking
-              ? `Complete the ${booking.serviceName} service for ${booking.customerName}`
+              ? `${booking.serviceName} • ${booking.customerName}`
               : "Loading booking details..."}
           </DialogDescription>
         </DialogHeader>
@@ -271,13 +320,16 @@ export function ServiceCompletionDialog({
                   <label className="text-sm font-medium mb-3 block">
                     📸 Service Photos (Optional)
                   </label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Photos will be uploaded when you verify the OTP
+                  </p>
                   <div className="grid grid-cols-2 gap-4">
                     {/* Before Photo */}
                     <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
-                      {beforePhoto ? (
+                      {beforePhotoPreview ? (
                         <div className="relative">
                           <img
-                            src={beforePhoto}
+                            src={beforePhotoPreview}
                             alt="Before"
                             className="w-full h-24 object-cover rounded"
                           />
@@ -286,7 +338,7 @@ export function ServiceCompletionDialog({
                             variant="destructive"
                             size="sm"
                             className="mt-2 w-full"
-                            onClick={() => setBeforePhoto(null)}
+                            onClick={() => handleRemovePhoto("before")}
                           >
                             Remove
                           </Button>
@@ -299,7 +351,7 @@ export function ServiceCompletionDialog({
                             className="hidden"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
-                              if (file) handleImageUpload(file, "before");
+                              if (file) handleFileSelect(file, "before");
                             }}
                           />
                           <div className="flex flex-col items-center">
@@ -313,10 +365,10 @@ export function ServiceCompletionDialog({
 
                     {/* After Photo */}
                     <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
-                      {afterPhoto ? (
+                      {afterPhotoPreview ? (
                         <div className="relative">
                           <img
-                            src={afterPhoto}
+                            src={afterPhotoPreview}
                             alt="After"
                             className="w-full h-24 object-cover rounded"
                           />
@@ -325,7 +377,7 @@ export function ServiceCompletionDialog({
                             variant="destructive"
                             size="sm"
                             className="mt-2 w-full"
-                            onClick={() => setAfterPhoto(null)}
+                            onClick={() => handleRemovePhoto("after")}
                           >
                             Remove
                           </Button>
@@ -338,7 +390,7 @@ export function ServiceCompletionDialog({
                             className="hidden"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
-                              if (file) handleImageUpload(file, "after");
+                              if (file) handleFileSelect(file, "after");
                             }}
                           />
                           <div className="flex flex-col items-center">
@@ -368,13 +420,13 @@ export function ServiceCompletionDialog({
                 {/* Send OTP Button */}
                 <Button
                   onClick={handleSendOTP}
-                  disabled={isLoading}
+                  disabled={isSending}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                 >
-                  {isLoading ? (
+                  {isSending ? (
                     <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Processing...
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Sending OTP...
                     </>
                   ) : (
                     <>
@@ -413,7 +465,8 @@ export function ServiceCompletionDialog({
                         value={digit}
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        className="w-12 h-14 text-center text-2xl font-bold border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        disabled={isVerifying}
+                        className="w-12 h-14 text-center text-2xl font-bold border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     ))}
                   </div>
@@ -444,21 +497,22 @@ export function ServiceCompletionDialog({
                   <button
                     type="button"
                     onClick={handleResendOTP}
-                    className="text-sm text-primary hover:underline"
+                    disabled={resendOTP.isPending}
+                    className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Didn't receive code? Resend OTP
+                    {resendOTP.isPending ? "Sending..." : "Didn't receive code? Resend OTP"}
                   </button>
                 </div>
 
                 {/* Verify Button */}
                 <Button
                   onClick={handleVerifyOTP}
-                  disabled={isLoading || otp.join("").length !== 6}
+                  disabled={isVerifying || otp.join("").length !== 6}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                 >
-                  {isLoading ? (
+                  {isVerifying ? (
                     <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Verifying...
                     </>
                   ) : (

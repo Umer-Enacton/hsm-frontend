@@ -488,7 +488,7 @@ export default function CustomerServicesPage() {
               viewMode === "grid" ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <Card key={i}>
+                    <Card key={i} className="p-2.5">
                       <CardContent className="p-4 space-y-3">
                         <div className="h-5 bg-muted rounded w-3/4 animate-pulse" />
                         <div className="h-4 bg-muted rounded w-1/2 animate-pulse" />
@@ -505,7 +505,7 @@ export default function CustomerServicesPage() {
               ) : (
                 <div className="space-y-3">
                   {[1, 2, 3, 4].map((i) => (
-                    <Card key={i}>
+                    <Card key={i} className="p-0">
                       <CardContent className="p-4">
                         <div className="space-y-3">
                           <div className="h-5 bg-muted rounded w-1/2 animate-pulse" />
@@ -541,7 +541,7 @@ export default function CustomerServicesPage() {
                     {services.map((service) => (
                       <Card
                         key={service.id}
-                        className="group hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
+                        className="group hover:border-primary/50 hover:shadow-md transition-all cursor-pointer p-2.5"
                         onClick={() =>
                           router.push(`/customer/services/${service.id}`)
                         }
@@ -615,7 +615,7 @@ export default function CustomerServicesPage() {
                     {services.map((service) => (
                       <Card
                         key={service.id}
-                        className="group hover:border-primary/50 transition-colors cursor-pointer border-border/50"
+                        className="group hover:border-primary/50 transition-colors cursor-pointer border-border/50 p-2"
                         onClick={() =>
                           router.push(`/customer/services/${service.id}`)
                         }

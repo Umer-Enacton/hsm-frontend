@@ -54,7 +54,7 @@ export function ServiceReviews({
     try {
       setIsLoading(true);
       const response = await api.get<{ feedback: ServiceReview[] }>(
-        API_ENDPOINTS.FEEDBACK_BY_SERVICE(serviceId)
+        API_ENDPOINTS.FEEDBACK_BY_SERVICE(serviceId),
       );
       setReviews(response.feedback || []);
     } catch (error) {
@@ -88,36 +88,41 @@ export function ServiceReviews({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto [&>button:last-child]:hidden">
+        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
+          <div className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 cursor-default">
               <Star className="h-5 w-5 text-yellow-400" />
               Customer Reviews
             </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
-          <DialogDescription className="flex items-center gap-4 mt-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onOpenChange(false)}
+            className="shrink-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </DialogHeader>
+        <DialogDescription className="pt-4 pb-0">
+          <div className="flex items-center gap-4">
             <span className="font-semibold text-lg">{serviceName}</span>
             <div className="flex items-center gap-2">
               <span className="text-2xl font-bold">
                 {Number(serviceRating || 0).toFixed(1)}
               </span>
               <div className="flex flex-col items-start">
-                <div className="flex">{renderStars(Math.round(serviceRating || 0))}</div>
+                <div className="flex">
+                  {renderStars(Math.round(serviceRating || 0))}
+                </div>
                 <span className="text-xs text-muted-foreground">
                   {totalReviews || 0} review{totalReviews !== 1 ? "s" : ""}
                 </span>
               </div>
             </div>
-          </DialogDescription>
-        </DialogHeader>
+          </div>
+        </DialogDescription>
 
         <div className="py-4">
           {isLoading ? (
@@ -142,7 +147,9 @@ export function ServiceReviews({
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <div className="flex">{renderStars(review.rating)}</div>
+                          <div className="flex">
+                            {renderStars(review.rating)}
+                          </div>
                           <Badge variant="outline" className="text-xs">
                             {review.rating}/5
                           </Badge>
@@ -150,7 +157,9 @@ export function ServiceReviews({
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <User className="h-3.5 w-3.5" />
-                            <span className="font-medium">{review.customerName}</span>
+                            <span className="font-medium">
+                              {review.customerName}
+                            </span>
                           </div>
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3.5 w-3.5" />
@@ -163,7 +172,9 @@ export function ServiceReviews({
                     {/* Comments */}
                     {review.comments && (
                       <div className="pl-1">
-                        <p className="text-sm leading-relaxed">{review.comments}</p>
+                        <p className="text-sm leading-relaxed">
+                          {review.comments}
+                        </p>
                       </div>
                     )}
                   </div>

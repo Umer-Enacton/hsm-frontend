@@ -19,8 +19,6 @@ import { getCurrentProfile } from "@/lib/profile-api";
 import { UserRole, type User } from "@/types/auth";
 import { getProviderBusiness } from "@/lib/provider/api";
 import { api, API_ENDPOINTS } from "@/lib/api";
-import { ProviderNotificationModal } from "@/components/provider/ProviderNotificationModal";
-import { WarningModal, type WarningData } from "@/components/common/WarningModal";
 
 // Navigation items for the provider sidebar
 const navItems = [
@@ -45,7 +43,6 @@ export default function ProviderLayout({
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [business, setBusiness] = useState<any>(null);
-  const [warning, setWarning] = useState<WarningData | null>(null);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -102,7 +99,10 @@ export default function ProviderLayout({
         // Check if provider has completed onboarding
         // Skip onboarding check if already on onboarding page or payments page
         // Only redirect to onboarding if NO business exists
-        if (!pathname?.includes("/onboarding") && !pathname?.includes("/payments")) {
+        if (
+          !pathname?.includes("/onboarding") &&
+          !pathname?.includes("/payments")
+        ) {
           try {
             const businessData = await getProviderBusiness(userData.id);
 
@@ -154,65 +154,6 @@ export default function ProviderLayout({
     };
   }, [router, pathname]);
 
-  // Check for warnings (verification pending, payment details missing)
-  useEffect(() => {
-    if (!business) return;
-
-    // Get dismissed warnings from localStorage
-    const getDismissedWarnings = (): Set<string> => {
-      if (typeof window === 'undefined') return new Set();
-      const stored = localStorage.getItem('dismissed_warnings');
-      return stored ? new Set(JSON.parse(stored)) : new Set();
-    };
-
-    const dismissed = getDismissedWarnings();
-
-    // Check 1: Business verification pending (only if not blocked)
-    if (!business.isVerified && !business.isBlocked) {
-      const warningKey = 'verification_pending';
-      if (!dismissed.has(warningKey)) {
-        setWarning({
-          type: 'pending_verification',
-          title: 'Verification Pending',
-          message: 'Your business is pending verification from admin. You can add services, but cannot receive bookings until verified.',
-          icon: 'shield',
-        });
-        return;
-      }
-    }
-
-    // Check 2: Payment details missing (only if verified and not blocked)
-    if (business.isVerified && !business.isBlocked && !business.hasPaymentDetails) {
-      const warningKey = 'payment_details_pending';
-      if (!dismissed.has(warningKey)) {
-        setWarning({
-          type: 'pending_payment',
-          title: 'Payment Details Required',
-          message: 'Add your payment details to receive payouts for completed bookings.',
-          icon: 'credit',
-          actionLabel: 'Add Payment Details',
-          actionHref: '/provider/payments',
-        });
-        return;
-      }
-    }
-
-    setWarning(null);
-  }, [business]);
-
-  const handleWarningDismiss = () => {
-    if (!warning) return;
-
-    // Save dismissed warning to localStorage
-    if (typeof window !== 'undefined') {
-      const dismissed = JSON.parse(localStorage.getItem('dismissed_warnings') || '[]');
-      dismissed.push(warning.type);
-      localStorage.setItem('dismissed_warnings', JSON.stringify(dismissed));
-    }
-
-    setWarning(null);
-  };
-
   const onLogout = async () => {
     try {
       await handleLogout("/login");
@@ -254,7 +195,7 @@ export default function ProviderLayout({
       <DashboardLayout
         sidebar={{
           navItems,
-          appName: "HSM Provider",
+          appName: "HomeFixCare",
         }}
         header={{
           user: user
@@ -274,10 +215,6 @@ export default function ProviderLayout({
       >
         {children}
       </DashboardLayout>
-      {/* Global notification modal for blocked business/deactivated services */}
-      <ProviderNotificationModal />
-      {/* Warning modal for verification pending/payment details */}
-      {warning && <WarningModal warning={warning} onDismiss={handleWarningDismiss} />}
     </>
   );
 }

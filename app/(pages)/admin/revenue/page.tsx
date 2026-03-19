@@ -65,7 +65,12 @@ export default function AdminRevenuePage() {
   }
 
   if (statsError && !stats) {
-    return <ErrorState message={statsError.message || "Failed to load revenue data"} onRetry={() => refetchStats()} />;
+    return (
+      <ErrorState
+        message={statsError.message || "Failed to load revenue data"}
+        onRetry={() => refetchStats()}
+      />
+    );
   }
 
   const formatCurrency = (amount: number) => {
@@ -131,8 +136,8 @@ export default function AdminRevenuePage() {
       <AnalyticsSection defaultPeriod="30d" />
 
       {/* Revenue Breakdown - Monthly Table */}
-      <Card className="shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950 dark:to-indigo-950">
+      <Card className="shadow-lg gap-0">
+        <CardHeader className="">
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-purple-600" />
             Monthly Platform Fee Breakdown
@@ -180,7 +185,7 @@ export default function AdminRevenuePage() {
 
       {/* Platform Fee Info */}
       <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800">
-        <CardContent className="pt-6">
+        <CardContent className="">
           <div className="flex gap-3">
             <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
             <div className="text-sm text-blue-800 dark:text-blue-300">

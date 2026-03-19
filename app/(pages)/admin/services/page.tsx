@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Wrench } from "lucide-react";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { toast } from "sonner";
+import { ServiceActionDialog } from "@/components/admin/ServiceActionDialog";
 import {
   AdminPageHeader,
   StatCard,
@@ -48,6 +49,7 @@ import {
   Clock,
   IndianRupee,
   Star,
+  Power,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -106,6 +108,7 @@ export default function AdminServicesPage() {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [actionDialogService, setActionDialogService] = useState<Service | null>(null);
 
   useEffect(() => {
     fetchServices();
@@ -124,8 +127,8 @@ export default function AdminServicesPage() {
       }
       setError(null);
 
-      // Fetch services
-      const servicesResponse: any = await api.get(API_ENDPOINTS.SERVICES);
+      // Fetch services using admin endpoint (includes inactive services)
+      const servicesResponse: any = await api.get(API_ENDPOINTS.ADMIN_SERVICES);
       const servicesData = Array.isArray(servicesResponse)
         ? servicesResponse
         : (servicesResponse?.services || servicesResponse?.data || []);
@@ -215,19 +218,14 @@ export default function AdminServicesPage() {
     setFilteredServices(filtered);
   };
 
-  const handleToggleStatus = async (service: Service) => {
-    try {
-      const newStatus = !service.isActive;
-      await api.patch(`${API_ENDPOINTS.SERVICE_BY_ID(service.id)}`, {
-        isActive: newStatus,
-      });
-      toast.success(
-        `Service ${newStatus ? "activated" : "deactivated"} successfully`
-      );
-      await fetchServices();
-    } catch (err: any) {
-      toast.error("Failed to update service status");
-    }
+  const handleToggleStatus = (service: Service) => {
+    // Open dialog for both activate and deactivate
+    setActionDialogService(service);
+  };
+
+  const handleActionCompleted = () => {
+    setActionDialogService(null);
+    fetchServices();
   };
 
   const handleViewDetails = (serviceId: number) => {
@@ -460,6 +458,18 @@ export default function AdminServicesPage() {
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {/* Service Action Dialog */}
+      {actionDialogService && (
+        <ServiceActionDialog
+          open={!!actionDialogService}
+          onOpenChange={(open) => !open && setActionDialogService(null)}
+          serviceId={actionDialogService.id}
+          serviceName={actionDialogService.name}
+          isActive={actionDialogService.isActive ?? true}
+          onActionCompleted={handleActionCompleted}
+        />
       )}
     </div>
   );

@@ -27,6 +27,7 @@ import {
   IndianRupee,
   History as HistoryIcon,
   RotateCcw,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,6 +71,7 @@ import { ProviderBookingsSkeleton } from "@/components/provider/skeletons/Provid
 import { ReschedulePendingActions } from "@/components/provider/bookings/ReschedulePendingActions";
 import { ProviderRescheduleDialog } from "@/components/provider/bookings/ProviderRescheduleDialog";
 import { ServiceCompletionDialog } from "@/components/provider/bookings/ServiceCompletionDialog";
+import { ImageLightbox } from "@/components/common";
 
 interface BookingStats {
   total: number;
@@ -143,6 +145,10 @@ export default function ProviderBookingsPage() {
   const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
   const [selectedBookingForCompletion, setSelectedBookingForCompletion] =
     useState<ProviderBooking | null>(null);
+
+  // Image lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   // Sync tab to URL
   const updateTab = (newTab: string) => {
@@ -1031,6 +1037,66 @@ export default function ProviderBookingsPage() {
                                   </div>
                                 </div>
                               </div>
+                              {/* Completion Photos (if available) */}
+                              {(booking.beforePhotoUrl ||
+                                booking.afterPhotoUrl) && (
+                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl p-5 border border-green-200 dark:border-green-800">
+                                  <div className="flex items-center gap-2 pb-3 border-b border-green-200 dark:border-green-800">
+                                    <ImageIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                    <h4 className="font-semibold text-sm text-green-900 dark:text-green-100">
+                                      Service Photos
+                                    </h4>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4 mt-4">
+                                    {booking.beforePhotoUrl && (
+                                      <div>
+                                        <p className="text-xs text-muted-foreground mb-2">
+                                          Before
+                                        </p>
+                                        <img
+                                          src={booking.beforePhotoUrl}
+                                          alt="Before service"
+                                          className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                                          onClick={() => {
+                                            setLightboxImage(
+                                              booking.beforePhotoUrl!,
+                                            );
+                                            setLightboxOpen(true);
+                                          }}
+                                        />
+                                      </div>
+                                    )}
+                                    {booking.afterPhotoUrl && (
+                                      <div>
+                                        <p className="text-xs text-muted-foreground mb-2">
+                                          After
+                                        </p>
+                                        <img
+                                          src={booking.afterPhotoUrl}
+                                          alt="After service"
+                                          className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                                          onClick={() => {
+                                            setLightboxImage(
+                                              booking.afterPhotoUrl!,
+                                            );
+                                            setLightboxOpen(true);
+                                          }}
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                  {booking.completionNotes && (
+                                    <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-800">
+                                      <p className="text-xs text-muted-foreground mb-1">
+                                        Provider Notes:
+                                      </p>
+                                      <p className="text-sm text-green-900 dark:text-green-100">
+                                        {booking.completionNotes}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
 
                             {/* RIGHT COLUMN: Service & Actions */}
@@ -1147,47 +1213,73 @@ export default function ProviderBookingsPage() {
                               </div>
 
                               {/* Reschedule History - Show for ALL bookings with reschedule outcome */}
-                              {booking.rescheduleOutcome && booking.previousSlotId && (
-                                <div className="bg-background/50 rounded-xl p-5 border">
-                                  <div className="flex items-center gap-2 pb-3 border-b">
-                                    <HistoryIcon className="h-4 w-4 text-muted-foreground" />
-                                    <h4 className="font-semibold text-sm">
-                                      Reschedule Details
-                                    </h4>
-                                  </div>
-                                  <div className="space-y-3 mt-4">
-                                    <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3">
-                                      <div className="flex items-center gap-2 text-sm">
-                                        <span className="text-muted-foreground">Previous:</span>
-                                        <span className="font-medium">
-                                          {booking.previousBookingDate ? formatDate(booking.previousBookingDate) : "N/A"}
-                                          {booking.previousSlotTime && ` at ${formatTime(booking.previousSlotTime)}`}
-                                        </span>
+                              {booking.rescheduleOutcome &&
+                                booking.previousSlotId && (
+                                  <div className="bg-background/50 rounded-xl p-5 border">
+                                    <div className="flex items-center gap-2 pb-3 border-b">
+                                      <HistoryIcon className="h-4 w-4 text-muted-foreground" />
+                                      <h4 className="font-semibold text-sm">
+                                        Reschedule Details
+                                      </h4>
+                                    </div>
+                                    <div className="space-y-3 mt-4">
+                                      <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3">
+                                        <div className="flex items-center gap-2 text-sm">
+                                          <span className="text-muted-foreground">
+                                            Previous:
+                                          </span>
+                                          <span className="font-medium">
+                                            {booking.previousBookingDate
+                                              ? formatDate(
+                                                  booking.previousBookingDate,
+                                                )
+                                              : "N/A"}
+                                            {booking.previousSlotTime &&
+                                              ` at ${formatTime(booking.previousSlotTime)}`}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center justify-center my-1">
+                                          <ChevronRight className="h-4 w-4 text-purple-600" />
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                          <span className="text-muted-foreground">
+                                            {booking.rescheduleOutcome ===
+                                            "pending"
+                                              ? "Requested:"
+                                              : booking.rescheduleOutcome ===
+                                                  "accepted"
+                                                ? "Confirmed:"
+                                                : booking.rescheduleOutcome ===
+                                                    "rejected"
+                                                  ? "Declined (reverted):"
+                                                  : "Cancelled (reverted):"}
+                                          </span>
+                                          <span className="font-medium">
+                                            {formatDate(
+                                              booking.bookingDate ||
+                                                booking.date,
+                                            )}{" "}
+                                            at {formatTime(booking.startTime)}
+                                          </span>
+                                        </div>
                                       </div>
-                                      <div className="flex items-center justify-center my-1">
-                                        <ChevronRight className="h-4 w-4 text-purple-600" />
-                                      </div>
-                                      <div className="flex items-center gap-2 text-sm">
-                                        <span className="text-muted-foreground">
-                                          {booking.rescheduleOutcome === "pending" ? "Requested:" :
-                                           booking.rescheduleOutcome === "accepted" ? "Confirmed:" :
-                                           booking.rescheduleOutcome === "rejected" ? "Declined (reverted):" :
-                                           "Cancelled (reverted):"}
-                                        </span>
-                                        <span className="font-medium">
-                                          {formatDate(booking.bookingDate || booking.date)} at {formatTime(booking.startTime)}
-                                        </span>
+                                      <div className="text-xs text-muted-foreground">
+                                        {booking.rescheduleOutcome ===
+                                          "pending" &&
+                                          "Customer's reschedule request - awaiting your approval"}
+                                        {booking.rescheduleOutcome ===
+                                          "accepted" &&
+                                          "You approved this reschedule request"}
+                                        {booking.rescheduleOutcome ===
+                                          "rejected" &&
+                                          "You declined this request - refunded to customer"}
+                                        {booking.rescheduleOutcome ===
+                                          "cancelled" &&
+                                          "Customer cancelled their reschedule request"}
                                       </div>
                                     </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {booking.rescheduleOutcome === "pending" && "Customer's reschedule request - awaiting your approval"}
-                                      {booking.rescheduleOutcome === "accepted" && "You approved this reschedule request"}
-                                      {booking.rescheduleOutcome === "rejected" && "You declined this request - refunded to customer"}
-                                      {booking.rescheduleOutcome === "cancelled" && "Customer cancelled their reschedule request"}
-                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
 
                               {/* Customer Review (if completed) */}
                               {booking.status === "completed" &&
@@ -1289,7 +1381,9 @@ export default function ProviderBookingsPage() {
             id: selectedBookingForCompletion.id,
             serviceName: selectedBookingForCompletion.serviceName || "Service",
             customerName: selectedBookingForCompletion.customerName,
-            date: selectedBookingForCompletion.bookingDate || selectedBookingForCompletion.date,
+            date:
+              selectedBookingForCompletion.bookingDate ||
+              selectedBookingForCompletion.date,
             startTime: selectedBookingForCompletion.startTime,
           }}
           onSuccess={handleCompletionSuccess}
@@ -1414,6 +1508,14 @@ export default function ProviderBookingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        imageUrl={lightboxImage}
+        alt="Service photo"
+      />
     </div>
   );
 }

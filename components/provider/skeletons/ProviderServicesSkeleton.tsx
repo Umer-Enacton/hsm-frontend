@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 function ServiceCardSkeleton() {
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden p-0">
       {/* Image Section */}
       <Skeleton className="h-48 w-full rounded-none" />
 

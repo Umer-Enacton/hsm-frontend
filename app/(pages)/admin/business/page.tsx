@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Briefcase, Building2, Badge, User, Trash2 } from "lucide-react";
+import { Briefcase, Building2, Badge, User, Trash2, Ban } from "lucide-react";
 import { toast } from "sonner";
 import {
   getAllBusinesses,
@@ -10,6 +10,8 @@ import {
   verifyBusiness,
   unverifyBusiness,
   deleteBusiness,
+  blockBusiness,
+  unblockBusiness,
   type AdminBusinessListParams,
   type BusinessStats,
 } from "@/lib/admin/business";
@@ -53,6 +55,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { BlockBusinessDialog } from "@/components/admin/BlockBusinessDialog";
 
 type ViewMode = "grid" | "list";
 
@@ -64,6 +67,7 @@ export default function AdminBusinessPage() {
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
   const [stats, setStats] = useState<BusinessStats | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [blockDialogBusiness, setBlockDialogBusiness] = useState<Business | null>(null);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -107,9 +111,11 @@ export default function AdminBusinessPage() {
 
     // Status filter
     if (statusFilter === "verified") {
-      filtered = filtered.filter((b) => b.isVerified);
+      filtered = filtered.filter((b) => b.isVerified && !b.isBlocked);
     } else if (statusFilter === "pending") {
-      filtered = filtered.filter((b) => !b.isVerified);
+      filtered = filtered.filter((b) => !b.isVerified && !b.isBlocked);
+    } else if (statusFilter === "blocked") {
+      filtered = filtered.filter((b) => b.isBlocked);
     }
 
     // Search filter
@@ -188,6 +194,29 @@ export default function AdminBusinessPage() {
     }
   };
 
+  const handleBlock = (business: Business) => {
+    setBlockDialogBusiness(business);
+  };
+
+  const handleUnblock = async (businessId: number) => {
+    try {
+      await unblockBusiness(businessId);
+      toast.success("Business unblocked successfully");
+      await loadData();
+      window.dispatchEvent(new CustomEvent("business-updated"));
+    } catch (error: any) {
+      toast.error("Failed to unblock business", {
+        description: error.message || "Please try again",
+      });
+    }
+  };
+
+  const handleBlocked = () => {
+    setBlockDialogBusiness(null);
+    loadData();
+    window.dispatchEvent(new CustomEvent("business-updated"));
+  };
+
   if (isLoading) {
     return <AdminBusinessSkeleton />;
   }
@@ -261,6 +290,7 @@ export default function AdminBusinessPage() {
             <SelectItem value="all">All Businesses</SelectItem>
             <SelectItem value="verified">Verified</SelectItem>
             <SelectItem value="pending">Pending Verification</SelectItem>
+            <SelectItem value="blocked">Blocked</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -286,8 +316,9 @@ export default function AdminBusinessPage() {
               business={business}
               onViewDetails={() => handleViewDetails(business.id)}
               onVerify={() => handleVerify(business.id)}
-              onUnverify={() => handleUnverify(business.id)}
               onDelete={() => handleDelete(business.id)}
+              onBlock={() => handleBlock(business)}
+              onUnblock={() => handleUnblock(business.id)}
             />
           ))}
         </div>
@@ -297,10 +328,22 @@ export default function AdminBusinessPage() {
             businesses={filteredBusinesses}
             onViewDetails={handleViewDetails}
             onVerify={handleVerify}
-            onUnverify={handleUnverify}
             onDelete={handleDelete}
+            onBlock={handleBlock}
+            onUnblock={handleUnblock}
           />
         </div>
+      )}
+
+      {/* Block Business Dialog */}
+      {blockDialogBusiness && (
+        <BlockBusinessDialog
+          open={!!blockDialogBusiness}
+          onOpenChange={(open) => !open && setBlockDialogBusiness(null)}
+          businessId={blockDialogBusiness.id}
+          businessName={blockDialogBusiness.name}
+          onBlocked={handleBlocked}
+        />
       )}
     </div>
   );
@@ -311,14 +354,16 @@ function BusinessGridCard({
   business,
   onViewDetails,
   onVerify,
-  onUnverify,
   onDelete,
+  onBlock,
+  onUnblock,
 }: {
   business: Business;
   onViewDetails: () => void;
   onVerify: () => void;
-  onUnverify: () => void;
   onDelete: () => void;
+  onBlock: () => void;
+  onUnblock: () => void;
 }) {
   return (
     <Card
@@ -348,17 +393,24 @@ function BusinessGridCard({
             {business.category}
           </div>
         )}
-        {/* Verification Badge - Top Right */}
+        {/* Verification/Blocking Badge - Top Right */}
         <div className="absolute top-3 right-3 z-10">
           <div
             className={cn(
               "px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow-lg",
-              business.isVerified
+              business.isBlocked
+                ? "bg-red-500 text-white"
+                : business.isVerified
                 ? "bg-green-500 text-white"
                 : "bg-yellow-500 text-white",
             )}
           >
-            {business.isVerified ? (
+            {business.isBlocked ? (
+              <>
+                <Ban className="h-3 w-3" />
+                Blocked
+              </>
+            ) : business.isVerified ? (
               <>
                 <CheckCircle className="h-3 w-3" />
                 Verified
@@ -441,15 +493,15 @@ function BusinessGridCard({
                     <Eye className="h-4 w-4 mr-2" />
                     View Details
                   </DropdownMenuItem>
-                  {business.isVerified ? (
-                    <DropdownMenuItem onClick={onUnverify}>
-                      <X className="h-4 w-4 mr-2" />
-                      Unverify Business
+                  {business.isBlocked ? (
+                    <DropdownMenuItem onClick={onUnblock} className="text-green-600">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Unblock Business
                     </DropdownMenuItem>
                   ) : (
-                    <DropdownMenuItem onClick={onVerify}>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Verify Business
+                    <DropdownMenuItem onClick={onBlock} className="text-destructive">
+                      <Ban className="h-4 w-4 mr-2" />
+                      Block Business
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
@@ -475,14 +527,16 @@ function BusinessListView({
   businesses,
   onViewDetails,
   onVerify,
-  onUnverify,
   onDelete,
+  onBlock,
+  onUnblock,
 }: {
   businesses: Business[];
   onViewDetails: (id: number) => void;
   onVerify: (id: number) => void;
-  onUnverify: (id: number) => void;
   onDelete: (id: number) => void;
+  onBlock: (business: Business) => void;
+  onUnblock: (id: number) => void;
 }) {
   return (
     <table className="w-full">
@@ -551,9 +605,16 @@ function BusinessListView({
               {business.providerName || "-"}
             </td>
             <td className="p-4 align-middle">
-              <StatusBadge
-                status={business.isVerified ? "verified" : "pending"}
-              />
+              {business.isBlocked ? (
+                <Badge className="bg-red-100 text-red-700 border-red-300">
+                  <Ban className="h-3 w-3 mr-1" />
+                  Blocked
+                </Badge>
+              ) : (
+                <StatusBadge
+                  status={business.isVerified ? "verified" : "pending"}
+                />
+              )}
             </td>
             <td
               className="p-4 align-middle"
@@ -570,15 +631,21 @@ function BusinessListView({
                     <Eye className="h-4 w-4 mr-2" />
                     View Details
                   </DropdownMenuItem>
-                  {business.isVerified ? (
-                    <DropdownMenuItem onClick={() => onUnverify(business.id)}>
-                      <X className="h-4 w-4 mr-2" />
-                      Unverify
+                  {business.isBlocked ? (
+                    <DropdownMenuItem
+                      onClick={() => onUnblock(business.id)}
+                      className="text-green-600"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Unblock
                     </DropdownMenuItem>
                   ) : (
-                    <DropdownMenuItem onClick={() => onVerify(business.id)}>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Verify
+                    <DropdownMenuItem
+                      onClick={() => onBlock(business)}
+                      className="text-destructive"
+                    >
+                      <Ban className="h-4 w-4 mr-2" />
+                      Block
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem

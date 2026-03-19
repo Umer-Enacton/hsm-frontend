@@ -139,7 +139,12 @@ export default function AdminDashboardPage() {
 
   // Show error state only if stats failed to load
   if (statsError && !stats && !isLoadingStats) {
-    return <ErrorState message={statsError.message || "Failed to load dashboard"} onRetry={() => refetchStats()} />;
+    return (
+      <ErrorState
+        message={statsError.message || "Failed to load dashboard"}
+        onRetry={() => refetchStats()}
+      />
+    );
   }
 
   // Show full skeleton while EITHER stats OR analytics are loading
@@ -152,7 +157,7 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <AdminPageHeader
         title="Dashboard"
-        description="Welcome to the HSM Admin Dashboard. Monitor your platform at a glance."
+        description="Welcome to the HomeFixCare Admin Dashboard. Monitor your platform at a glance."
         onRefresh={() => refetchStats()}
         isRefreshing={isLoadingStats}
       />
@@ -162,6 +167,7 @@ export default function AdminDashboardPage() {
         <StatCard
           title="Total Users"
           value={stats?.users.total || 0}
+          change={`total users`}
           icon={Users}
           trend="up"
         />
@@ -193,6 +199,7 @@ export default function AdminDashboardPage() {
         <StatCard
           title="Total Revenue"
           value={formatCurrency(stats?.revenue.totalRevenue || 0)}
+          change={`total revenue by providers`}
           icon={IndianRupee}
           trend="up"
           className="border-green-200 dark:border-green-800"
@@ -200,6 +207,7 @@ export default function AdminDashboardPage() {
         <StatCard
           title="Platform Fees"
           value={formatCurrency(stats?.revenue.platformFees || 0)}
+          change={`your earnings`}
           icon={DollarSign}
           trend="up"
           className="border-purple-200 dark:border-purple-800"
@@ -215,6 +223,7 @@ export default function AdminDashboardPage() {
         <StatCard
           title="Min Payout"
           value={formatCurrency(stats?.payouts.minimumThreshold || 30000)}
+          change={`the minimum amount for payouts`}
           icon={Clock}
           trend="neutral"
         />

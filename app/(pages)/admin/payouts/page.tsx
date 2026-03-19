@@ -293,7 +293,7 @@ export default function AdminPayoutsPage() {
       {/* Summary Cards */}
       {summary && (
         <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-          <Card>
+          <Card className="gap-0">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Pending to Pay
@@ -310,7 +310,7 @@ export default function AdminPayoutsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="gap-0">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Paid Out
@@ -326,7 +326,7 @@ export default function AdminPayoutsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="gap-0">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Providers Ready
@@ -342,7 +342,7 @@ export default function AdminPayoutsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="gap-0">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Minimum Payout
@@ -386,7 +386,11 @@ export default function AdminPayoutsPage() {
                 providers receive their full accumulated amount.
               </p>
               {providersReadyToPay.length > 1 && (
-                <Button onClick={handlePayAllReady} disabled={processing} className="w-full sm:w-auto">
+                <Button
+                  onClick={handlePayAllReady}
+                  disabled={processing}
+                  className="w-full sm:w-auto"
+                >
                   <Wallet className="h-4 w-4 mr-2" />
                   Pay All Ready ({providersReadyToPay.length})
                 </Button>
@@ -445,9 +449,7 @@ export default function AdminPayoutsPage() {
                       {/* Stats */}
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <p className="text-muted-foreground">
-                            Total Pending
-                          </p>
+                          <p className="text-muted-foreground">Total Pending</p>
                           <p className="text-lg font-bold text-orange-600">
                             {formatCurrency(provider.totalPending)}
                           </p>
@@ -470,51 +472,74 @@ export default function AdminPayoutsPage() {
                           {provider.paymentDetails.upiId ? (
                             <div className="flex items-center justify-between">
                               <span className="text-sm">
-                                <span className="text-muted-foreground">UPI:</span>{" "}
-                                <span className="font-mono font-medium">{provider.paymentDetails.upiId}</span>
+                                <span className="text-muted-foreground">
+                                  UPI:
+                                </span>{" "}
+                                <span className="font-mono font-medium">
+                                  {provider.paymentDetails.upiId}
+                                </span>
                               </span>
                               <Button
                                 size="sm"
                                 variant="outline"
                                 className="h-7 px-2"
                                 onClick={() => {
-                                  navigator.clipboard.writeText(provider.paymentDetails?.upiId || "");
+                                  navigator.clipboard.writeText(
+                                    provider.paymentDetails?.upiId || "",
+                                  );
                                   toast.success("UPI ID copied!");
                                 }}
                               >
                                 Copy
                               </Button>
                             </div>
-                          ) : provider.paymentDetails.bankAccount && (
-                            <div className="space-y-1 text-sm">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Account:</span>
-                                <span className="font-mono font-medium">{provider.paymentDetails.bankAccountMasked}</span>
-                              </div>
-                              {provider.paymentDetails.ifscCode && (
+                          ) : (
+                            provider.paymentDetails.bankAccount && (
+                              <div className="space-y-1 text-sm">
                                 <div className="flex justify-between">
-                                  <span className="text-muted-foreground">IFSC:</span>
-                                  <span className="font-mono">{provider.paymentDetails.ifscCode}</span>
+                                  <span className="text-muted-foreground">
+                                    Account:
+                                  </span>
+                                  <span className="font-mono font-medium">
+                                    {provider.paymentDetails.bankAccountMasked}
+                                  </span>
                                 </div>
-                              )}
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Holder:</span>
-                                <span className="text-medium">{provider.paymentDetails.accountHolderName}</span>
+                                {provider.paymentDetails.ifscCode && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                      IFSC:
+                                    </span>
+                                    <span className="font-mono">
+                                      {provider.paymentDetails.ifscCode}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">
+                                    Holder:
+                                  </span>
+                                  <span className="text-medium">
+                                    {provider.paymentDetails.accountHolderName}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
+                            )
                           )}
                         </div>
                       )}
 
                       {/* No Payment Details Warning */}
-                      {provider.canProcessPayout && !provider.paymentDetails && (
-                        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm">
-                          <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
-                            <AlertCircle className="h-4 w-4" />
-                            <span>Provider hasn't added payment details yet</span>
+                      {provider.canProcessPayout &&
+                        !provider.paymentDetails && (
+                          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm">
+                            <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
+                              <AlertCircle className="h-4 w-4" />
+                              <span>
+                                Provider hasn't added payment details yet
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Threshold Status */}
                       {provider.canProcessPayout ? (
@@ -617,7 +642,9 @@ export default function AdminPayoutsPage() {
           </div>
           {allProviderPayouts.length > 0 && (
             <p className="text-xs text-muted-foreground mt-2">
-              Use the <span className="font-semibold">Provider-Level Payouts</span> section above to process payments.
+              Use the{" "}
+              <span className="font-semibold">Provider-Level Payouts</span>{" "}
+              section above to process payments.
             </p>
           )}
         </CardHeader>
@@ -700,7 +727,8 @@ export default function AdminPayoutsPage() {
           <DialogHeader>
             <DialogTitle>Confirm Mark as Paid (MANUAL)</DialogTitle>
             <DialogDescription>
-              Mark all pending payouts for {selectedProvider?.providerName} as paid
+              Mark all pending payouts for {selectedProvider?.providerName} as
+              paid
             </DialogDescription>
           </DialogHeader>
 
@@ -742,51 +770,77 @@ export default function AdminPayoutsPage() {
                   </div>
                   {selectedProvider.paymentDetails.upiId ? (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">UPI ID:</span>
+                      <span className="text-sm text-muted-foreground">
+                        UPI ID:
+                      </span>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-medium">{selectedProvider.paymentDetails.upiId}</span>
+                        <span className="font-mono font-medium">
+                          {selectedProvider.paymentDetails.upiId}
+                        </span>
                         <Button
                           size="sm"
                           variant="outline"
                           className="h-7 px-2"
                           onClick={() => {
-                            navigator.clipboard.writeText(selectedProvider.paymentDetails?.upiId || "");
-                            toast.success("UPI ID copied! Paste in your UPI app.");
+                            navigator.clipboard.writeText(
+                              selectedProvider.paymentDetails?.upiId || "",
+                            );
+                            toast.success(
+                              "UPI ID copied! Paste in your UPI app.",
+                            );
                           }}
                         >
                           <Copy className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
-                  ) : selectedProvider.paymentDetails.bankAccount && (
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Bank Account:</span>
-                        <span className="font-mono">{selectedProvider.paymentDetails.bankAccountMasked}</span>
-                      </div>
-                      {selectedProvider.paymentDetails.ifscCode && (
+                  ) : (
+                    selectedProvider.paymentDetails.bankAccount && (
+                      <div className="space-y-1 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">IFSC Code:</span>
-                          <span className="font-mono">{selectedProvider.paymentDetails.ifscCode}</span>
+                          <span className="text-muted-foreground">
+                            Bank Account:
+                          </span>
+                          <span className="font-mono">
+                            {selectedProvider.paymentDetails.bankAccountMasked}
+                          </span>
                         </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">A/c Holder:</span>
-                        <span className="font-medium">{selectedProvider.paymentDetails.accountHolderName}</span>
+                        {selectedProvider.paymentDetails.ifscCode && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              IFSC Code:
+                            </span>
+                            <span className="font-mono">
+                              {selectedProvider.paymentDetails.ifscCode}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">
+                            A/c Holder:
+                          </span>
+                          <span className="font-medium">
+                            {selectedProvider.paymentDetails.accountHolderName}
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    )
                   )}
                 </div>
               )}
 
               <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-300">
                 <AlertCircle className="h-4 w-4 inline mr-2" />
-                <strong>IMPORTANT:</strong> Mark as "Paid" <strong>ONLY AFTER</strong> you manually transfer ₹{(selectedProvider.totalPending / 100).toFixed(2)} to the provider via UPI/bank.
+                <strong>IMPORTANT:</strong> Mark as "Paid"{" "}
+                <strong>ONLY AFTER</strong> you manually transfer ₹
+                {(selectedProvider.totalPending / 100).toFixed(2)} to the
+                provider via UPI/bank.
               </div>
 
               <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-300">
                 <CheckCircle className="h-4 w-4 inline mr-2" />
-                This will mark {selectedProvider.bookingCount} pending payouts as paid in the system.
+                This will mark {selectedProvider.bookingCount} pending payouts
+                as paid in the system.
               </div>
             </div>
           )}
@@ -804,9 +858,7 @@ export default function AdminPayoutsPage() {
               disabled={processing}
               className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
             >
-              {processing
-                ? "Processing..."
-                : `Confirm Mark as Paid`}
+              {processing ? "Processing..." : `Confirm Mark as Paid`}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -826,19 +878,27 @@ export default function AdminPayoutsPage() {
             <div className="bg-muted/50 rounded-lg p-4 space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Total Providers:</span>
-                <span className="font-medium">{providersReadyToPay.length}</span>
+                <span className="font-medium">
+                  {providersReadyToPay.length}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Total Bookings:</span>
                 <span className="font-medium">
-                  {providersReadyToPay.reduce((sum, p) => sum + p.bookingCount, 0)}
+                  {providersReadyToPay.reduce(
+                    (sum, p) => sum + p.bookingCount,
+                    0,
+                  )}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Total Amount:</span>
                 <span className="font-bold text-green-600 text-lg">
                   {formatCurrency(
-                    providersReadyToPay.reduce((sum, p) => sum + p.totalPending, 0)
+                    providersReadyToPay.reduce(
+                      (sum, p) => sum + p.totalPending,
+                      0,
+                    ),
                   )}
                 </span>
               </div>
@@ -849,7 +909,10 @@ export default function AdminPayoutsPage() {
               <p className="text-sm font-medium mb-2">Providers to be paid:</p>
               <div className="space-y-1">
                 {providersReadyToPay.map((provider) => (
-                  <div key={provider.providerId} className="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-muted">
+                  <div
+                    key={provider.providerId}
+                    className="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-muted"
+                  >
                     <span>{provider.providerName}</span>
                     <span className="font-medium text-green-600">
                       {formatCurrency(provider.totalPending)}
@@ -861,7 +924,9 @@ export default function AdminPayoutsPage() {
 
             <div className="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-300">
               <AlertCircle className="h-4 w-4 inline mr-2" />
-              This will process payments for {providersReadyToPay.length} provider{providersReadyToPay.length > 1 ? "s" : ""}. Make sure you have transferred the money to their accounts before confirming.
+              This will process payments for {providersReadyToPay.length}{" "}
+              provider{providersReadyToPay.length > 1 ? "s" : ""}. Make sure you
+              have transferred the money to their accounts before confirming.
             </div>
           </div>
 
@@ -873,14 +938,14 @@ export default function AdminPayoutsPage() {
             >
               Cancel
             </Button>
-            <Button
-              onClick={confirmPayAllReady}
-              disabled={processing}
-            >
+            <Button onClick={confirmPayAllReady} disabled={processing}>
               {processing
                 ? "Processing..."
                 : `Confirm Pay ${formatCurrency(
-                    providersReadyToPay.reduce((sum, p) => sum + p.totalPending, 0)
+                    providersReadyToPay.reduce(
+                      (sum, p) => sum + p.totalPending,
+                      0,
+                    ),
                   )}`}
             </Button>
           </DialogFooter>

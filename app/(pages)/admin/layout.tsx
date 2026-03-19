@@ -80,7 +80,9 @@ export default function AdminLayout({
         // Note: Admin users may not have a profile endpoint, so we use token data directly
         // Try to fetch profile but fall back to token data without throwing error
         const userProfile = await getCurrentProfile().catch((err) => {
-          console.log("Admin profile not available (expected for admin users), using token data");
+          console.log(
+            "Admin profile not available (expected for admin users), using token data",
+          );
           return null;
         });
 
@@ -169,7 +171,7 @@ export default function AdminLayout({
     <DashboardLayout
       sidebar={{
         navItems,
-        appName: "HSM Admin",
+        appName: "HomeFixCare",
       }}
       header={{
         user: user

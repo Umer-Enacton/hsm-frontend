@@ -12,6 +12,7 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Image as ImageIcon,
 } from "lucide-react";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { AdminPageHeader, LoadingState, ErrorState, StatusBadge } from "@/components/admin/shared";
@@ -26,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ImageLightbox } from "@/components/common";
 
 type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled" | "reschedule_pending";
 
@@ -65,6 +67,9 @@ interface Booking {
     state: string;
     pincode: string;
   };
+  beforePhotoUrl?: string | null;
+  afterPhotoUrl?: string | null;
+  completionNotes?: string | null;
 }
 
 export default function AdminBookingsPage() {
@@ -74,6 +79,10 @@ export default function AdminBookingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  // Image lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const fetchBookings = async () => {
     try {
@@ -332,6 +341,56 @@ export default function AdminBookingsPage() {
                             <span> • Scheduled for {formatDate(booking.slot.date)}</span>
                           )}
                         </div>
+
+                        {/* Completion Photos (if available) */}
+                        {(booking.beforePhotoUrl || booking.afterPhotoUrl) && (
+                          <div className="mt-4 pt-4 border-t">
+                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
+                              <div className="flex items-center gap-2 pb-3 border-b border-green-200 dark:border-green-800">
+                                <ImageIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <h4 className="font-semibold text-sm text-green-900 dark:text-green-100">
+                                  Service Photos
+                                </h4>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4 mt-4">
+                                {booking.beforePhotoUrl && (
+                                  <div>
+                                    <p className="text-xs text-muted-foreground mb-2">Before</p>
+                                    <img
+                                      src={booking.beforePhotoUrl}
+                                      alt="Before service"
+                                      className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                                      onClick={() => {
+                                        setLightboxImage(booking.beforePhotoUrl!);
+                                        setLightboxOpen(true);
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                {booking.afterPhotoUrl && (
+                                  <div>
+                                    <p className="text-xs text-muted-foreground mb-2">After</p>
+                                    <img
+                                      src={booking.afterPhotoUrl}
+                                      alt="After service"
+                                      className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                                      onClick={() => {
+                                        setLightboxImage(booking.afterPhotoUrl!);
+                                        setLightboxOpen(true);
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                              {booking.completionNotes && (
+                                <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-800">
+                                  <p className="text-xs text-muted-foreground mb-1">Provider Notes:</p>
+                                  <p className="text-sm text-green-900 dark:text-green-100">{booking.completionNotes}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -341,6 +400,14 @@ export default function AdminBookingsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        imageUrl={lightboxImage}
+        alt="Service photo"
+      />
     </div>
   );
 }
