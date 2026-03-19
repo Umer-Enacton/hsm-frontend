@@ -69,6 +69,7 @@ import {
 import { ProviderBookingsSkeleton } from "@/components/provider/skeletons/ProviderBookingsSkeleton";
 import { ReschedulePendingActions } from "@/components/provider/bookings/ReschedulePendingActions";
 import { ProviderRescheduleDialog } from "@/components/provider/bookings/ProviderRescheduleDialog";
+import { ServiceCompletionDialog } from "@/components/provider/bookings/ServiceCompletionDialog";
 
 interface BookingStats {
   total: number;
@@ -137,6 +138,11 @@ export default function ProviderBookingsPage() {
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(
     null,
   );
+
+  // New OTP-based completion dialog state
+  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
+  const [selectedBookingForCompletion, setSelectedBookingForCompletion] =
+    useState<ProviderBooking | null>(null);
 
   // Sync tab to URL
   const updateTab = (newTab: string) => {
@@ -286,6 +292,17 @@ export default function ProviderBookingsPage() {
       setCompleteDialogOpen(false);
       setSelectedBookingId(null);
     }
+  };
+
+  // New OTP-based completion handler
+  const handleOpenCompletionDialog = (booking: ProviderBooking) => {
+    setSelectedBookingForCompletion(booking);
+    setCompletionDialogOpen(true);
+  };
+
+  const handleCompletionSuccess = () => {
+    // Refresh bookings after successful completion
+    setExpandedRowId(null);
   };
 
   const getFilteredBookings = () => {
@@ -550,16 +567,15 @@ export default function ProviderBookingsPage() {
             <CalendarDays className="h-3 w-3" />
             Reschedule
           </Button>
-          {/* Complete button */}
+          {/* Complete button - Uses new OTP-based completion dialog */}
           <Button
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
-              setSelectedBookingId(booking.id);
-              setCompleteDialogOpen(true);
+              handleOpenCompletionDialog(booking);
             }}
             disabled={isLoading}
-            className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
+            className="gap-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all"
           >
             {isLoading ? (
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -1261,6 +1277,22 @@ export default function ProviderBookingsPage() {
           onRescheduled={refetch}
           open={rescheduleDialogOpen}
           onOpenChange={setRescheduleDialogOpen}
+        />
+      )}
+
+      {/* OTP-based Service Completion Dialog */}
+      {selectedBookingForCompletion && (
+        <ServiceCompletionDialog
+          open={completionDialogOpen}
+          onOpenChange={setCompletionDialogOpen}
+          booking={{
+            id: selectedBookingForCompletion.id,
+            serviceName: selectedBookingForCompletion.serviceName || "Service",
+            customerName: selectedBookingForCompletion.customerName,
+            date: selectedBookingForCompletion.bookingDate || selectedBookingForCompletion.date,
+            startTime: selectedBookingForCompletion.startTime,
+          }}
+          onSuccess={handleCompletionSuccess}
         />
       )}
 

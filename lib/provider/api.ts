@@ -494,3 +494,93 @@ export async function completeOnboarding(
     throw new Error(error.message || "Failed to complete onboarding. Please try again.");
   }
 }
+
+// ============================================================================
+// COMPLETION VERIFICATION API (OTP-based)
+// ============================================================================
+
+/**
+ * Initiate completion - Send OTP to customer
+ */
+export async function initiateCompletion(
+  bookingId: number,
+  data?: {
+    beforePhotoUrl?: string;
+    afterPhotoUrl?: string;
+    completionNotes?: string;
+  }
+): Promise<{ otpExpiry: string; canResendAfter: string; message: string }> {
+  try {
+    const response = await api.post<{
+      otpExpiry: string;
+      canResendAfter: string;
+      message: string;
+    }>(API_ENDPOINTS.INITIATE_COMPLETION(bookingId), data || {});
+    return response;
+  } catch (error) {
+    console.error("Error initiating completion:", error);
+    throw error;
+  }
+}
+
+/**
+ * Verify OTP and complete booking
+ */
+export async function verifyCompletionOTP(
+  bookingId: number,
+  otp: string
+): Promise<{ success: boolean; message: string; booking?: any }> {
+  try {
+    const response = await api.post<{
+      success: boolean;
+      message: string;
+      booking?: any;
+    }>(API_ENDPOINTS.VERIFY_COMPLETION_OTP(bookingId), { otp });
+    return response;
+  } catch (error) {
+    console.error("Error verifying completion OTP:", error);
+    throw error;
+  }
+}
+
+/**
+ * Resend completion OTP
+ */
+export async function resendCompletionOTP(
+  bookingId: number
+): Promise<{ otpExpiry: string; message: string }> {
+  try {
+    const response = await api.post<{
+      otpExpiry: string;
+      message: string;
+    }>(API_ENDPOINTS.RESEND_COMPLETION_OTP(bookingId), {});
+    return response;
+  } catch (error) {
+    console.error("Error resending completion OTP:", error);
+    throw error;
+  }
+}
+
+/**
+ * Upload completion photos
+ */
+export async function uploadCompletionPhotos(
+  bookingId: number,
+  beforePhotoUrl?: string,
+  afterPhotoUrl?: string
+): Promise<{ beforePhotoUrl?: string; afterPhotoUrl?: string; message: string }> {
+  try {
+    const response = await api.post<{
+      beforePhotoUrl?: string;
+      afterPhotoUrl?: string;
+      message: string;
+    }>(API_ENDPOINTS.UPLOAD_COMPLETION_PHOTOS(bookingId), {
+      beforePhotoUrl,
+      afterPhotoUrl,
+    });
+    return response;
+  } catch (error) {
+    console.error("Error uploading completion photos:", error);
+    throw error;
+  }
+}

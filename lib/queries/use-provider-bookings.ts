@@ -5,6 +5,10 @@ import {
   acceptBooking,
   rejectBooking,
   completeBooking,
+  initiateCompletion,
+  verifyCompletionOTP,
+  resendCompletionOTP,
+  uploadCompletionPhotos,
 } from "@/lib/provider/api";
 import { queryKeys } from "./query-keys";
 import type { ProviderBooking } from "@/types/provider";
@@ -131,6 +135,89 @@ export function useCompleteBooking() {
       } else {
         toast.error(error.message || "Failed to complete booking");
       }
+    },
+  });
+}
+
+/**
+ * Initiate completion - Send OTP to customer
+ */
+export function useInitiateCompletion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ bookingId, data }: { bookingId: number; data?: { beforePhotoUrl?: string; afterPhotoUrl?: string; completionNotes?: string } }) =>
+      initiateCompletion(bookingId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.provider.bookings.all });
+      toast.success("OTP sent to customer's email");
+    },
+    onError: (error: any) => {
+      console.error("Error initiating completion:", error);
+      toast.error(error.message || "Failed to send OTP");
+    },
+  });
+}
+
+/**
+ * Verify OTP and complete booking
+ */
+export function useVerifyCompletionOTP() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ bookingId, otp }: { bookingId: number; otp: string }) =>
+      verifyCompletionOTP(bookingId, otp),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.provider.bookings.all });
+      if (data.success) {
+        toast.success("Booking completed successfully!");
+      } else {
+        toast.error(data.message || "Failed to verify OTP");
+      }
+    },
+    onError: (error: any) => {
+      console.error("Error verifying OTP:", error);
+      toast.error(error.message || "Failed to verify OTP");
+    },
+  });
+}
+
+/**
+ * Resend completion OTP
+ */
+export function useResendCompletionOTP() {
+  return useMutation({
+    mutationFn: (bookingId: number) => resendCompletionOTP(bookingId),
+    onSuccess: () => {
+      toast.success("New OTP sent to customer's email");
+    },
+    onError: (error: any) => {
+      console.error("Error resending OTP:", error);
+      toast.error(error.message || "Failed to resend OTP");
+    },
+  });
+}
+
+/**
+ * Upload completion photos
+ */
+export function useUploadCompletionPhotos() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ bookingId, beforePhotoUrl, afterPhotoUrl }: {
+      bookingId: number;
+      beforePhotoUrl?: string;
+      afterPhotoUrl?: string;
+    }) => uploadCompletionPhotos(bookingId, beforePhotoUrl, afterPhotoUrl),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.provider.bookings.all });
+      toast.success("Photos uploaded successfully");
+    },
+    onError: (error: any) => {
+      console.error("Error uploading photos:", error);
+      toast.error(error.message || "Failed to upload photos");
     },
   });
 }

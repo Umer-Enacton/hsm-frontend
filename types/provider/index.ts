@@ -216,6 +216,14 @@ export interface ProviderBooking {
   cancelledAt?: string;
   cancellationReason?: string;
   cancelledBy?: "customer" | "provider" | "system";
+  // Completion verification (OTP-based)
+  completionOtp?: string | null;
+  completionOtpExpiry?: string | null;
+  completionOtpVerifiedAt?: string | null;
+  beforePhotoUrl?: string | null;
+  afterPhotoUrl?: string | null;
+  completionNotes?: string | null;
+  actualCompletionTime?: string | null;
 }
 
 /**

@@ -116,6 +116,11 @@ export const API_ENDPOINTS = {
   APPROVE_RESCHEDULE: (id: string | number) => `/booking/${id}/reschedule-approve`,
   DECLINE_RESCHEDULE: (id: string | number) => `/booking/${id}/reschedule-decline`,
   PROVIDER_RESCHEDULE: (id: string | number) => `/booking/${id}/provider-reschedule`,
+  // OTP-based completion verification (provider actions)
+  INITIATE_COMPLETION: (id: string | number) => `/booking/${id}/complete-initiate`,
+  VERIFY_COMPLETION_OTP: (id: string | number) => `/booking/${id}/complete-verify`,
+  RESEND_COMPLETION_OTP: (id: string | number) => `/booking/${id}/complete-resend`,
+  UPLOAD_COMPLETION_PHOTOS: (id: string | number) => `/booking/${id}/completion-photos`,
   PROVIDER_RESCHEDULE_SETTINGS: "/booking/provider/settings",
   PROVIDER_RESCHEDULE_SETTINGS_BY_BUSINESS: (businessId: string | number) =>
     `/booking/provider/settings/${businessId}`,
