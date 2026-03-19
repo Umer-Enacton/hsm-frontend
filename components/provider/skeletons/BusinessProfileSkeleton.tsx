@@ -15,47 +15,45 @@ export function BusinessProfileSkeleton() {
       </div>
 
       {/* Hero Card */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden py-0">
         {/* Cover Image */}
-        <Skeleton className="h-56 w-full rounded-none" />
-
-        <CardContent className="relative">
-          {/* Avatar - overlapping cover */}
-          <div className="-mt-16 mb-6">
-            <Skeleton className="h-28 w-28 rounded-full border-4 border-background" />
+        <div className="relative h-36 sm:h-48 bg-muted">
+          <Skeleton className="h-full w-full" />
+          {/* Logo Overlay - Bottom Left */}
+          <div className="absolute -bottom-4 sm:-bottom-6 left-3 sm:left-6">
+            <Skeleton className="h-14 w-14 sm:h-20 sm:w-20 rounded-xl border-4 border-background" />
           </div>
-
-          {/* Business Name + Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-5 w-20 rounded-full" />
-              </div>
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-4 rounded-full" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-            </div>
-            {/* Quick action buttons */}
-            <div className="flex gap-2">
-              <Skeleton className="h-8 w-24 rounded-md" />
-              <Skeleton className="h-8 w-28 rounded-md" />
-              <Skeleton className="h-8 w-24 rounded-md" />
-            </div>
+          {/* Badges - Top Right */}
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4">
+            <Skeleton className="h-5 w-16 rounded-full" />
           </div>
-
-          {/* Description block */}
-          <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/30">
-            <Skeleton className="h-5 w-5 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-12" />
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-3/4" />
-            </div>
+          {/* Category Badge - Top Left */}
+          <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
+            <Skeleton className="h-5 w-12 rounded-full" />
           </div>
-        </CardContent>
+        </div>
+
+        {/* Business Info Below Cover */}
+        <div className="px-3 sm:px-6 pb-3 sm:pb-4 pt-1 sm:pt-2 space-y-2 sm:space-y-3">
+          {/* Business Name */}
+          <Skeleton className="h-6 sm:h-7 w-48 sm:w-56" />
+          {/* Rating */}
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-4" />
+            <Skeleton className="h-4 w-8" />
+            <Skeleton className="h-3 w-12" />
+          </div>
+          {/* Location */}
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-3 w-3" />
+            <Skeleton className="h-3 w-32" />
+          </div>
+          {/* Category Badge */}
+          <Skeleton className="h-5 w-16 rounded-full" />
+          {/* Description lines */}
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-3/4" />
+        </div>
       </Card>
 
       {/* Stats Overview - 4 Cards */}

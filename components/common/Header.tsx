@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +16,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Bell,
-  Search,
   Settings,
   LogOut,
   User,
@@ -309,21 +315,23 @@ export function Header({
         className,
       )}
     >
+      {/* Mobile Logo */}
+      <div className="flex items-center md:hidden shrink-0">
+        <Image
+          src="/homefixcareicon-removebg-preview-removebg-preview.png"
+          alt="HomeFixCare Logo"
+          width={32}
+          height={32}
+          className="h-8 w-8 object-cover"
+        />
+      </div>
+
       {title && (
         <h1 className="text-base font-semibold tracking-tight md:text-lg">
           {title}
         </h1>
       )}
-      {showSearch && (
-        <div className="relative hidden max-w-sm flex-1 md:flex">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={searchPlaceholder}
-            className="pl-9"
-            onChange={(e) => onSearch?.(e.target.value)}
-          />
-        </div>
-      )}
+      {/* Search block removed to declutter interface */}
       <div className="flex-1" />
       <div className="flex items-center gap-3">
         {businessVerification !== undefined && (
@@ -332,12 +340,14 @@ export function Header({
         {actions}
         <ThemeToggle />
         <NotificationsMenu />
-        <UserMenu
-          user={user}
-          onProfileClick={onProfileClick}
-          onSettingsClick={onSettingsClick}
-          onLogout={onLogout}
-        />
+        <div className="hidden md:block">
+          <UserMenu
+            user={user}
+            onProfileClick={onProfileClick}
+            onSettingsClick={onSettingsClick}
+            onLogout={onLogout}
+          />
+        </div>
       </div>
     </header>
   );

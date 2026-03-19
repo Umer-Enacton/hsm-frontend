@@ -438,6 +438,22 @@ const RegisterPage = () => {
                 Sign in
               </Link>
             </p>
+
+            <div className="flex items-center justify-center gap-4 pt-2 border-t">
+              <Link
+                href="/terms"
+                className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+              >
+                Terms & Conditions
+              </Link>
+              <span className="text-muted-foreground">•</span>
+              <Link
+                href="/privacy"
+                className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+              >
+                Privacy Policy
+              </Link>
+            </div>
           </CardFooter>
         </Card>
       </div>

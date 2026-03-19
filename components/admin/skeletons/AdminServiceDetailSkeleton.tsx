@@ -9,7 +9,6 @@ export function AdminServiceDetailSkeleton() {
         <Skeleton className="h-9 w-9 rounded-md" />
         <div className="flex items-center justify-end gap-2 flex-1">
           <Skeleton className="h-8 w-24 rounded-md" />
-          <Skeleton className="h-8 w-20 rounded-md" />
         </div>
       </div>
 

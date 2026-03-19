@@ -13,7 +13,6 @@ import {
   CheckCircle,
   Clock,
   X,
-  Trash2,
   Calendar,
   Wrench,
   DollarSign,
@@ -30,7 +29,6 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   verifyBusiness,
-  deleteBusiness,
   blockBusiness,
   unblockBusiness,
 } from "@/lib/admin/business";
@@ -227,28 +225,6 @@ export default function BusinessDetailsPage() {
     fetchBusinessDetails();
   };
 
-  const handleDelete = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this business? This action cannot be undone and will delete all associated data.",
-      )
-    ) {
-      return;
-    }
-
-    setIsActionLoading(true);
-    try {
-      await deleteBusiness(Number(businessId));
-      toast.success("Business deleted successfully");
-      router.push("/admin/business");
-    } catch (error: any) {
-      toast.error("Failed to delete business", {
-        description: error.message || "Please try again",
-      });
-      setIsActionLoading(false);
-    }
-  };
-
   if (isLoading) {
     return <AdminBusinessDetailSkeleton />;
   }
@@ -317,15 +293,6 @@ export default function BusinessDetailsPage() {
               Block Business
             </Button>
           )}
-          <Button
-            variant="outline"
-            onClick={handleDelete}
-            disabled={isActionLoading}
-            className="text-destructive hover:text-destructive text-xs sm:text-sm"
-          >
-            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-            Delete
-          </Button>
         </div>
       </div>
       {/* Cover Image Banner */}

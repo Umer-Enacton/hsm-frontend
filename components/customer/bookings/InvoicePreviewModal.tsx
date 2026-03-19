@@ -109,7 +109,7 @@ export function InvoicePreviewModal({
       const booking = response.booking;
 
       // Fetch business profile separately
-      const business: any = await api.get(
+      const businessRes: any = await api.get(
         API_ENDPOINTS.BUSINESS_BY_ID(booking.businessProfileId),
       );
 
@@ -122,7 +122,7 @@ export function InvoicePreviewModal({
         createdAt: booking.createdAt || booking.bookingDate,
         totalPrice: booking.totalPrice,
         status: booking.status,
-        business: business,
+        business: businessRes.business,
         customer: {
           id: userProfile.user.id,
           name: userProfile.user.name || userProfile.user.email,
@@ -203,7 +203,7 @@ export function InvoicePreviewModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!p-0 sm:!max-w-[50vw]">
-        <DialogHeader className="px-6 py-4 border-b sticky top-0 bg-white z-20 flex flex-row items-center justify-between w-full">
+        <DialogHeader className="px-6 py-4 border-b sticky top-0 bg-background z-20 flex flex-row items-center justify-between w-full">
           <DialogTitle className="text-xl font-semibold">
             Invoice Preview
           </DialogTitle>
@@ -223,8 +223,8 @@ export function InvoicePreviewModal({
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : bookingData ? (
-          <div className="overflow-y-auto max-h-[calc(95vh-80px)] bg-slate-100 p-4">
-            {/* Invoice Container */}
+          <div className="overflow-y-auto max-h-[calc(95vh-80px)] bg-slate-100/50 p-4">
+            {/* Invoice Container - ALWAYS LIGHT (It's a paper document!) */}
             <div className="w-full bg-white rounded-xl shadow-lg text-slate-900 p-10">
               {/* ============================================ */}
               {/* HEADER SECTION */}
@@ -232,22 +232,19 @@ export function InvoicePreviewModal({
               <div className="flex justify-between items-start mb-8">
                 {/* Left - Logo and Business Name */}
                 <div className="flex items-start gap-4">
-                  {bookingData.business.logo ? (
-                    <img
-                      src={bookingData.business.logo}
-                      alt="Logo"
-                      className="w-16 h-16 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white text-xl font-bold">HSM</span>
-                    </div>
-                  )}
+                  <img
+                    src="/homefixcareicon-removebg-preview-removebg-preview.png"
+                    alt="Logo"
+                    className="w-16 h-16 object-contain"
+                  />
                   <div>
-                    <h1 className="text-2xl font-bold text-slate-900">
-                      {bookingData.business.businessName || "Home Service Pro"}
+                    <h1 className="text-2xl font-bold text-blue-600">
+                      HomeFixCare
                     </h1>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <p className="text-lg font-semibold text-slate-900 mt-1">
+                      {bookingData.business.businessName || "Home Service Pro"}
+                    </p>
+                    <p className="text-sm text-slate-500">
                       {bookingData.business.description ||
                         "Quality Service Solutions"}
                     </p>
@@ -461,7 +458,7 @@ export function InvoicePreviewModal({
                           <span className="text-sm font-bold text-slate-900 uppercase tracking-wide">
                             Total
                           </span>
-                          <span className="text-2xl font-black text-orange-600">
+                          <span className="text-2xl font-black text-blue-600">
                             {formatCurrency(finalTotal)}
                           </span>
                         </div>

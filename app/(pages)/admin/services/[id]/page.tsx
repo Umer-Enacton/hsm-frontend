@@ -190,27 +190,6 @@ export default function ServiceDetailsPage() {
     fetchServiceDetails();
   };
 
-  const handleDelete = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this service? This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
-    setIsActionLoading(true);
-    try {
-      await api.delete(`${API_ENDPOINTS.SERVICE_BY_ID(serviceId)}`);
-      toast.success("Service deleted successfully");
-      router.push("/admin/services");
-    } catch (error: any) {
-      toast.error("Failed to delete service", {
-        description: error.message || "Please try again",
-      });
-      setIsActionLoading(false);
-    }
-  };
-
   const formatRating = (rating: string | number | undefined): number | null => {
     if (rating === undefined || rating === null || rating === "") return null;
     const num = typeof rating === "string" ? parseFloat(rating) : rating;
@@ -266,15 +245,6 @@ export default function ServiceDetailsPage() {
               Activate
             </Button>
           )}
-          <Button
-            variant="outline"
-            onClick={handleDelete}
-            disabled={isActionLoading}
-            className="text-destructive hover:text-destructive text-xs sm:text-sm"
-          >
-            <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-            Delete
-          </Button>
         </div>
       </div>
 

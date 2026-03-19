@@ -223,139 +223,120 @@ export default function ProviderBusinessPage() {
       {/* Verification Alert */}
 
       {/* Hero Card with Cover */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden py-0">
         {/* Cover Image */}
-        <div className="relative h-56 bg-gradient-to-br from-primary/20 via-primary/10 to-background">
-          {business.coverImage ? (
+        <div className="relative h-36 sm:h-48 bg-muted">
+          {business.coverImage || business.logo ? (
             <img
-              src={business.coverImage}
-              alt="Cover"
-              className="w-full h-full object-cover"
+              src={business.coverImage || business.logo || undefined}
+              alt={`${business.name} cover`}
+              className="h-full w-full object-cover"
             />
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <Globe className="h-16 w-16 mx-auto text-primary/30" />
-                <p className="text-sm text-muted-foreground mt-3">
-                  Add a cover image to showcase your business
-                </p>
+            <div className="h-full w-full bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center">
+              <Globe className="h-16 w-16 sm:h-24 sm:w-24 text-primary/20" />
+            </div>
+          )}
+
+          {/* Logo Overlay - Bottom Left */}
+          {(business.logo || (!business.logo && !business.coverImage)) && (
+            <div className="absolute -bottom-4 sm:-bottom-6 left-3 sm:left-6">
+              <div className="h-14 w-14 sm:h-20 sm:w-20 rounded-xl border-4 border-background overflow-hidden bg-card shadow-lg">
+                {business.logo ? (
+                  <img
+                    src={business.logo}
+                    alt={business.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-primary flex items-center justify-center">
+                    <span className="text-xl sm:text-2xl font-bold text-primary-foreground">
+                      {business.name?.charAt(0)?.toUpperCase() || "B"}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* Verification Badge - Top Right */}
-          <div className="absolute top-4 right-4">
+          {/* Badges - Top Right */}
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 flex flex-col gap-1 items-end">
             {business.isVerified ? (
-              <Badge className="bg-green-600 gap-1 px-3 py-1.5">
-                <CheckCircle className="h-3 w-3" />
-                Verified
+              <Badge className="bg-green-100 text-green-700 border-green-300 px-2 py-1 text-[10px] sm:px-3 sm:py-1.5">
+                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                <span className="hidden sm:inline">Verified</span>
+                <span className="sm:hidden">✓</span>
               </Badge>
             ) : (
-              <Badge className="bg-yellow-600 gap-1 px-3 py-1.5">
-                <Clock className="h-3 w-3" />
-                Pending
+              <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300 px-2 py-1 text-[10px] sm:px-3 sm:py-1.5">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                <span className="hidden sm:inline">Pending</span>
+                <span className="sm:hidden">Pending</span>
               </Badge>
             )}
           </div>
-        </div>
 
-        {/* Profile Header */}
-        <CardContent className="relative">
-          <div className="-mt-16 mb-6">
-            <Avatar className="h-28 w-28 border-4 border-background shadow-xl">
-              {business.logo ? (
-                <AvatarImage src={business.logo} alt={business.name} />
-              ) : (
-                <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
-                  {business.name?.charAt(0)?.toUpperCase() || "B"}
-                </AvatarFallback>
-              )}
-            </Avatar>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-3xl font-bold">{business.name}</h2>
-                {business.category && (
-                  <Badge variant="outline" className="text-xs">
-                    {business.category}
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <div className="flex items-center gap-1 text-sm">
-                  <MapPin className="h-4 w-4" />
-                  <span>
-                    {business.city}, {business.state}
-                  </span>
-                </div>
-                {business.rating > 0 && (
-                  <>
-                    <span className="text-sm">•</span>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">
-                        {business.rating.toFixed(1)}
-                      </span>
-                      <span className="text-xs">
-                        ({business.totalReviews || 0})
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/provider/services")}
-                disabled={!business.isVerified}
-                className="flex-1 min-w-[100px]"
-              >
-                <Package className="h-4 w-4 mr-1" />
-                <span className="hidden xs:inline">Services</span>
-                <span className="xs:hidden">Svc</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/provider/availability")}
-                className="flex-1 min-w-[100px]"
-              >
-                <Calendar className="h-4 w-4 mr-1" />
-                <span className="hidden xs:inline">Availability</span>
-                <span className="xs:hidden">Slots</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/provider/bookings")}
-                className="flex-1 min-w-[100px]"
-              >
-                <Users className="h-4 w-4 mr-1" />
-                <span className="hidden xs:inline">Bookings</span>
-                <span className="xs:hidden">Bkng</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Description */}
-          {business.description && (
-            <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/30">
-              <FileText className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-medium mb-1">About</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {business.description}
-                </p>
-              </div>
+          {/* Category Badge - Top Left */}
+          {business.category && (
+            <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
+              <Badge className="bg-white/90 backdrop-blur-sm text-foreground border-0 shadow-sm px-2 py-1 text-[10px] sm:px-3 sm:py-1.5">
+                {business.category}
+              </Badge>
             </div>
           )}
-        </CardContent>
+        </div>
+
+        {/* Business Info Below Cover */}
+        <div className="px-3 sm:px-6 pb-3 sm:pb-4 pt-1 sm:pt-2 space-y-2 sm:space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold truncate">
+                {business.name}
+              </h1>
+              {business.rating > 0 && (
+                <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
+                  <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
+                  <span className="font-semibold text-sm sm:text-base">
+                    {business.rating.toFixed(1)}
+                  </span>
+                  <span className="text-xs sm:text-sm text-muted-foreground">
+                    ({business.totalReviews || 0}{" "}
+                    {business.totalReviews === 1 ? "review" : "reviews"})
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Location, Category, Description */}
+          <div className="space-y-1.5 sm:space-y-2">
+            {/* Location */}
+            {business.city && business.state && (
+              <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+                <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+                <span className="truncate">
+                  {business.city}, {business.state}
+                </span>
+              </div>
+            )}
+
+            {/* Category */}
+            {business.category && (
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Badge variant="outline" className="text-xs">
+                  {business.category}
+                </Badge>
+              </div>
+            )}
+
+            {/* Description */}
+            {business.description && (
+              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                {business.description}
+              </p>
+            )}
+          </div>
+        </div>
       </Card>
 
       {/* Stats Overview */}

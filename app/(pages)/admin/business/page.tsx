@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Briefcase, Building2, Badge, User, Trash2, Ban } from "lucide-react";
+import { Briefcase, Building2, Badge, User, Ban } from "lucide-react";
 import { toast } from "sonner";
 import {
   getAllBusinesses,
   getBusinessStats,
   verifyBusiness,
   unverifyBusiness,
-  deleteBusiness,
   blockBusiness,
   unblockBusiness,
   type AdminBusinessListParams,
@@ -174,26 +173,6 @@ export default function AdminBusinessPage() {
     }
   };
 
-  const handleDelete = async (businessId: number) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this business? This will delete all services, bookings, and data associated with this business. This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await deleteBusiness(businessId);
-      toast.success("Business deleted successfully");
-      await loadData();
-    } catch (error: any) {
-      toast.error("Failed to delete business", {
-        description: error.message || "Please try again",
-      });
-    }
-  };
-
   const handleBlock = (business: Business) => {
     setBlockDialogBusiness(business);
   };
@@ -316,7 +295,6 @@ export default function AdminBusinessPage() {
               business={business}
               onViewDetails={() => handleViewDetails(business.id)}
               onVerify={() => handleVerify(business.id)}
-              onDelete={() => handleDelete(business.id)}
               onBlock={() => handleBlock(business)}
               onUnblock={() => handleUnblock(business.id)}
             />
@@ -328,7 +306,6 @@ export default function AdminBusinessPage() {
             businesses={filteredBusinesses}
             onViewDetails={handleViewDetails}
             onVerify={handleVerify}
-            onDelete={handleDelete}
             onBlock={handleBlock}
             onUnblock={handleUnblock}
           />
@@ -354,14 +331,12 @@ function BusinessGridCard({
   business,
   onViewDetails,
   onVerify,
-  onDelete,
   onBlock,
   onUnblock,
 }: {
   business: Business;
   onViewDetails: () => void;
   onVerify: () => void;
-  onDelete: () => void;
   onBlock: () => void;
   onUnblock: () => void;
 }) {
@@ -504,14 +479,6 @@ function BusinessGridCard({
                       Block Business
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={onDelete}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Business
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -527,14 +494,12 @@ function BusinessListView({
   businesses,
   onViewDetails,
   onVerify,
-  onDelete,
   onBlock,
   onUnblock,
 }: {
   businesses: Business[];
   onViewDetails: (id: number) => void;
   onVerify: (id: number) => void;
-  onDelete: (id: number) => void;
   onBlock: (business: Business) => void;
   onUnblock: (id: number) => void;
 }) {
@@ -648,12 +613,6 @@ function BusinessListView({
                       Block
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem
-                    onClick={() => onDelete(business.id)}
-                    className="text-destructive"
-                  >
-                    Delete
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </td>
