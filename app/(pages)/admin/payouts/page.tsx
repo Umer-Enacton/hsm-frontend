@@ -478,7 +478,7 @@ export default function AdminPayoutsPage() {
                                 variant="outline"
                                 className="h-7 px-2"
                                 onClick={() => {
-                                  navigator.clipboard.writeText(provider.paymentDetails.upiId || "");
+                                  navigator.clipboard.writeText(provider.paymentDetails?.upiId || "");
                                   toast.success("UPI ID copied!");
                                 }}
                               >
@@ -750,7 +750,7 @@ export default function AdminPayoutsPage() {
                           variant="outline"
                           className="h-7 px-2"
                           onClick={() => {
-                            navigator.clipboard.writeText(selectedProvider.paymentDetails.upiId || "");
+                            navigator.clipboard.writeText(selectedProvider.paymentDetails?.upiId || "");
                             toast.success("UPI ID copied! Paste in your UPI app.");
                           }}
                         >
