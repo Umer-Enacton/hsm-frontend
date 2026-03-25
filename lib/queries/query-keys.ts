@@ -4,6 +4,9 @@
  */
 
 export const queryKeys = {
+  addresses: {
+    all: ["address"] as const,
+  },
   bookings: {
     all: ["bookings"] as const,
     lists: () => [...queryKeys.bookings.all, "list"] as const,
@@ -53,15 +56,18 @@ export const queryKeys = {
       lists: () => [...queryKeys.provider.bookings.all, "list"] as const,
       list: (filters: { status?: string }) =>
         [...queryKeys.provider.bookings.lists(), filters] as const,
-      detail: (id: number) => [...queryKeys.provider.bookings.all, "detail", id] as const,
+      detail: (id: number) =>
+        [...queryKeys.provider.bookings.all, "detail", id] as const,
     },
     business: {
       all: ["provider", "business"] as const,
-      detail: (userId?: number) => [...queryKeys.provider.business.all, "detail", userId] as const,
+      detail: (userId?: number) =>
+        [...queryKeys.provider.business.all, "detail", userId] as const,
     },
     services: {
       all: ["provider", "services"] as const,
-      forBusiness: (businessId: number) => [...queryKeys.provider.services.all, businessId] as const,
+      forBusiness: (businessId: number) =>
+        [...queryKeys.provider.services.all, businessId] as const,
     },
     dashboard: {
       all: ["provider", "dashboard"] as const,
@@ -73,9 +79,12 @@ export const queryKeys = {
     },
     analytics: {
       all: ["provider", "analytics"] as const,
-      revenue: (period: string) => [...queryKeys.provider.analytics.all, "revenue", period] as const,
-      services: (period: string) => [...queryKeys.provider.analytics.all, "services", period] as const,
-      status: (period: string) => [...queryKeys.provider.analytics.all, "status", period] as const,
+      revenue: (period: string) =>
+        [...queryKeys.provider.analytics.all, "revenue", period] as const,
+      services: (period: string) =>
+        [...queryKeys.provider.analytics.all, "services", period] as const,
+      status: (period: string) =>
+        [...queryKeys.provider.analytics.all, "status", period] as const,
     },
   },
 } as const;

@@ -1,7 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { getCurrentProfile, updateProfile, uploadAvatar } from "@/lib/profile-api";
-import { getAddresses, createAddress, updateAddress, deleteAddress } from "@/lib/customer/api";
+import {
+  getCurrentProfile,
+  updateProfile,
+  uploadAvatar,
+} from "@/lib/profile-api";
+import {
+  getAddresses,
+  createAddress,
+  updateAddress,
+  deleteAddress,
+} from "@/lib/customer/api";
 import { queryKeys } from "./query-keys";
 import type { Address } from "@/types/customer";
 
@@ -16,7 +25,7 @@ export function useProfile() {
 
 export function useAddresses() {
   return useQuery({
-    queryKey: ["addresses"],
+    queryKey: queryKeys.addresses.all,
     queryFn: async () => {
       const data = await getAddresses();
       return Array.isArray(data) ? data : [];
@@ -81,8 +90,13 @@ export function useUpdateAddress() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ addressId, updates }: { addressId: number; updates: Partial<Address> }) =>
-      updateAddress(addressId, updates),
+    mutationFn: ({
+      addressId,
+      updates,
+    }: {
+      addressId: number;
+      updates: Partial<Address>;
+    }) => updateAddress(addressId, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
       toast.success("Address updated successfully");

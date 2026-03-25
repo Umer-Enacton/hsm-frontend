@@ -45,7 +45,10 @@ export const updateProfile = async (data: ProfileUpdateData): Promise<User> => {
 export const uploadAvatar = async (
   file: File,
 ): Promise<{ url: string; publicId: string }> => {
-  console.log("⚠️⚠️⚠️ [API] uploadAvatar CALLED - This should ONLY happen on submit!", file.name);
+  console.log(
+    "⚠️⚠️⚠️ [API] uploadAvatar CALLED - This should ONLY happen on submit!",
+    file.name,
+  );
 
   try {
     const formData = new FormData();
@@ -60,8 +63,12 @@ export const uploadAvatar = async (
       headers: {
         // Don't set Content-Type for FormData - browser does it automatically with boundary
         // But we need to send the Authorization header
-        ...(localStorage.getItem("token") && { Authorization: `Bearer ${localStorage.getItem("token")}` }),
-        ...(sessionStorage.getItem("token") && { Authorization: `Bearer ${sessionStorage.getItem("token")}` }),
+        ...(localStorage.getItem("token") && {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        }),
+        ...(sessionStorage.getItem("token") && {
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+        }),
       },
       body: formData,
     });
