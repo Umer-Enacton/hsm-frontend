@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Check, X, Loader2, CalendarDays, Clock, AlertTriangle, History as HistoryIcon, ArrowRight } from "lucide-react";
+import {
+  Check,
+  X,
+  Loader2,
+  CalendarDays,
+  Clock,
+  AlertTriangle,
+  History as HistoryIcon,
+  ArrowRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -83,7 +92,10 @@ export function ReschedulePendingActions({
         <div className="flex items-center gap-2 flex-wrap">
           {/* Slot comparison badge (if previous info available) */}
           {(previousDate || previousTime) && (
-            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+            <Badge
+              variant="outline"
+              className="bg-purple-50 text-purple-700 border-purple-200 text-xs"
+            >
               <Clock className="h-3 w-3 mr-1" />
               {previousTime || previousDate || "Previous"} → {newTime}
             </Badge>
@@ -91,7 +103,11 @@ export function ReschedulePendingActions({
 
           {/* Reschedule reason badge */}
           {rescheduleReason && (
-            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs max-w-xs truncate" title={rescheduleReason}>
+            <Badge
+              variant="outline"
+              className="bg-purple-50 text-purple-700 border-purple-200 text-xs max-w-xs truncate"
+              title={rescheduleReason}
+            >
               <AlertTriangle className="h-3 w-3 mr-1" />
               {rescheduleReason}
             </Badge>
@@ -99,7 +115,10 @@ export function ReschedulePendingActions({
 
           {/* New time info (if no previous) */}
           {!(previousDate || previousTime) && (
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+            <Badge
+              variant="outline"
+              className="bg-blue-50 text-blue-700 border-blue-200 text-xs"
+            >
               <CalendarDays className="h-3 w-3 mr-1" />
               {newDate}
               <Clock className="h-3 w-3 ml-2 mr-1" />
@@ -142,16 +161,22 @@ export function ReschedulePendingActions({
           </Button>
         </div>
 
-        <AlertDialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
+        <AlertDialog
+          open={showDeclineDialog}
+          onOpenChange={setShowDeclineDialog}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Decline Reschedule Request?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will restore the original booking time and automatically refund the 10% reschedule fee to the customer.
+                This will restore the original booking time and automatically
+                refund the 10% reschedule fee to the customer.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel disabled={isProcessing}>
+                Cancel
+              </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDecline}
                 disabled={isProcessing}
@@ -181,7 +206,7 @@ export function ReschedulePendingActions({
     <>
       <div className="space-y-4">
         {/* Slot Comparison Card */}
-        <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 rounded-xl border border-purple-200 dark:border-purple-800">
+        {/* <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 rounded-xl border border-purple-200 dark:border-purple-800">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-10 w-10 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center">
               <HistoryIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -194,14 +219,14 @@ export function ReschedulePendingActions({
                 Review the details and approve or decline this request
               </p>
             </div>
-          </div>
+          </div> */}
 
-          {/* Slot Comparison */}
-          {(previousDate || previousTime) && (
+        {/* Slot Comparison */}
+        {/* {(previousDate || previousTime) && (
             <div className="bg-white/60 dark:bg-gray-900/40 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
               <div className="flex items-center justify-between gap-4">
                 {/* Previous Slot */}
-                <div className="flex-1">
+        {/* <div className="flex-1">
                   <p className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide mb-1">
                     Previous
                   </p>
@@ -213,13 +238,13 @@ export function ReschedulePendingActions({
                     <Clock className="h-3.5 w-3.5" />
                     <span>{previousTime || "N/A"}</span>
                   </div>
-                </div>
+                </div>  */}
 
-                {/* Arrow */}
-                <ArrowRight className="h-5 w-5 text-purple-500 dark:text-purple-400 flex-shrink-0 mt-4" />
+        {/* Arrow */}
+        {/* <ArrowRight className="h-5 w-5 text-purple-500 dark:text-purple-400 flex-shrink-0 mt-4" /> */}
 
-                {/* New Slot */}
-                <div className="flex-1">
+        {/* New Slot */}
+        {/* <div className="flex-1">
                   <p className="text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wide mb-1">
                     Requested
                   </p>
@@ -235,7 +260,7 @@ export function ReschedulePendingActions({
               </div>
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3 justify-end">
@@ -285,11 +310,14 @@ export function ReschedulePendingActions({
           <AlertDialogHeader>
             <AlertDialogTitle>Decline Reschedule Request?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will restore the original booking time and automatically refund the 10% reschedule fee to the customer.
+              This will restore the original booking time and automatically
+              refund the 10% reschedule fee to the customer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isProcessing}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDecline}
               disabled={isProcessing}

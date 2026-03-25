@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 import type { RazorpayOptions, RazorpayResponse } from "@/types/payment";
+import { cn } from "@/lib/utils";
 
 interface RazorpayCheckoutProps {
   options: RazorpayOptions;
@@ -66,7 +67,9 @@ export function useRazorpay({
 
   const openCheckout = async () => {
     if (typeof window === "undefined" || !(window as any).Razorpay) {
-      const error = new Error("Razorpay not loaded. Please refresh and try again.");
+      const error = new Error(
+        "Razorpay not loaded. Please refresh and try again.",
+      );
       console.error("❌ Razorpay not loaded");
       onPaymentFailure?.(error);
       return;
@@ -76,14 +79,22 @@ export function useRazorpay({
     if (paymentIntentId) {
       setIsValidating(true);
       try {
-        console.log(`🔍 Validating payment intent ${paymentIntentId} before opening Razorpay...`);
+        console.log(
+          `🔍 Validating payment intent ${paymentIntentId} before opening Razorpay...`,
+        );
 
-        const validationResponse = await api.post(API_ENDPOINTS.PAYMENT.VALIDATE_INTENT, {
-          paymentIntentId
-        });
+        const validationResponse = await api.post(
+          API_ENDPOINTS.PAYMENT.VALIDATE_INTENT,
+          {
+            paymentIntentId,
+          },
+        );
 
         if (!validationResponse.valid) {
-          console.error(`❌ Payment intent validation failed:`, validationResponse);
+          console.error(
+            `❌ Payment intent validation failed:`,
+            validationResponse,
+          );
 
           // Close the payment modal
           onModalClose?.();
@@ -93,7 +104,9 @@ export function useRazorpay({
           return;
         }
 
-        console.log(`✅ Payment intent validated successfully (${validationResponse.data?.timeRemaining}s remaining)`);
+        console.log(
+          `✅ Payment intent validated successfully (${validationResponse.data?.timeRemaining}s remaining)`,
+        );
       } catch (error: any) {
         console.error(`❌ Error validating payment intent:`, error);
 
@@ -181,7 +194,9 @@ export function RazorpayCheckoutButton({
 
   const handleClick = () => {
     if (!scriptLoaded) {
-      onPaymentFailure?.(new Error("Payment gateway is loading. Please wait..."));
+      onPaymentFailure?.(
+        new Error("Payment gateway is loading. Please wait..."),
+      );
       return;
     }
     openCheckout();
@@ -193,14 +208,14 @@ export function RazorpayCheckoutButton({
     <button
       onClick={handleClick}
       disabled={disabled || isLoading || !scriptLoaded}
-      className={className}
+      className={cn("", className)}
       type="button"
     >
       {isLoading ? (
-        <>
+        <div className="flex items-center justify-center">
           <Loader2 className="h-4 w-4 animate-spin mr-2" />
           {isValidating ? "Validating..." : "Processing..."}
-        </>
+        </div>
       ) : (
         children || "Pay Now"
       )}

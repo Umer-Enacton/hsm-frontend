@@ -1036,6 +1036,74 @@ export default function ProviderBookingsPage() {
                                     </p>
                                   </div>
                                 </div>
+                                {/* Reschedule History - Show for ALL bookings with reschedule outcome */}
+                                {/* {booking.rescheduleOutcome &&
+                                  booking.previousSlotId && (
+                                    <div className="bg-background/50 rounded-xl p-5 border">
+                                      <div className="flex items-center gap-2 pb-3 border-b">
+                                        <HistoryIcon className="h-4 w-4 text-muted-foreground" />
+                                        <h4 className="font-semibold text-sm">
+                                          Reschedule Details
+                                        </h4>
+                                      </div>
+                                      <div className="space-y-3 mt-4">
+                                        <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3">
+                                          <div className="flex items-center gap-2 text-sm">
+                                            <span className="text-muted-foreground">
+                                              Previous:
+                                            </span>
+                                            <span className="font-medium">
+                                              {booking.previousBookingDate
+                                                ? formatDate(
+                                                    booking.previousBookingDate,
+                                                  )
+                                                : "N/A"}
+                                              {booking.previousSlotTime &&
+                                                ` at ${formatTime(booking.previousSlotTime)}`}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center justify-center my-1">
+                                            <ChevronRight className="h-4 w-4 text-purple-600" />
+                                          </div>
+                                          <div className="flex items-center gap-2 text-sm">
+                                            <span className="text-muted-foreground">
+                                              {booking.rescheduleOutcome ===
+                                              "pending"
+                                                ? "Requested:"
+                                                : booking.rescheduleOutcome ===
+                                                    "accepted"
+                                                  ? "Confirmed:"
+                                                  : booking.rescheduleOutcome ===
+                                                      "rejected"
+                                                    ? "Declined (reverted):"
+                                                    : "Cancelled (reverted):"}
+                                            </span>
+                                            <span className="font-medium">
+                                              {formatDate(
+                                                booking.bookingDate ||
+                                                  booking.date,
+                                              )}{" "}
+                                              at {formatTime(booking.startTime)}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {booking.rescheduleOutcome ===
+                                            "pending" &&
+                                            "Customer's reschedule request - awaiting your approval"}
+                                          {booking.rescheduleOutcome ===
+                                            "accepted" &&
+                                            "You approved this reschedule request"}
+                                          {booking.rescheduleOutcome ===
+                                            "rejected" &&
+                                            "You declined this request - refunded to customer"}
+                                          {booking.rescheduleOutcome ===
+                                            "cancelled" &&
+                                            "Customer cancelled their reschedule request"}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )} */}
                               </div>
                               {/* Completion Photos (if available) */}
                               {(booking.beforePhotoUrl ||
@@ -1109,6 +1177,39 @@ export default function ProviderBookingsPage() {
                                     <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">
                                       Reschedule Re quest
                                     </h4>
+                                    <div className="flex items-center gap-2 text-sm">
+                                      <span className="text-muted-foreground">
+                                        {booking.rescheduleOutcome === "pending"
+                                          ? "Requested:"
+                                          : booking.rescheduleOutcome ===
+                                              "accepted"
+                                            ? "Confirmed:"
+                                            : booking.rescheduleOutcome ===
+                                                "rejected"
+                                              ? "Declined (reverted):"
+                                              : "Cancelled (reverted):"}
+                                      </span>
+                                      {/* <span className="font-medium">
+                                        {formatDate(
+                                          booking.bookingDate || booking.date,
+                                        )}{" "}
+                                        at {formatTime(booking.startTime)}
+                                      </span> */}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {booking.rescheduleOutcome ===
+                                        "pending" &&
+                                        "Customer's reschedule request - awaiting your approval"}
+                                      {booking.rescheduleOutcome ===
+                                        "accepted" &&
+                                        "You approved this reschedule request"}
+                                      {booking.rescheduleOutcome ===
+                                        "rejected" &&
+                                        "You declined this request - refunded to customer"}
+                                      {booking.rescheduleOutcome ===
+                                        "cancelled" &&
+                                        "Customer cancelled their reschedule request"}
+                                    </div>
                                   </div>
                                   <div className="mt-4 space-y-4">
                                     {/* Slot Comparison - Previous → New */}
@@ -1211,75 +1312,6 @@ export default function ProviderBookingsPage() {
                                   </div>
                                 </div>
                               </div>
-
-                              {/* Reschedule History - Show for ALL bookings with reschedule outcome */}
-                              {booking.rescheduleOutcome &&
-                                booking.previousSlotId && (
-                                  <div className="bg-background/50 rounded-xl p-5 border">
-                                    <div className="flex items-center gap-2 pb-3 border-b">
-                                      <HistoryIcon className="h-4 w-4 text-muted-foreground" />
-                                      <h4 className="font-semibold text-sm">
-                                        Reschedule Details
-                                      </h4>
-                                    </div>
-                                    <div className="space-y-3 mt-4">
-                                      <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3">
-                                        <div className="flex items-center gap-2 text-sm">
-                                          <span className="text-muted-foreground">
-                                            Previous:
-                                          </span>
-                                          <span className="font-medium">
-                                            {booking.previousBookingDate
-                                              ? formatDate(
-                                                  booking.previousBookingDate,
-                                                )
-                                              : "N/A"}
-                                            {booking.previousSlotTime &&
-                                              ` at ${formatTime(booking.previousSlotTime)}`}
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center justify-center my-1">
-                                          <ChevronRight className="h-4 w-4 text-purple-600" />
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                          <span className="text-muted-foreground">
-                                            {booking.rescheduleOutcome ===
-                                            "pending"
-                                              ? "Requested:"
-                                              : booking.rescheduleOutcome ===
-                                                  "accepted"
-                                                ? "Confirmed:"
-                                                : booking.rescheduleOutcome ===
-                                                    "rejected"
-                                                  ? "Declined (reverted):"
-                                                  : "Cancelled (reverted):"}
-                                          </span>
-                                          <span className="font-medium">
-                                            {formatDate(
-                                              booking.bookingDate ||
-                                                booking.date,
-                                            )}{" "}
-                                            at {formatTime(booking.startTime)}
-                                          </span>
-                                        </div>
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">
-                                        {booking.rescheduleOutcome ===
-                                          "pending" &&
-                                          "Customer's reschedule request - awaiting your approval"}
-                                        {booking.rescheduleOutcome ===
-                                          "accepted" &&
-                                          "You approved this reschedule request"}
-                                        {booking.rescheduleOutcome ===
-                                          "rejected" &&
-                                          "You declined this request - refunded to customer"}
-                                        {booking.rescheduleOutcome ===
-                                          "cancelled" &&
-                                          "Customer cancelled their reschedule request"}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
 
                               {/* Customer Review (if completed) */}
                               {booking.status === "completed" &&

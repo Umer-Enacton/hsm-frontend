@@ -109,7 +109,10 @@ export function PaymentModal({
 
     try {
       // Log full response for debugging
-      console.log("📦 Full Razorpay response:", JSON.stringify(response, null, 2));
+      console.log(
+        "📦 Full Razorpay response:",
+        JSON.stringify(response, null, 2),
+      );
 
       // Razorpay v2 checkout structure
       const razorpayPaymentId =
@@ -389,7 +392,6 @@ export function PaymentModal({
 
         {/* Payment Info */}
         <div className="text-xs text-muted-foreground mb-4 space-y-1">
-          <p>• Slot is reserved for 1 minute</p>
           <p>• Booking confirmed only after provider approval</p>
           <p>• Full refund if provider rejects booking</p>
         </div>
@@ -433,7 +435,9 @@ export function PaymentModal({
             onPaymentFailure={handlePaymentFailure}
             onModalClose={async () => {
               // User closed Razorpay without paying - cancel the intent to release slot
-              console.log("ℹ️ Razorpay modal closed by user - cancelling payment intent");
+              console.log(
+                "ℹ️ Razorpay modal closed by user - cancelling payment intent",
+              );
 
               if (orderData && step === "ready") {
                 try {
@@ -488,7 +492,7 @@ export function PaymentModal({
         <div className="fixed inset-0 bg-black/70 dark:bg-black/90 flex items-center justify-center z-50 p-4">
           {renderModalContent()}
         </div>,
-        document.body
+        document.body,
       )
     : null;
 }
