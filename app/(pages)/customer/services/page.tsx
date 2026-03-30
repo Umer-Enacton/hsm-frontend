@@ -367,7 +367,7 @@ export default function CustomerServicesPage() {
                     value={filterState.state}
                     onValueChange={handleStateChange}
                   >
-                    <SelectTrigger className="h-9 text-sm">
+                    <SelectTrigger className="w-full h-9 text-sm">
                       <SelectValue placeholder="State" />
                     </SelectTrigger>
                     <SelectContent>
@@ -386,7 +386,7 @@ export default function CustomerServicesPage() {
                       value={filterState.city}
                       onValueChange={(c) => updateFilter("city", c)}
                     >
-                      <SelectTrigger className="h-9 text-sm">
+                      <SelectTrigger className="w-full h-9 text-sm">
                         <SelectValue placeholder="City" />
                       </SelectTrigger>
                       <SelectContent>
@@ -416,7 +416,7 @@ export default function CustomerServicesPage() {
                     value={filterState.category}
                     onValueChange={(c) => updateFilter("category", c)}
                   >
-                    <SelectTrigger className="h-9 text-sm">
+                    <SelectTrigger className="w-full h-9 text-sm">
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -762,7 +762,7 @@ export default function CustomerServicesPage() {
                   value={filterState.state}
                   onValueChange={handleStateChange}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="State" />
                   </SelectTrigger>
                   <SelectContent>
@@ -781,7 +781,7 @@ export default function CustomerServicesPage() {
                     value={filterState.city}
                     onValueChange={(c) => updateFilter("city", c)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="City" />
                     </SelectTrigger>
                     <SelectContent>
@@ -809,7 +809,7 @@ export default function CustomerServicesPage() {
                     value={filterState.category}
                     onValueChange={(c) => updateFilter("category", c)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>

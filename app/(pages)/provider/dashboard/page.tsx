@@ -326,9 +326,16 @@ export default function ProviderDashboardPage() {
                 })}
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Your 95% share from all bookings
-            </p>
+            <div className="flex flex-col gap-0.5 mt-1">
+              <p className="text-[10px] text-muted-foreground">
+                95% share from bookings
+              </p>
+              {Number(revenueStats?.rescheduleRevenue || 0) > 0 && (
+                <p className="text-[10px] text-purple-600 font-medium">
+                  + ₹{(revenueStats?.rescheduleRevenue || 0)} reschedule fees
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
 

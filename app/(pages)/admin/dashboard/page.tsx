@@ -202,7 +202,6 @@ export default function AdminDashboardPage() {
           change={`total revenue by providers`}
           icon={IndianRupee}
           trend="up"
-          className="border-green-200 dark:border-green-800"
         />
         <StatCard
           title="Platform Fees"
@@ -210,7 +209,6 @@ export default function AdminDashboardPage() {
           change={`your earnings`}
           icon={DollarSign}
           trend="up"
-          className="border-purple-200 dark:border-purple-800"
         />
         <StatCard
           title="Pending Payouts"
@@ -218,7 +216,6 @@ export default function AdminDashboardPage() {
           change={`${stats?.payouts.pendingCount || 0} pending`}
           icon={Wallet}
           trend="neutral"
-          className="border-orange-200 dark:border-orange-800"
         />
         <StatCard
           title="Min Payout"
@@ -236,14 +233,12 @@ export default function AdminDashboardPage() {
           value={stats?.businesses.verified || 0}
           icon={CheckCircle}
           trend="up"
-          className="border-emerald-200 dark:border-emerald-800"
         />
         <StatCard
           title="Pending Verification"
           value={stats?.businesses.pending || 0}
           icon={Clock}
           trend="neutral"
-          className="border-amber-200 dark:border-amber-800"
         />
       </div>
 

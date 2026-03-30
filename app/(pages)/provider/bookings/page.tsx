@@ -95,6 +95,7 @@ export default function ProviderBookingsPage() {
     error,
     refetch,
     isFetching,
+    dataUpdatedAt,
   } = useProviderBookings();
   const acceptBooking = useAcceptBooking();
   const rejectBooking = useRejectBooking();
@@ -1376,7 +1377,7 @@ export default function ProviderBookingsPage() {
                               <HistoryIcon className="h-5 w-5 text-primary" />
                               Booking Timeline
                             </h4>
-                            <BookingHistoryTimeline bookingId={booking.id} />
+                            <BookingHistoryTimeline bookingId={booking.id} refreshKey={dataUpdatedAt} />
                           </div>
 
                           {/* Quick Actions - Full Action Buttons */}

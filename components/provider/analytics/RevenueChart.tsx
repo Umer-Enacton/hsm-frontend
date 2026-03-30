@@ -1,7 +1,15 @@
 "use client";
 
 import { TrendingUp, Calendar } from "lucide-react";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import {
   Card,
   CardContent,
@@ -14,6 +22,8 @@ export interface RevenueChartData {
   date: string;
   bookings: number;
   revenue: number;
+  rescheduleRevenue: number;
+  totalRevenue: number;
   completed: number;
 }
 
@@ -31,7 +41,7 @@ export function RevenueChart({
   totalBookings,
 }: RevenueChartProps) {
   // Calculate proper tick values for bookings Y-axis
-  const maxBookings = Math.max(...data.map(d => d.bookings), 5); // At least 5
+  const maxBookings = Math.max(...data.map((d) => d.bookings), 5); // At least 5
   const bookingTicks = Array.from({ length: maxBookings + 1 }, (_, i) => i);
 
   // Format date for display
@@ -41,14 +51,30 @@ export function RevenueChart({
 
     if (isMonthly) {
       // Parse YYYY-MM format - show as "Mar '24"
-      const [year, month] = dateStr.split('-');
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const [year, month] = dateStr.split("-");
+      const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
       const shortYear = year.slice(-2); // Last 2 digits of year
       return `${monthNames[parseInt(month) - 1]} '${shortYear}`;
     } else {
       // Parse YYYY-MM-DD format - show as "13 Mar"
-      const date = new Date(dateStr + 'T00:00:00');
-      return date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+      const date = new Date(dateStr + "T00:00:00");
+      return date.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+      });
     }
   };
 
@@ -67,18 +93,25 @@ export function RevenueChart({
   // Calculate growth
   const hasGrowth = data.length >= 2;
   const growth = hasGrowth
-    ? ((data[data.length - 1].revenue - data[0].revenue) / (data[0].revenue || 1)) * 100
+    ? ((data[data.length - 1].revenue - data[0].revenue) /
+        (data[0].revenue || 1)) *
+      100
     : 0;
 
   // Calculate actual total bookings from chart data (including those with ₹0 revenue)
-  const actualTotalBookings = data.reduce((sum, item) => sum + item.bookings, 0);
+  const actualTotalBookings = data.reduce(
+    (sum, item) => sum + item.bookings,
+    0,
+  );
 
   return (
     <Card className="shadow-lg hover:shadow-xl transition-all overflow-hidden">
       <CardHeader className="pb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <CardTitle className="text-lg sm:text-xl">Revenue & Bookings</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">
+              Revenue & Bookings
+            </CardTitle>
             <CardDescription className="text-xs sm:text-sm">
               Track your earnings and booking trends over time
             </CardDescription>
@@ -88,7 +121,8 @@ export function RevenueChart({
               {formatCurrency(totalRevenue)}
             </div>
             <div className="text-xs text-muted-foreground">
-              {actualTotalBookings} booking{actualTotalBookings !== 1 ? "s" : ""}
+              {actualTotalBookings} booking
+              {actualTotalBookings !== 1 ? "s" : ""}
             </div>
           </div>
         </div>
@@ -108,15 +142,35 @@ export function RevenueChart({
               >
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1} />
                   </linearGradient>
-                  <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                  <linearGradient
+                    id="colorBookings"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
+                  </linearGradient>
+                  <linearGradient
+                    id="colorReschedule"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0.1} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#e5e7eb"
+                />
                 <XAxis
                   dataKey="date"
                   tickLine={false}
@@ -133,7 +187,7 @@ export function RevenueChart({
                   axisLine={false}
                   tickMargin={8}
                   tickFormatter={formatCurrency}
-                  domain={[0, 'auto']}
+                  domain={[0, "auto"]}
                   tick={{ fill: "#22c55e", fontSize: 10 }}
                   width={50}
                 />
@@ -154,10 +208,18 @@ export function RevenueChart({
                     if (active && payload && payload.length) {
                       return (
                         <div className="bg-background border rounded-lg shadow-lg p-2 text-xs">
-                          <p className="font-medium">{payload[0].payload.date}</p>
+                          <p className="font-medium">
+                            {payload[0].payload.date}
+                          </p>
                           {payload.map((entry) => (
-                            <p key={entry.dataKey} style={{ color: entry.color }}>
-                              {entry.name}: {entry.dataKey === "revenue" ? formatCurrency(Number(entry.value ?? 0)) : entry.value ?? 0}
+                            <p
+                              key={entry.dataKey}
+                              style={{ color: entry.color }}
+                            >
+                              {entry.name === "rescheduleRevenue" ? "Reschedule Fee" : entry.name}:{" "}
+                              {entry.dataKey === "revenue" || entry.dataKey === "rescheduleRevenue" || entry.dataKey === "totalRevenue"
+                                ? formatCurrency(Number(entry.value ?? 0))
+                                : (entry.value ?? 0)}
                             </p>
                           ))}
                         </div>
@@ -178,7 +240,20 @@ export function RevenueChart({
                 <Area
                   yAxisId="revenue"
                   type="monotone"
+                  dataKey="rescheduleRevenue"
+                  name="Reschedule Fee"
+                  stackId="1"
+                  stroke="#a855f7"
+                  strokeWidth={2}
+                  fill="url(#colorReschedule)"
+                  fillOpacity={1}
+                />
+                <Area
+                  yAxisId="revenue"
+                  type="monotone"
                   dataKey="revenue"
+                  name="Booking Revenue"
+                  stackId="1"
                   stroke="#22c55e"
                   strokeWidth={2}
                   fill="url(#colorRevenue)"
@@ -195,6 +270,10 @@ export function RevenueChart({
               <span className="text-muted-foreground">Revenue (₹)</span>
             </div>
             <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+              <span className="text-muted-foreground">Reschedule Fees</span>
+            </div>
+            <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full bg-blue-600"></div>
               <span className="text-muted-foreground">Bookings</span>
             </div>
@@ -205,7 +284,13 @@ export function RevenueChart({
             ) : (
               <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-red-600 rotate-180" />
             )}
-            <span className={growth >= 0 ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+            <span
+              className={
+                growth >= 0
+                  ? "text-green-600 font-medium"
+                  : "text-red-600 font-medium"
+              }
+            >
               {growth >= 0 ? "+" : ""}
               {growth.toFixed(1)}%
             </span>

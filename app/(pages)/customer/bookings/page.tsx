@@ -75,6 +75,7 @@ export default function CustomerBookingsPage() {
     error: bookingsError,
     refetch: refetchBookings,
     isFetching: isRefreshing,
+    dataUpdatedAt,
   } = useBookings();
 
   // Local state for UI-only concerns
@@ -1265,7 +1266,7 @@ export default function CustomerBookingsPage() {
 
                           {/* Booking History Timeline */}
                           <div className="mt-6 pt-5 border-t">
-                            <BookingHistoryTimeline bookingId={booking.id} />
+                            <BookingHistoryTimeline bookingId={booking.id} refreshKey={dataUpdatedAt} />
                           </div>
 
                           {/* Quick Actions - Using modular BookingActions component */}

@@ -19,9 +19,10 @@ interface BookingHistoryEvent {
 
 interface BookingHistoryTimelineProps {
   bookingId: number;
+  refreshKey?: number;
 }
 
-export function BookingHistoryTimeline({ bookingId }: BookingHistoryTimelineProps) {
+export function BookingHistoryTimeline({ bookingId, refreshKey }: BookingHistoryTimelineProps) {
   const [events, setEvents] = useState<BookingHistoryEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +46,7 @@ export function BookingHistoryTimeline({ bookingId }: BookingHistoryTimelineProp
     }
 
     fetchHistory();
-  }, [bookingId]);
+  }, [bookingId, refreshKey]);
 
   const getEventIcon = (action: string) => {
     switch (action) {

@@ -25,6 +25,38 @@ export interface TopProvidersChartProps {
   totalPlatformFees: number;
 }
 
+const formatCurrencyDetailed = (value: number | null | undefined) => {
+  if (value == null || isNaN(value)) {
+    return '₹0';
+  }
+  if (value >= 100000) {
+    return `₹${(value / 100000).toFixed(1)}L`;
+  }
+  if (value >= 1000) {
+    return `₹${(value / 1000).toFixed(1)}K`;
+  }
+  return `₹${Number(value).toFixed(2)}`;
+};
+
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-background border rounded-lg shadow-lg p-3">
+        <p className="text-sm font-medium">{data.fullName}</p>
+        <p className="text-xs text-muted-foreground">{data.businessName}</p>
+        <p className="text-sm text-green-600">
+          Platform Fees: {formatCurrencyDetailed(data.platformFees)}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {data.bookingCount} bookings ({data.percentage}%)
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function TopProvidersChart({ data, totalPlatformFees }: TopProvidersChartProps) {
   const formatCurrency = (value: number | null | undefined) => {
     if (value == null || isNaN(value)) {
@@ -36,7 +68,7 @@ export function TopProvidersChart({ data, totalPlatformFees }: TopProvidersChart
     if (value >= 1000) {
       return `₹${(value / 1000).toFixed(1)}K`;
     }
-    return `₹${value.toFixed(0)}`;
+    return `₹${Number(value).toFixed(2)}`;
   };
 
   // Prepare data for bar chart
@@ -48,25 +80,6 @@ export function TopProvidersChart({ data, totalPlatformFees }: TopProvidersChart
     bookingCount: item.bookingCount,
     percentage: item.percentage,
   }));
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-background border rounded-lg shadow-lg p-3">
-          <p className="text-sm font-medium">{data.fullName}</p>
-          <p className="text-xs text-muted-foreground">{data.businessName}</p>
-          <p className="text-sm text-green-600">
-            Platform Fees: {formatCurrency(data.platformFees)}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {data.bookingCount} bookings ({data.percentage}%)
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   if (data.length === 0) {
     return (

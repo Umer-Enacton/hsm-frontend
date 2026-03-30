@@ -12,12 +12,14 @@ interface BookingTimelineModalProps {
   bookingId: number | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  refreshKey?: number;
 }
 
 export function BookingTimelineModal({
   bookingId,
   open,
   onOpenChange,
+  refreshKey,
 }: BookingTimelineModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -30,7 +32,7 @@ export function BookingTimelineModal({
         </DialogHeader>
         <div className="py-4">
           {bookingId ? (
-            <BookingHistoryTimeline bookingId={bookingId} />
+            <BookingHistoryTimeline bookingId={bookingId} refreshKey={refreshKey} />
           ) : (
             <p className="text-center text-muted-foreground">
               No booking selected.

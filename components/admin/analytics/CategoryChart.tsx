@@ -37,28 +37,6 @@ const CATEGORY_COLORS = [
   "#6366f1", // Indigo
 ];
 
-export function CategoryChart({ data, totalPlatformFees }: CategoryChartProps) {
-  // Prepare data for pie chart
-  const chartData = data.map((item, index) => ({
-    name: item.categoryName,
-    value: item.platformFees,
-    percentage: item.percentage,
-    color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
-  }));
-
-  const formatCurrency = (value: number | null | undefined) => {
-    if (value == null || isNaN(value)) {
-      return '₹0';
-    }
-    if (value >= 100000) {
-      return `₹${(value / 100000).toFixed(1)}L`;
-    }
-    if (value >= 1000) {
-      return `₹${(value / 1000).toFixed(1)}K`;
-    }
-    return `₹${value.toFixed(0)}`;
-  };
-
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -66,7 +44,7 @@ export function CategoryChart({ data, totalPlatformFees }: CategoryChartProps) {
         <div className="bg-background border rounded-lg shadow-lg p-3">
           <p className="text-sm font-medium">{data.name}</p>
           <p className="text-sm" style={{ color: data.color }}>
-            Platform Fees: {formatCurrency(data.value)}
+            Platform Fees: {formatCurrencyWithDecimals(data.value)}
           </p>
           <p className="text-xs text-muted-foreground">
             {data.percentage}% of total
@@ -76,6 +54,28 @@ export function CategoryChart({ data, totalPlatformFees }: CategoryChartProps) {
     }
     return null;
   };
+
+  const formatCurrencyWithDecimals = (value: number | null | undefined) => {
+    if (value == null || isNaN(value)) {
+      return '₹0';
+    }
+    if (value >= 100000) {
+      return `₹${(value / 100000).toFixed(1)}L`;
+    }
+    if (value >= 1000) {
+      return `₹${(value / 1000).toFixed(1)}K`;
+    }
+    return `₹${Number(value).toFixed(2)}`;
+  };
+
+export function CategoryChart({ data, totalPlatformFees }: CategoryChartProps) {
+  // Prepare data for pie chart
+  const chartData = data.map((item, index) => ({
+    name: item.categoryName,
+    value: item.platformFees,
+    percentage: item.percentage,
+    color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+  }));
 
   if (data.length === 0) {
     return (
@@ -143,7 +143,7 @@ export function CategoryChart({ data, totalPlatformFees }: CategoryChartProps) {
               </div>
               <div className="flex items-center gap-1.5 sm:gap-3">
                 <span className="text-muted-foreground text-[10px] sm:text-xs">{category.bookingCount} bookings</span>
-                <span className="font-medium text-green-600 text-[10px] sm:text-xs">{formatCurrency(category.platformFees)}</span>
+                <span className="font-medium text-green-600 text-[10px] sm:text-xs">{formatCurrencyWithDecimals(category.platformFees)}</span>
               </div>
             </div>
           ))}

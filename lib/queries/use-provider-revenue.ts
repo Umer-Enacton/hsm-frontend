@@ -4,6 +4,8 @@ import { QUERY_KEYS } from "@/lib/queries/query-keys";
 
 interface ProviderRevenueStats {
   totalEarnings: number;
+  baseEarnings: number;
+  rescheduleRevenue: number;
   pendingPayouts: number;
   paidPayouts: number;
   totalBookings: number;

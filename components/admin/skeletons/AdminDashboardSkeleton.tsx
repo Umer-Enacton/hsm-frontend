@@ -38,16 +38,16 @@ export function AdminDashboardSkeleton() {
 
       {/* Revenue Stats Row — 2 cols mobile, 4 cols lg, colored borders */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-        <StatCardSkeleton className="border-green-200 dark:border-green-800" />
-        <StatCardSkeleton className="border-purple-200 dark:border-purple-800" />
-        <StatCardSkeleton className="border-orange-200 dark:border-orange-800" />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
         <StatCardSkeleton />
       </div>
 
       {/* Business Status — always 2 cols */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2">
-        <StatCardSkeleton className="border-emerald-200 dark:border-emerald-800" />
-        <StatCardSkeleton className="border-amber-200 dark:border-amber-800" />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
       </div>
 
       {/* Analytics Section */}
