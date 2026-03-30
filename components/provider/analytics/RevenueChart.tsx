@@ -22,9 +22,10 @@ export interface RevenueChartData {
   date: string;
   bookings: number;
   revenue: number;
-  rescheduleRevenue: number;
-  totalRevenue: number;
+  rescheduleRevenue?: number;
+  totalRevenue?: number;
   completed: number;
+  cumulativeRevenue?: number;
 }
 
 export interface RevenueChartProps {
@@ -237,17 +238,19 @@ export function RevenueChart({
                   fill="url(#colorBookings)"
                   fillOpacity={1}
                 />
-                <Area
-                  yAxisId="revenue"
-                  type="monotone"
-                  dataKey="rescheduleRevenue"
-                  name="Reschedule Fee"
-                  stackId="1"
-                  stroke="#a855f7"
-                  strokeWidth={2}
-                  fill="url(#colorReschedule)"
-                  fillOpacity={1}
-                />
+                {data.some((d) => d.rescheduleRevenue && d.rescheduleRevenue > 0) && (
+                  <Area
+                    yAxisId="revenue"
+                    type="monotone"
+                    dataKey="rescheduleRevenue"
+                    name="Reschedule Fee"
+                    stackId="1"
+                    stroke="#a855f7"
+                    strokeWidth={2}
+                    fill="url(#colorReschedule)"
+                    fillOpacity={1}
+                  />
+                )}
                 <Area
                   yAxisId="revenue"
                   type="monotone"
@@ -269,10 +272,12 @@ export function RevenueChart({
               <div className="w-3 h-3 rounded-full bg-green-600"></div>
               <span className="text-muted-foreground">Revenue (₹)</span>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-              <span className="text-muted-foreground">Reschedule Fees</span>
-            </div>
+            {data.some((d) => d.rescheduleRevenue && d.rescheduleRevenue > 0) && (
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                <span className="text-muted-foreground">Reschedule Fees</span>
+              </div>
+            )}
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full bg-blue-600"></div>
               <span className="text-muted-foreground">Bookings</span>
