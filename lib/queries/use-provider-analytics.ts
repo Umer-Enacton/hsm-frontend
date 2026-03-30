@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { api, API_ENDPOINTS } from '@/lib/api';
+import { QUERY_KEYS } from './query-keys';
 
 type PeriodType = '7d' | '30d' | '6m' | '12m' | 'all';
 
@@ -54,7 +55,7 @@ interface StatusResponse {
 
 export function useProviderAnalytics(period: PeriodType = '7d') {
   const revenueQuery = useQuery<RevenueResponse>({
-    queryKey: ['provider', 'analytics', 'revenue', period],
+    queryKey: [QUERY_KEYS.PROVIDER_ANALYTICS, 'revenue', period],
     queryFn: () =>
       api.get<RevenueResponse>(
         `${API_ENDPOINTS.PROVIDER_ANALYTICS_REVENUE}?period=${period}`,
@@ -63,7 +64,7 @@ export function useProviderAnalytics(period: PeriodType = '7d') {
   });
 
   const servicesQuery = useQuery<ServicesResponse>({
-    queryKey: ['provider', 'analytics', 'services', period],
+    queryKey: [QUERY_KEYS.PROVIDER_ANALYTICS, 'services', period],
     queryFn: () =>
       api.get<ServicesResponse>(
         `${API_ENDPOINTS.PROVIDER_ANALYTICS_SERVICES}?period=${period}`,
@@ -72,7 +73,7 @@ export function useProviderAnalytics(period: PeriodType = '7d') {
   });
 
   const statusQuery = useQuery<StatusResponse>({
-    queryKey: ['provider', 'analytics', 'status', period],
+    queryKey: [QUERY_KEYS.PROVIDER_ANALYTICS, 'status', period],
     queryFn: () =>
       api.get<StatusResponse>(
         `${API_ENDPOINTS.PROVIDER_ANALYTICS_STATUS}?period=${period}`,

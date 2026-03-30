@@ -24,7 +24,7 @@ import {
   useDeleteAddress,
 } from "@/lib/queries";
 import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/queries/query-keys";
+import { QUERY_KEYS } from "@/lib/queries/query-keys";
 import type { User } from "@/types/auth";
 import type { Address } from "@/types/customer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -94,7 +94,7 @@ export default function CustomerProfilePage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.profile.all });
+      await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PROFILE] });
       await queryClient.invalidateQueries({ queryKey: ["addresses"] });
       toast.success("Profile refreshed");
     } catch (err) {

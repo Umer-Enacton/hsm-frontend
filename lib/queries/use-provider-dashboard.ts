@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getProviderBusiness, getProviderBookings } from "@/lib/provider/api";
 import { api } from "@/lib/api";
-import { queryKeys } from "./query-keys";
+import { QUERY_KEYS } from "./query-keys";
 import type { Business, ProviderDashboardStats } from "@/types/provider";
 import type { ProviderBooking } from "@/types/provider";
 
@@ -14,7 +14,7 @@ import type { ProviderBooking } from "@/types/provider";
  */
 export function useProviderBusiness(userId?: number) {
   return useQuery({
-    queryKey: queryKeys.provider.business.detail(userId),
+    queryKey: [QUERY_KEYS.PROVIDER_BUSINESS, "detail", userId],
     queryFn: () => getProviderBusiness(userId || 0),
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -27,7 +27,7 @@ export function useProviderBusiness(userId?: number) {
  */
 export function useProviderServices(businessId?: number) {
   return useQuery({
-    queryKey: queryKeys.provider.services.forBusiness(businessId || 0),
+    queryKey: [QUERY_KEYS.PROVIDER_SERVICES, businessId || 0],
     queryFn: async () => {
       if (!businessId) return [];
       const response = await api.get(`/services/business/${businessId}`);
@@ -43,7 +43,7 @@ export function useProviderServices(businessId?: number) {
  */
 export function useProviderDashboardBookings() {
   return useQuery({
-    queryKey: queryKeys.provider.bookings.list({}),
+    queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS, "list", {}],
     queryFn: async () => {
       const data = await getProviderBookings(undefined);
       return Array.isArray(data) ? data : [];
@@ -66,7 +66,7 @@ export function useProviderDashboardStats(businessId?: number) {
   };
 
   return useQuery({
-    queryKey: queryKeys.provider.dashboard.stats(),
+    queryKey: [QUERY_KEYS.PROVIDER_DASHBOARD, "stats"],
     queryFn: (): ProviderDashboardStats => {
       // Calculate today's bookings
       const today = new Date().toDateString();

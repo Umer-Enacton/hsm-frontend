@@ -1,90 +1,32 @@
 /**
- * Query Keys Factory
- * Hierarchical query keys for React Query
+ * Simple Query Keys Constants
+ * 
+ * Instead of complex nested functions, use these base strings inside your queryKey arrays.
+ * 
+ * Example: 
+ *   // Before: queryKey: queryKeys.bookings.list(filters)
+ *   // After:  queryKey: [QUERY_KEYS.BOOKINGS, "list", filters]
  */
 
-export const queryKeys = {
-  addresses: {
-    all: ["address"] as const,
-  },
-  bookings: {
-    all: ["bookings"] as const,
-    lists: () => [...queryKeys.bookings.all, "list"] as const,
-    list: (filters: { status?: string; limit?: number }) =>
-      [...queryKeys.bookings.lists(), filters] as const,
-    details: () => [...queryKeys.bookings.all, "detail"] as const,
-    detail: (id: number) => [...queryKeys.bookings.details(), id] as const,
-    stats: () => [...queryKeys.bookings.all, "stats"] as const,
-    recent: () => [...queryKeys.bookings.all, "recent"] as const,
-  },
+export const QUERY_KEYS = {
+  ADDRESS: "address",
+  BOOKINGS: "bookings",
+  SERVICES: "services",
+  SLOTS: "slots",
+  PROFILE: "profile",
+  CATEGORIES: "categories",
+  NOTIFICATIONS: "notifications",
+  REVIEWS: "reviews",
+  
+  // Provider specific base keys
+  PROVIDER_BOOKINGS: "provider_bookings",
+  PROVIDER_BUSINESS: "provider_business",
+  PROVIDER_SERVICES: "provider_services",
+  PROVIDER_DASHBOARD: "provider_dashboard",
+  PROVIDER_REVENUE: "provider_revenue",
+  PROVIDER_ANALYTICS: "provider_analytics",
+  PROVIDER_REVIEWS: "provider_reviews",
 
-  services: {
-    all: ["services"] as const,
-    lists: () => [...queryKeys.services.all, "list"] as const,
-    list: (filters: {
-      categoryId?: number;
-      state?: string;
-      city?: string;
-      minPrice?: number;
-      maxPrice?: number;
-      search?: string;
-    }) => [...queryKeys.services.lists(), filters] as const,
-    details: () => [...queryKeys.services.all, "detail"] as const,
-    detail: (id: number) => [...queryKeys.services.details(), id] as const,
-    featured: () => [...queryKeys.services.all, "featured"] as const,
-  },
-
-  slots: {
-    all: ["slots"] as const,
-    forBusiness: (businessId: number, date?: string, serviceId?: number) =>
-      ["slots", { businessId, date, serviceId }] as const,
-  },
-
-  profile: {
-    all: ["profile"] as const,
-  },
-
-  categories: {
-    all: ["categories"] as const,
-  },
-
-  // Provider-specific query keys
-  provider: {
-    all: ["provider"] as const,
-    bookings: {
-      all: ["provider", "bookings"] as const,
-      lists: () => [...queryKeys.provider.bookings.all, "list"] as const,
-      list: (filters: { status?: string }) =>
-        [...queryKeys.provider.bookings.lists(), filters] as const,
-      detail: (id: number) =>
-        [...queryKeys.provider.bookings.all, "detail", id] as const,
-    },
-    business: {
-      all: ["provider", "business"] as const,
-      detail: (userId?: number) =>
-        [...queryKeys.provider.business.all, "detail", userId] as const,
-    },
-    services: {
-      all: ["provider", "services"] as const,
-      forBusiness: (businessId: number) =>
-        [...queryKeys.provider.services.all, businessId] as const,
-    },
-    dashboard: {
-      all: ["provider", "dashboard"] as const,
-      stats: () => [...queryKeys.provider.dashboard.all, "stats"] as const,
-    },
-    revenue: {
-      all: ["provider", "revenue"] as const,
-      stats: () => [...queryKeys.provider.revenue.all, "stats"] as const,
-    },
-    analytics: {
-      all: ["provider", "analytics"] as const,
-      revenue: (period: string) =>
-        [...queryKeys.provider.analytics.all, "revenue", period] as const,
-      services: (period: string) =>
-        [...queryKeys.provider.analytics.all, "services", period] as const,
-      status: (period: string) =>
-        [...queryKeys.provider.analytics.all, "status", period] as const,
-    },
-  },
+  // Admin specific base keys
+  ADMIN_ANALYTICS: "admin_analytics",
 } as const;

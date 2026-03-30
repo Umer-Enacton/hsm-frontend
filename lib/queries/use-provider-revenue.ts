@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api, API_ENDPOINTS } from "@/lib/api";
-import { queryKeys } from "@/lib/queries/query-keys";
+import { QUERY_KEYS } from "@/lib/queries/query-keys";
 
 interface ProviderRevenueStats {
   totalEarnings: number;
@@ -20,7 +20,7 @@ interface ProviderRevenueStats {
  */
 export function useProviderRevenueStats() {
   return useQuery<ProviderRevenueStats>({
-    queryKey: queryKeys.provider.revenue.stats(),
+    queryKey: [QUERY_KEYS.PROVIDER_REVENUE, "stats"],
     queryFn: async () => {
       const response = await api.get<ProviderRevenueStats>(API_ENDPOINTS.PROVIDER_REVENUE);
       return response;

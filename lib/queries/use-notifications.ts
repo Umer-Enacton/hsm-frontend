@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, API_ENDPOINTS } from '@/lib/api';
 import { toast } from 'sonner';
 import { onMessageListener } from '@/lib/firebase';
+import { QUERY_KEYS } from './query-keys';
 
 export interface Notification {
   id: number;
@@ -23,16 +24,7 @@ interface NotificationsResponse {
   unreadCount: number;
 }
 
-/**
- * Query key factory for notifications
- */
-export const notificationKeys = {
-  all: ['notifications'] as const,
-  lists: () => [...notificationKeys.all, 'list'] as const,
-  list: (filters: { limit?: number; offset?: number }) =>
-    [...notificationKeys.lists(), filters] as const,
-  unreadCount: () => [...notificationKeys.all, 'unreadCount'] as const,
-};
+// Removed local notificationKeys factory as we use QUERY_KEYS now
 
 /**
  * Fetch notifications with TanStack Query
@@ -42,7 +34,7 @@ export function useNotifications(options?: { limit?: number; offset?: number }) 
   const { limit = 20, offset = 0 } = options || {};
 
   const query = useQuery<NotificationsResponse>({
-    queryKey: notificationKeys.list({ limit, offset }),
+    queryKey: [QUERY_KEYS.NOTIFICATIONS, "list", { limit, offset }],
     queryFn: async () => {
       const response = await api.get<NotificationsResponse>(
         `${API_ENDPOINTS.NOTIFICATIONS}?limit=${limit}&offset=${offset}`
@@ -54,7 +46,7 @@ export function useNotifications(options?: { limit?: number; offset?: number }) 
   });
 
   const unreadCountQuery = useQuery<{ count: number }>({
-    queryKey: notificationKeys.unreadCount(),
+    queryKey: [QUERY_KEYS.NOTIFICATIONS, "unreadCount"],
     queryFn: async () => {
       const response = await api.get<{ count: number }>(API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT);
       return response;
@@ -72,9 +64,8 @@ export function useNotifications(options?: { limit?: number; offset?: number }) 
       });
     },
     onSuccess: () => {
-      // Invalidate both notifications list and unread count
-      queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
+      // Invalidate all notifications cache
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTIFICATIONS] });
     },
   });
 
@@ -84,9 +75,8 @@ export function useNotifications(options?: { limit?: number; offset?: number }) 
       await api.delete(API_ENDPOINTS.NOTIFICATION_DELETE(id));
     },
     onSuccess: () => {
-      // Invalidate both notifications list and unread count
-      queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
+      // Invalidate all notifications cache
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTIFICATIONS] });
     },
   });
 
@@ -98,8 +88,7 @@ export function useNotifications(options?: { limit?: number; offset?: number }) 
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTIFICATIONS] });
     },
   });
 
@@ -182,8 +171,7 @@ function useFCMMessageListener(queryClient: ReturnType<typeof useQueryClient>) {
           }
 
           // IMMEDIATELY refresh notifications from server
-          queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
-          queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
+          queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTIFICATIONS] });
         });
 
         console.log('✅ FCM message listener set up successfully');

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { QUERY_KEYS } from "./query-keys";
 
 type PeriodType = "7d" | "30d" | "6m" | "12m" | "all";
 
@@ -105,42 +106,42 @@ export function useAdminAnalytics(period: PeriodType = "7d"): AdminAnalyticsResu
     isLoading: isLoadingRevenue,
     refetch: refetchRevenue,
   } = useQuery<RevenueResponse>({
-    queryKey: ["admin", "analytics", "revenue", period],
+    queryKey: [QUERY_KEYS.ADMIN_ANALYTICS, "revenue", period],
     queryFn: () => api.get<RevenueResponse>(`/admin/analytics/revenue?period=${period}`),
     staleTime: 1000 * 60, // 1 minute
   });
 
   // Category data
   const { data: categoryData, isLoading: isLoadingCategory } = useQuery<CategoryResponse>({
-    queryKey: ["admin", "analytics", "categories", period],
+    queryKey: [QUERY_KEYS.ADMIN_ANALYTICS, "categories", period],
     queryFn: () => api.get<CategoryResponse>(`/admin/analytics/categories?period=${period}`),
     staleTime: 1000 * 60,
   });
 
   // Status data
   const { data: statusData, isLoading: isLoadingStatus } = useQuery<StatusResponse>({
-    queryKey: ["admin", "analytics", "status", period],
+    queryKey: [QUERY_KEYS.ADMIN_ANALYTICS, "status", period],
     queryFn: () => api.get<StatusResponse>(`/admin/analytics/status?period=${period}`),
     staleTime: 1000 * 60,
   });
 
   // Providers data
   const { data: providersData, isLoading: isLoadingProviders } = useQuery<ProvidersResponse>({
-    queryKey: ["admin", "analytics", "providers", period],
+    queryKey: [QUERY_KEYS.ADMIN_ANALYTICS, "providers", period],
     queryFn: () => api.get<ProvidersResponse>(`/admin/analytics/providers?period=${period}`),
     staleTime: 1000 * 60,
   });
 
   // Payment status data
   const { data: paymentStatusData, isLoading: isLoadingPaymentStatus } = useQuery<PaymentStatusResponse>({
-    queryKey: ["admin", "analytics", "payment-status", period],
+    queryKey: [QUERY_KEYS.ADMIN_ANALYTICS, "payment-status", period],
     queryFn: () => api.get<PaymentStatusResponse>(`/admin/analytics/payment-status?period=${period}`),
     staleTime: 1000 * 60,
   });
 
   // Average order value data
   const { data: avgOrderValueData, isLoading: isLoadingAvgOrderValue } = useQuery<AverageOrderValueResponse>({
-    queryKey: ["admin", "analytics", "average-order-value", period],
+    queryKey: [QUERY_KEYS.ADMIN_ANALYTICS, "average-order-value", period],
     queryFn: () => api.get<AverageOrderValueResponse>(`/admin/analytics/average-order-value?period=${period}`),
     staleTime: 1000 * 60,
   });

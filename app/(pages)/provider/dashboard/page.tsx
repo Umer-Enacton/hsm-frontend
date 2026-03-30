@@ -33,7 +33,7 @@ import {
 import { useProviderBookings } from "@/lib/queries/use-provider-bookings";
 import { useProviderRevenueStats } from "@/lib/queries/use-provider-revenue";
 import { useProviderAnalytics } from "@/lib/queries/use-provider-analytics";
-import { queryKeys } from "@/lib/queries/query-keys";
+import { QUERY_KEYS } from "@/lib/queries/query-keys";
 import { cn } from "@/lib/utils";
 import type { ProviderBooking } from "@/types/provider";
 
@@ -125,19 +125,19 @@ export default function ProviderDashboardPage() {
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({
-      queryKey: queryKeys.provider.bookings.all,
+      queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS],
     });
     queryClient.invalidateQueries({
-      queryKey: queryKeys.provider.business.all,
+      queryKey: [QUERY_KEYS.PROVIDER_BUSINESS],
     });
     queryClient.invalidateQueries({
-      queryKey: queryKeys.provider.services.all,
+      queryKey: [QUERY_KEYS.PROVIDER_SERVICES],
     });
     queryClient.invalidateQueries({
-      queryKey: queryKeys.provider.dashboard.all,
+      queryKey: [QUERY_KEYS.PROVIDER_DASHBOARD],
     });
-    queryClient.invalidateQueries({ queryKey: queryKeys.provider.revenue.all });
-    queryClient.invalidateQueries({ queryKey: queryKeys.provider.analytics.all });
+    queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PROVIDER_REVENUE] });
+    queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PROVIDER_ANALYTICS] });
   };
 
   const formatRating = (rating: number) => {

@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { getCustomerBookings, getServices } from "@/lib/customer/api";
-import { queryKeys } from "./query-keys";
+import { QUERY_KEYS } from "./query-keys";
 import type { CustomerBooking, CustomerService } from "@/types/customer";
 
 export function useRecentBookings() {
   return useQuery({
-    queryKey: queryKeys.bookings.recent(),
+    queryKey: [QUERY_KEYS.BOOKINGS, "recent"],
     queryFn: async () => {
       const data = await getCustomerBookings({ limit: 3 });
       return Array.isArray(data?.bookings) ? data.bookings.slice(0, 3) : [];
@@ -16,7 +16,7 @@ export function useRecentBookings() {
 
 export function useBookingStats() {
   return useQuery({
-    queryKey: queryKeys.bookings.stats(),
+    queryKey: [QUERY_KEYS.BOOKINGS, "stats"],
     queryFn: async () => {
       const data = await getCustomerBookings();
       const bookings = Array.isArray(data?.bookings) ? data.bookings : [];
@@ -33,7 +33,7 @@ export function useBookingStats() {
 
 export function useFeaturedServices() {
   return useQuery({
-    queryKey: queryKeys.services.featured(),
+    queryKey: [QUERY_KEYS.SERVICES, "featured"],
     queryFn: async () => {
       const data = await getServices();
       const services = Array.isArray(data?.data) ? data.data : [];

@@ -10,7 +10,7 @@ import { ProviderReviewsManager } from "@/components/provider/reviews";
 import { useProviderBusiness } from "@/lib/queries/use-provider-dashboard";
 import { getUserData } from "@/lib/auth-utils";
 import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/queries/query-keys";
+import { QUERY_KEYS } from "@/lib/queries/query-keys";
 
 export default function ProviderReviewsPage() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function ProviderReviewsPage() {
   const businessId = business?.id;
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.provider.business.all });
+    queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PROVIDER_BUSINESS] });
     queryClient.invalidateQueries({ queryKey: ['provider', 'reviews'] });
     queryClient.invalidateQueries({ queryKey: ['provider', 'services', 'business'] });
     toast.success("Reviews refreshed");

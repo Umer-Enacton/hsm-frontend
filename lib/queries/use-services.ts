@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { getServices, getServiceById, getAvailableSlots } from "@/lib/customer/api";
-import { queryKeys } from "./query-keys";
+import { QUERY_KEYS } from "./query-keys";
 import type { ServiceFilters, ServiceDetails, Slot } from "@/types/customer";
 
 export function useServices(filters?: ServiceFilters) {
   return useQuery({
-    queryKey: queryKeys.services.list(filters || {}),
+    queryKey: [QUERY_KEYS.SERVICES, "list", filters || {}],
     queryFn: async () => {
       const result = await getServices(filters);
       return {
@@ -19,7 +19,7 @@ export function useServices(filters?: ServiceFilters) {
 
 export function useService(serviceId: number) {
   return useQuery({
-    queryKey: queryKeys.services.detail(serviceId),
+    queryKey: [QUERY_KEYS.SERVICES, "detail", serviceId],
     queryFn: () => getServiceById(serviceId),
     enabled: !!serviceId,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -32,7 +32,7 @@ export function useServiceSlots(
   serviceId?: number
 ) {
   return useQuery({
-    queryKey: queryKeys.slots.forBusiness(businessId, date, serviceId),
+    queryKey: [QUERY_KEYS.SLOTS, businessId, date || "all", serviceId || "all"],
     queryFn: () => getAvailableSlots(businessId, date, serviceId),
     enabled: !!businessId,
     staleTime: 60 * 1000, // 1 minute

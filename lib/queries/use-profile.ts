@@ -11,13 +11,13 @@ import {
   updateAddress,
   deleteAddress,
 } from "@/lib/customer/api";
-import { queryKeys } from "./query-keys";
+import { QUERY_KEYS } from "./query-keys";
 import type { Address } from "@/types/customer";
 
 // PROFILE QUERIES
 export function useProfile() {
   return useQuery({
-    queryKey: queryKeys.profile.all,
+    queryKey: [QUERY_KEYS.PROFILE],
     queryFn: getCurrentProfile,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -25,7 +25,7 @@ export function useProfile() {
 
 export function useAddresses() {
   return useQuery({
-    queryKey: queryKeys.addresses.all,
+    queryKey: [QUERY_KEYS.ADDRESS],
     queryFn: async () => {
       const data = await getAddresses();
       return Array.isArray(data) ? data : [];
@@ -41,7 +41,7 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: updateProfile,
     onSuccess: (updatedUser) => {
-      queryClient.setQueryData(queryKeys.profile.all, updatedUser);
+      queryClient.setQueryData([QUERY_KEYS.PROFILE], updatedUser);
       window.dispatchEvent(new CustomEvent("profile-updated"));
       toast.success("Profile updated successfully");
     },
@@ -57,7 +57,7 @@ export function useUploadAvatar() {
   return useMutation({
     mutationFn: uploadAvatar,
     onSuccess: (avatarData) => {
-      queryClient.setQueryData(queryKeys.profile.all, (old: any) => ({
+      queryClient.setQueryData([QUERY_KEYS.PROFILE], (old: any) => ({
         ...old,
         avatar: avatarData.url,
       }));
