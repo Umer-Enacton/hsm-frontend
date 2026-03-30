@@ -28,6 +28,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImageLightbox } from "@/components/common";
+import { BookingTimelineModal } from "@/components/admin/bookings/BookingTimelineModal";
+import { History as HistoryIcon } from "lucide-react";
 
 type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled" | "reschedule_pending";
 
@@ -83,6 +85,10 @@ export default function AdminBookingsPage() {
   // Image lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
+  // Timeline Modal state
+  const [timelineBookingId, setTimelineBookingId] = useState<number | null>(null);
+  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
 
   const fetchBookings = async () => {
     try {
@@ -302,14 +308,29 @@ export default function AdminBookingsPage() {
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-3">
-                          <span className="font-semibold text-lg">#{booking.id}</span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
-                            {statusInfo.label}
-                          </span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="font-semibold text-lg">#{booking.id}</span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
+                              {statusInfo.label}
+                            </span>
+                          </div>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 shrink-0"
+                            onClick={() => {
+                              setTimelineBookingId(booking.id);
+                              setIsTimelineOpen(true);
+                            }}
+                          >
+                            <HistoryIcon className="h-4 w-4" />
+                            <span className="hidden sm:inline">View Timeline</span>
+                          </Button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mt-3">
                           <div>
                             <p className="text-muted-foreground flex items-center gap-1">
                               <User className="h-3 w-3" />
@@ -407,6 +428,13 @@ export default function AdminBookingsPage() {
         onClose={() => setLightboxOpen(false)}
         imageUrl={lightboxImage}
         alt="Service photo"
+      />
+
+      {/* Timeline Modal */}
+      <BookingTimelineModal
+        bookingId={timelineBookingId}
+        open={isTimelineOpen}
+        onOpenChange={setIsTimelineOpen}
       />
     </div>
   );

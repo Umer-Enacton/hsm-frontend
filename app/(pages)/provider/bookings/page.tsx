@@ -72,6 +72,7 @@ import { ReschedulePendingActions } from "@/components/provider/bookings/Resched
 import { ProviderRescheduleDialog } from "@/components/provider/bookings/ProviderRescheduleDialog";
 import { ServiceCompletionDialog } from "@/components/provider/bookings/ServiceCompletionDialog";
 import { ImageLightbox } from "@/components/common";
+import { BookingHistoryTimeline } from "@/components/customer/bookings/BookingHistoryTimeline";
 
 interface BookingStats {
   total: number;
@@ -1369,8 +1370,17 @@ export default function ProviderBookingsPage() {
                             </div>
                           </div>
 
-                          {/* Quick Actions - Full Action Buttons */}
+                          {/* Booking History Timeline */}
                           <div className="mt-6 pt-5 border-t">
+                            <h4 className="font-semibold text-base mb-4 flex items-center gap-2">
+                              <HistoryIcon className="h-5 w-5 text-primary" />
+                              Booking Timeline
+                            </h4>
+                            <BookingHistoryTimeline bookingId={booking.id} />
+                          </div>
+
+                          {/* Quick Actions - Full Action Buttons */}
+                          <div className="mt-6 pt-5 border-t flex justify-end">
                             {getActionButtons(booking)}
                           </div>
                         </TableCell>

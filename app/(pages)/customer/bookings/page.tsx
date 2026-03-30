@@ -37,6 +37,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { BookingActions } from "@/components/customer/bookings/BookingActions";
+import { BookingHistoryTimeline } from "@/components/customer/bookings/BookingHistoryTimeline";
 import { CustomerBookingsSkeleton } from "@/components/customer/skeletons/CustomerBookingsSkeleton";
 import { useBookings } from "@/lib/queries/use-bookings";
 import { useService } from "@/lib/queries/use-services";
@@ -587,12 +588,27 @@ export default function CustomerBookingsPage() {
           <TabsList className="inline-flex w-full min-w-max gap-1 h-10">
             <TabsTrigger value="all" className="whitespace-nowrap">
               All
+              {stats.total > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.total}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="pending" className="whitespace-nowrap">
               Pending
+              {stats.pending > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.pending}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="confirmed" className="whitespace-nowrap">
               Confirmed
+              {stats.confirmed > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.confirmed}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger
               value="reschedule_pending"
@@ -607,9 +623,19 @@ export default function CustomerBookingsPage() {
             </TabsTrigger>
             <TabsTrigger value="completed" className="whitespace-nowrap">
               Completed
+              {stats.completed > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.completed}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="cancelled" className="whitespace-nowrap">
               Cancelled
+              {stats.cancelled > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.cancelled}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="rejected" className="whitespace-nowrap">
               Rejected
@@ -625,9 +651,30 @@ export default function CustomerBookingsPage() {
         {/* Desktop: Grid layout tabs */}
         <div className="hidden md:block">
           <TabsList className="grid w-full max-w-4xl grid-cols-7 h-10">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
+            <TabsTrigger value="all">
+              All
+              {stats.total > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.total}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="pending">
+              Pending
+              {stats.pending > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.pending}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="confirmed">
+              Confirmed
+              {stats.confirmed > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.confirmed}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="reschedule_pending">
               Reschedule
               {stats.reschedulePending > 0 && (
@@ -636,8 +683,22 @@ export default function CustomerBookingsPage() {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+            <TabsTrigger value="completed">
+              Completed
+              {stats.completed > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.completed}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="cancelled">
+              Cancelled
+              {stats.cancelled > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.cancelled}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="rejected">
               Rejected
               {stats.rejected > 0 && (
@@ -1201,6 +1262,11 @@ export default function CustomerBookingsPage() {
                               )}
                             </div>
                           )}
+
+                          {/* Booking History Timeline */}
+                          <div className="mt-6 pt-5 border-t">
+                            <BookingHistoryTimeline bookingId={booking.id} />
+                          </div>
 
                           {/* Quick Actions - Using modular BookingActions component */}
                           <div className="mt-6 pt-5 border-t">

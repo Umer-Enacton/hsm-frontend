@@ -74,6 +74,8 @@ interface BookingDetails {
   lastRescheduleFee?: number;
   previousBookingDate?: string;
   previousSlotTime?: string;
+  isRefunded?: boolean;
+  refundAmount?: number;
 }
 
 export function InvoicePreviewModal({
@@ -138,6 +140,8 @@ export function InvoicePreviewModal({
         lastRescheduleFee: booking.lastRescheduleFee,
         previousBookingDate: booking.previousBookingDate,
         previousSlotTime: booking.previousSlotTime,
+        isRefunded: booking.isRefunded,
+        refundAmount: booking.refundAmount,
       });
     } catch (error: any) {
       console.error("Error fetching booking details:", error);
@@ -263,12 +267,38 @@ export function InvoicePreviewModal({
                     Issued: {formatDate(bookingData.createdAt)}
                   </p>
 
-                  {/* PAID Badge */}
-                  <div className="inline-flex items-center justify-center px-4 py-1.5 bg-green-100 border-2 border-green-700 rounded-full mt-3">
-                    <span className="text-sm font-bold text-green-700">
-                      PAID
-                    </span>
-                  </div>
+                  {/* Status Badge */}
+                  {(() => {
+                    let badgeBg = "bg-green-100";
+                    let badgeBorder = "border-green-700";
+                    let badgeText = "text-green-700";
+                    let text = "PAID";
+
+                    if (bookingData.status === "cancelled") {
+                      badgeBg = "bg-red-100";
+                      badgeBorder = "border-red-700";
+                      badgeText = "text-red-700";
+                      text = "CANCELLED";
+                    } else if (bookingData.status === "rejected") {
+                      badgeBg = "bg-red-100";
+                      badgeBorder = "border-red-700";
+                      badgeText = "text-red-700";
+                      text = "REJECTED";
+                    } else if (bookingData.isRefunded) {
+                      badgeBg = "bg-gray-100";
+                      badgeBorder = "border-gray-700";
+                      badgeText = "text-gray-700";
+                      text = "REFUNDED";
+                    }
+
+                    return (
+                      <div className={`inline-flex items-center justify-center px-4 py-1.5 ${badgeBg} border-2 ${badgeBorder} rounded-full mt-3`}>
+                        <span className={`text-sm font-bold ${badgeText}`}>
+                          {text}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -443,15 +473,56 @@ export function InvoicePreviewModal({
                       </span>
                     </div>
 
+                    {/* Cancellation & Refund Logic */}
+                    {(() => {
+                      if ((bookingData.status === 'cancelled' || bookingData.status === 'rejected') && bookingData.isRefunded) {
+                        const servicePrice = bookingData.service?.price || bookingData.totalPrice;
+                        const rawRefund = bookingData.refundAmount || servicePrice;
+                        // Determine if rawRefund is in paise (if it's unreasonably large compared to totalPrice)
+                        const displayRefund = rawRefund > servicePrice * 10 ? Math.round(rawRefund / 100) : rawRefund;
+                        const cancelCharge = servicePrice - displayRefund;
+
+                        return (
+                          <div className="mt-2 space-y-2">
+                            {cancelCharge > 0 && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-red-600">Cancel Charge</span>
+                                <span className="text-sm text-red-700 font-semibold">
+                                  {formatCurrency(cancelCharge)}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-green-600">Amount Refunded</span>
+                              <span className="text-sm text-green-700 font-semibold">
+                                -{formatCurrency(displayRefund)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+
                     {/* Divider */}
-                    <div className="border-t-2 border-slate-200"></div>
+                    <div className="border-t-2 border-slate-200 mt-4"></div>
 
                     {/* Total Amount */}
                     {(() => {
                       const servicePrice = bookingData.service?.price || bookingData.totalPrice;
                       const rescheduleFee = bookingData.lastRescheduleFee ? bookingData.lastRescheduleFee / 100 : 100;
                       const hasRefund = bookingData.rescheduleOutcome === "rejected" || bookingData.rescheduleOutcome === "cancelled";
-                      const finalTotal = hasRefund ? servicePrice : (servicePrice + (bookingData.rescheduleOutcome ? rescheduleFee : 0));
+                      
+                      let finalTotal = hasRefund ? servicePrice : (servicePrice + (bookingData.rescheduleOutcome ? rescheduleFee : 0));
+
+                      // Subtract refund if applicable
+                      if ((bookingData.status === 'cancelled' || bookingData.status === 'rejected') && bookingData.isRefunded) {
+                        const rawRefund = bookingData.refundAmount || servicePrice;
+                        const displayRefund = rawRefund > servicePrice * 10 ? Math.round(rawRefund / 100) : rawRefund;
+                        finalTotal -= displayRefund;
+                      }
+
+                      finalTotal = Math.max(0, finalTotal);
 
                       return (
                         <div className="flex justify-between items-center pt-2">

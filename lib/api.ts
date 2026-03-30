@@ -104,6 +104,7 @@ export const API_ENDPOINTS = {
   // Bookings
   BOOKING: "/booking",
   BOOKING_BY_ID: (id: string | number) => `/booking/${id}`,
+  BOOKING_HISTORY: (id: string | number) => `/booking/${id}/history`,
   CUSTOMER_BOOKINGS: "/bookings/customer",
   PROVIDER_BOOKINGS: "/bookings/provider",
   ADMIN_BOOKINGS_ALL: "/admin/bookings/all",
