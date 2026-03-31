@@ -27,20 +27,19 @@ import {
   Award,
   TrendingUp,
   ArrowUpRight,
+  Sun,
+  Moon,
+  LogIn,
+  PlusCircle,
+  Hash,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -68,6 +67,7 @@ export default function LandingPage() {
   const [featuredServices, setFeaturedServices] = useState<Service[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -98,13 +98,65 @@ export default function LandingPage() {
   };
 
   const categories = [
-    { name: "Cleaning", desc: "Home & office deep cleaning", icon: Sparkles, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200 dark:border-blue-800" },
-    { name: "Electrical", desc: "Wiring, fixtures & repairs", icon: Zap, color: "text-yellow-600 bg-yellow-50 dark:bg-yellow-950/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800" },
-    { name: "Plumbing", desc: "Pipes, leaks & installations", icon: Wrench, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800" },
-    { name: "Painting", desc: "Interior & exterior painting", icon: Sparkles, color: "text-purple-600 bg-purple-50 dark:bg-purple-950/30 dark:text-purple-400 border-purple-200 dark:border-purple-800" },
-    { name: "Carpentry", desc: "Furniture & woodwork", icon: Wrench, color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30 dark:text-orange-400 border-orange-200 dark:border-orange-800" },
-    { name: "Roofing", desc: "Roof repair & waterproofing", icon: Shield, color: "text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400 border-red-200 dark:border-red-800" },
+    {
+      name: "Cleaning",
+      desc: "Home & office deep cleaning",
+      icon: Sparkles,
+      color:
+        "text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+    },
+    {
+      name: "Electrical",
+      desc: "Wiring, fixtures & repairs",
+      icon: Zap,
+      color:
+        "text-yellow-600 bg-yellow-50 dark:bg-yellow-950/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800",
+    },
+    {
+      name: "Plumbing",
+      desc: "Pipes, leaks & installations",
+      icon: Wrench,
+      color:
+        "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
+    },
+    {
+      name: "Painting",
+      desc: "Interior & exterior painting",
+      icon: Sparkles,
+      color:
+        "text-purple-600 bg-purple-50 dark:bg-purple-950/30 dark:text-purple-400 border-purple-200 dark:border-purple-800",
+    },
+    {
+      name: "Carpentry",
+      desc: "Furniture & woodwork",
+      icon: Wrench,
+      color:
+        "text-orange-600 bg-orange-50 dark:bg-orange-950/30 dark:text-orange-400 border-orange-200 dark:border-orange-800",
+    },
+    {
+      name: "Roofing",
+      desc: "Roof repair & waterproofing",
+      icon: Shield,
+      color:
+        "text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400 border-red-200 dark:border-red-800",
+    },
   ];
+
+  const ThemeToggle = () => {
+    const { theme, setTheme } = useTheme();
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        className="h-9 w-9"
+      >
+        <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+        <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+        <span className="sr-only">Toggle theme</span>
+      </Button>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -138,15 +190,19 @@ export default function LandingPage() {
               { label: "Services", href: "#services" },
               { label: "How it Works", href: "#how-it-works" },
               { label: "Why Us", href: "#why-us" },
-              { label: "Become a Pro", href: "/register?role=provider" },
             ].map((item) => (
-              <Link key={item.label} href={item.href} className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors">
+              <Link
+                key={item.label}
+                href={item.href}
+                className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
+              >
                 {item.label}
               </Link>
             ))}
           </nav>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Link href="/login" className="hidden sm:block">
               <Button variant="ghost" size="sm">
                 Sign In
@@ -155,111 +211,153 @@ export default function LandingPage() {
             <Link href="/register">
               <Button size="sm">Get Started</Button>
             </Link>
-
-            {/* Mobile Menu */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-72">
-                <SheetHeader className="mb-6">
-                  <SheetTitle className="flex items-center gap-2">
-                    <Image
-                      src="/homefixcareicon-removebg-preview-removebg-preview.png"
-                      alt="HomeFixCare"
-                      width={28}
-                      height={28}
-                      className="h-7 w-7"
-                    />
-                    HomeFixCare
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="flex flex-col gap-1">
-                  {["Services", "How it Works", "Why Us", "Become a Pro"].map(
-                    (item) => (
-                      <Link
-                        key={item}
-                        href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                        className="px-3 py-2.5 text-sm font-medium rounded-md hover:bg-muted transition-colors"
-                      >
-                        {item}
-                      </Link>
-                    ),
-                  )}
-                </div>
-                <Separator className="my-4" />
-                <div className="space-y-2">
-                  <Link href="/login" className="block">
-                    <Button variant="outline" className="w-full">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link href="/register" className="block">
-                    <Button className="w-full">Get Started</Button>
-                  </Link>
-                </div>
-              </SheetContent>
-            </Sheet>
           </div>
         </div>
       </header>
 
-      {/* ───── Hero Section ───── */}
-      <section className="relative pt-12 pb-8 md:pt-20 md:pb-12 overflow-hidden">
-        {/* Subtle gradient background */}
-        <div className="absolute inset-0 bg-linear-to-b from-primary/3 via-transparent to-transparent" />
-        <div className="absolute top-20 left-1/4 h-72 w-72 bg-primary/5 rounded-full blur-[100px]" />
-        <div className="absolute bottom-10 right-1/4 h-64 w-64 bg-blue-500/5 rounded-full blur-[100px]" />
+      {/* ───── Mobile Drawer (System Standard) ───── */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm md:hidden transition-opacity duration-300"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
 
-        <div className="container max-w-5xl mx-auto px-4 relative z-10">
-          <div className="text-center space-y-6">
-            <Badge
-              variant="secondary"
-              className="px-4 py-1.5 text-xs font-semibold"
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-[240px] bg-card border-r shadow-2xl transition-transform duration-300 ease-in-out md:hidden flex flex-col",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
+        {/* Sidebar Style Header */}
+        <div className="flex h-16 items-center border-b px-4 gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden">
+            <Image
+              src="/homefixcareicon-removebg-preview-removebg-preview.png"
+              alt="HomeFixCare"
+              width={32}
+              height={32}
+              className="h-8 w-8 object-cover"
+            />
+          </div>
+          <span className="truncate text-base font-semibold tracking-tight">
+            HomeFixCare
+          </span>
+        </div>
+
+        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+          {[
+            { label: "Services", href: "#services", icon: Wrench },
+            { label: "How it Works", href: "#how-it-works", icon: Zap },
+            { label: "Why Us", href: "#why-us", icon: Shield },
+          ].map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground text-muted-foreground"
             >
-              <Sparkles className="h-3.5 w-3.5 mr-1.5 text-primary" />
-              Trusted by 25,000+ homeowners
-            </Badge>
+              <item.icon className="h-4 w-4 shrink-0" />
+              <span>{item.label}</span>
+            </Link>
+          ))}
 
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]">
-              Expert Home Services,{" "}
-              <span className="text-primary">Simplified</span>
-            </h1>
+          <Separator className="my-4" />
 
-            <p className="max-w-2xl mx-auto text-lg text-muted-foreground">
-              Connect with verified professionals for all your home maintenance
-              needs. Book in minutes, get it done right.
-            </p>
+          {/* Auth Section De-cluttered */}
+          <Link
+            href="/login"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-accent text-muted-foreground"
+          >
+            <LogIn className="h-4 w-4 shrink-0" />
+            <span>Sign In</span>
+          </Link>
+          <Link
+            href="/register"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-accent text-muted-foreground"
+          >
+            <PlusCircle className="h-4 w-4 shrink-0" />
+            <span>Register</span>
+          </Link>
+        </div>
 
-            {/* Search */}
-            <div className="max-w-2xl mx-auto pt-2">
-              <div className="flex items-center gap-2 p-1.5 rounded-md border bg-card shadow-lg">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="What service are you looking for?"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="pl-10 h-12 border-none bg-transparent focus-visible:ring-0 text-base"
-                  />
-                </div>
-                <Button
-                  onClick={handleSearch}
-                  className="h-12 px-6 shrink-0"
+        <div className="p-3 border-t">
+          <div className="flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-muted-foreground">
+            <span>Theme</span>
+            <ThemeToggle />
+          </div>
+        </div>
+      </aside>
+
+      {/* ───── Mobile Menu FAB (System Standard) ───── */}
+      {!isMobileMenuOpen && (
+        <Button
+          size="icon"
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="fixed bottom-6 left-6 z-40 h-14 w-14 rounded-full shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 md:hidden transition-all hover:scale-105 active:scale-95 border-2 border-background"
+          aria-label="Open menu"
+        >
+          <Menu className="h-6 w-6" />
+        </Button>
+      )}
+
+      {/* ───── Hero Section ───── */}
+      <section className="relative pt-20 pb-12 md:pt-28 md:pb-16 overflow-hidden">
+        {/* Subtle background elements */}
+        <div className="absolute inset-0 bg-linear-to-b from-primary/3 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute top-20 left-10 h-[400px] w-[400px] bg-primary/5 rounded-full blur-[100px] opacity-60 pointer-events-none" />
+
+        <div className="container max-w-7xl mx-auto px-4 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+            <div className="text-left space-y-6 animate-in fade-in slide-in-from-left duration-1000">
+              <div className="space-y-3">
+                <Badge
+                  variant="secondary"
+                  className="px-3 py-1 text-xs font-bold bg-primary/10 text-primary border-primary/20 rounded-md"
                 >
-                  Search
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                  <Sparkles className="h-3.5 w-3.5 mr-2" />
+                  India&apos;s Trusted Home Services
+                </Badge>
+
+                <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] text-foreground">
+                  Expert Home Services,
+                  <br />
+                  <span className="text-primary">Simplified</span>
+                </h1>
+
+                <p className="max-w-lg text-lg md:text-xl text-muted-foreground font-medium leading-relaxed">
+                  Join 25,000+ happy homeowners. Connect with verified pros for
+                  all your plumbing, electrical, and cleaning needs.
+                </p>
               </div>
-              <div className="flex flex-wrap justify-center gap-2 mt-4">
-                <span className="text-xs text-muted-foreground pt-0.5">
-                  Popular:
-                </span>
-                {["Deep Cleaning", "AC Service", "Plumbing", "Painting"].map(
-                  (term) => (
+
+              {/* Refined Search */}
+              <div className="relative group max-w-lg">
+                <div className="relative flex items-center p-1.5 rounded-md bg-card border shadow-xl">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+                    <Input
+                      placeholder="What service do you need?"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                      className="pl-10 h-12 border-none bg-transparent focus-visible:ring-0 text-base"
+                    />
+                  </div>
+                  <Button
+                    onClick={handleSearch}
+                    className="h-12 px-6 rounded-md font-bold"
+                  >
+                    Search
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 pt-1.5 mr-1">
+                    Popular:
+                  </span>
+                  {["Cleaning", "AC Service", "Plumbing"].map((term) => (
                     <button
                       key={term}
                       onClick={() => {
@@ -272,8 +370,34 @@ export default function LandingPage() {
                     >
                       {term}
                     </button>
-                  ),
-                )}
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="relative hidden lg:block animate-in fade-in duration-1000 delay-200">
+              <div className="relative aspect-4/5 w-full max-w-sm mx-auto rounded-md overflow-hidden border shadow-2xl">
+                <Image
+                  src="/hero_landing_page.png"
+                  alt="Modern Home Interior"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-black/10 to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6 p-4 bg-background/95 backdrop-blur-md rounded-md border border-border shadow-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-md bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                      <CheckCircle className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold">Quality Assured</p>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        Verified professional pros
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -285,18 +409,47 @@ export default function LandingPage() {
         <div className="container max-w-5xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { value: "1,200+", label: "Verified Pros", icon: Users, color: "text-blue-600" },
-              { value: "25k+", label: "Jobs Completed", icon: CheckCircle, color: "text-emerald-600" },
-              { value: "99.8%", label: "Satisfaction", icon: TrendingUp, color: "text-purple-600" },
-              { value: "< 2 Hrs", label: "Avg Response", icon: Clock, color: "text-orange-600" },
+              {
+                value: "1,200+",
+                label: "Verified Pros",
+                icon: Users,
+                color: "text-blue-600",
+              },
+              {
+                value: "25k+",
+                label: "Jobs Completed",
+                icon: CheckCircle,
+                color: "text-emerald-600",
+              },
+              {
+                value: "99.8%",
+                label: "Satisfaction",
+                icon: TrendingUp,
+                color: "text-purple-600",
+              },
+              {
+                value: "< 2 Hrs",
+                label: "Avg Response",
+                icon: Clock,
+                color: "text-orange-600",
+              },
             ].map((stat) => (
               <div key={stat.label} className="flex items-center gap-3">
-                <div className={cn("h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0", stat.color)}>
+                <div
+                  className={cn(
+                    "h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0",
+                    stat.color,
+                  )}
+                >
                   <stat.icon className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold tracking-tight">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
+                  <p className="text-2xl font-bold tracking-tight">
+                    {stat.value}
+                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    {stat.label}
+                  </p>
                 </div>
               </div>
             ))}
@@ -476,21 +629,24 @@ export default function LandingPage() {
                 title: "Search & Select",
                 desc: "Browse services or search for what you need. Compare providers, reviews, and prices.",
                 icon: Search,
-                color: "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800",
+                color:
+                  "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800",
               },
               {
                 step: "2",
                 title: "Pick a Time Slot",
                 desc: "Choose a convenient date and time that fits your schedule. Real-time availability.",
                 icon: Calendar,
-                color: "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-800",
+                color:
+                  "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-800",
               },
               {
                 step: "3",
                 title: "Get It Done",
                 desc: "A verified professional arrives on time and completes the work to your satisfaction.",
                 icon: CheckCircle,
-                color: "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800",
+                color:
+                  "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800",
               },
             ].map((step) => (
               <Card key={step.step} className="text-center border-dashed">
@@ -518,7 +674,10 @@ export default function LandingPage() {
       </section>
 
       {/* ───── Why Choose Us ───── */}
-      <section id="why-us" className="py-8 md:py-12 bg-primary text-primary-foreground">
+      <section
+        id="why-us"
+        className="py-8 md:py-16 bg-primary dark:bg-muted/50 text-primary-foreground dark:text-foreground transition-colors duration-300"
+      >
         <div className="container max-w-6xl mx-auto px-4">
           <div className="text-center mb-4 md:mb-6">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">
@@ -605,19 +764,24 @@ export default function LandingPage() {
                 rating: 5,
               },
             ].map((testimonial) => (
-              <Card key={testimonial.name} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4 space-y-3">
+              <Card
+                key={testimonial.name}
+                className="hover:shadow-md transition-shadow"
+              >
+                <CardContent className="py-0 space-y-3">
                   <Quote className="h-8 w-8 text-primary/20" />
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     &ldquo;{testimonial.text}&rdquo;
                   </p>
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: testimonial.rating }).map((_, index) => (
-                      <Star
-                        key={index}
-                        className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400"
-                      />
-                    ))}
+                    {Array.from({ length: testimonial.rating }).map(
+                      (_, index) => (
+                        <Star
+                          key={index}
+                          className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400"
+                        />
+                      ),
+                    )}
                   </div>
                   <Separator />
                   <div className="flex items-center gap-3">
@@ -673,7 +837,7 @@ export default function LandingPage() {
 
       {/* ───── Provider CTA ───── */}
       <section className="py-8 md:py-12">
-        <div className="container max-w-4xl mx-auto px-4">
+        <div className="container max-w-5xl mx-auto px-4">
           <Card className="bg-muted/30 border-dashed overflow-hidden">
             <CardContent className="p-8 md:p-12 text-center space-y-6 relative">
               <div className="absolute top-4 right-4 opacity-5 pointer-events-none">

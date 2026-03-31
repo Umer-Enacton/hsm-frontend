@@ -181,9 +181,13 @@ export default function CustomerDashboardPage() {
       .slice(0, 5);
 
     return {
-      spendingChartData,
       serviceChartData,
       totalSpent,
+      upcomingCount: allBookings.filter((b) => {
+        if (b.status !== "confirmed") return false;
+        const bookingDate = new Date(b.bookingDate);
+        return bookingDate >= new Date();
+      }).length,
       avgSpendingPerBooking:
         stats.completedBookings > 0 ? totalSpent / stats.completedBookings : 0,
     };
@@ -265,19 +269,18 @@ export default function CustomerDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800">
+        <Card className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 border-violet-200 dark:border-violet-800">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-400">
-              Total Spent
+            <CardTitle className="text-sm font-medium text-violet-700 dark:text-violet-400">
+              Upcoming
             </CardTitle>
-            <Wallet className="h-4 w-4 text-purple-500 dark:text-purple-400" />
+            <Clock className="h-4 w-4 text-violet-500 dark:text-violet-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold flex items-center gap-1 text-purple-900 dark:text-purple-100">
-              <IndianRupee className="h-4 w-4" />
-              {analytics.totalSpent.toLocaleString("en-IN")}
+            <div className="text-2xl font-bold text-violet-900 dark:text-violet-100">
+              {analytics.upcomingCount}
             </div>
-            <p className="text-xs text-muted-foreground">All time spending</p>
+            <p className="text-xs text-muted-foreground">Confirmed services</p>
           </CardContent>
         </Card>
       </div>

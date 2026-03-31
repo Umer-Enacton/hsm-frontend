@@ -155,30 +155,30 @@ const RegisterPage = () => {
         `Account created successfully as ${userType === "provider" ? "Provider" : "Customer"}! Redirecting to login...`,
       );
 
-      // Redirect to login page after 2 seconds
       setTimeout(() => {
         router.push("/login");
       }, 2000);
-    } catch (err: any) {
-      toast.error(err.message || "An error occurred during registration");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An error occurred during registration";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-background to-purple-50/50 dark:from-slate-950 dark:via-background dark:to-slate-950 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4 shadow-lg shadow-primary/20">
             {userType === "provider" ? (
               <Building2 className="w-8 h-8 text-primary-foreground" />
             ) : (
               <User className="w-8 h-8 text-primary-foreground" />
             )}
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Create Account</h1>
+          <p className="text-muted-foreground mt-2">
             Join our home service platform today
           </p>
         </div>
@@ -213,7 +213,7 @@ const RegisterPage = () => {
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name *</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/60" />
 
                   <Input
                     id="name"
@@ -229,13 +229,13 @@ const RegisterPage = () => {
                     disabled={isLoading}
                   />
                 </div>
-                <p className="text-xs text-gray-500">Enter your full name</p>
+                <p className="text-xs text-muted-foreground/70">Enter your full name</p>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/60" />
                   <Input
                     id="email"
                     type="email"
@@ -253,7 +253,7 @@ const RegisterPage = () => {
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number *</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/60" />
                   <Input
                     id="phone"
                     type="tel"
@@ -276,7 +276,7 @@ const RegisterPage = () => {
                       <X className="absolute right-3 top-3 h-4 w-4 text-red-500" />
                     )}
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground/70">
                   10 digits starting with 6-9 (Indian format)
                 </p>
               </div>
@@ -284,7 +284,7 @@ const RegisterPage = () => {
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/60" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -299,7 +299,7 @@ const RegisterPage = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-3 text-muted-foreground/60 hover:text-foreground transition-colors"
                     tabIndex={-1}
                   >
                     {showPassword ? (
@@ -325,11 +325,11 @@ const RegisterPage = () => {
                           }`}
                         />
                       </div>
-                      <span className="text-xs text-gray-600">
+                      <span className="text-xs text-muted-foreground">
                         {passwordStrength.label}
                       </span>
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground/70">
                       Must be at least 6 characters
                     </div>
                   </div>
@@ -339,7 +339,7 @@ const RegisterPage = () => {
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password *</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/60" />
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
@@ -357,7 +357,7 @@ const RegisterPage = () => {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-3 text-muted-foreground/60 hover:text-foreground transition-colors"
                     tabIndex={-1}
                   >
                     {showConfirmPassword ? (
@@ -400,7 +400,7 @@ const RegisterPage = () => {
                 />
                 <label
                   htmlFor="terms"
-                  className="text-sm text-gray-600 cursor-pointer"
+                  className="text-sm text-muted-foreground cursor-pointer"
                 >
                   I agree to the{" "}
                   <Link href="/terms" className="text-primary hover:underline">
@@ -429,7 +429,7 @@ const RegisterPage = () => {
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
               <Link
                 href="/login"

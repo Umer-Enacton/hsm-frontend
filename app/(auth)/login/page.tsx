@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import {
 import { Mail, Lock, Loader2, Building2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/api";
-import { storeAuthData, redirectBasedOnRole } from "@/lib/auth-utils";
+import { storeAuthData } from "@/lib/auth-utils";
 import type { LoginResponse } from "@/types/auth";
 import { UserRole } from "@/types/auth";
 import { getGoogleAuthUrl } from "@/lib/googleAuth";
@@ -39,8 +39,9 @@ function LoginForm() {
       setIsLoading(true);
       const authUrl = await getGoogleAuthUrl(role);
       window.location.href = authUrl;
-    } catch (error: any) {
-      toast.error(error.message || "Failed to initialize Google sign in");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to initialize Google sign in";
+      toast.error(message);
       setIsLoading(false);
     }
   };
@@ -136,8 +137,9 @@ function LoginForm() {
           router.push(redirectPath);
         }
       }, 1000);
-    } catch (err: any) {
-      toast.error(err.message || "An error occurred during login");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An error occurred during login";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -153,14 +155,14 @@ function LoginForm() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-background to-purple-50/50 dark:from-slate-950 dark:via-background dark:to-slate-950 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4 shadow-lg shadow-primary/20">
             <Building2 className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-600 mt-2">Sign in to your account</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome Back</h1>
+          <p className="text-muted-foreground mt-2">Sign in to your account</p>
         </div>
 
         <Card>
@@ -175,7 +177,7 @@ function LoginForm() {
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/60" />
                   <Input
                     id="email"
                     type="email"
@@ -194,7 +196,7 @@ function LoginForm() {
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/60" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -210,7 +212,7 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-3 text-muted-foreground/60 hover:text-foreground transition-colors"
                     tabIndex={-1}
                   >
                     {showPassword ? (
@@ -228,9 +230,9 @@ function LoginForm() {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="rounded border-gray-300"
+                    className="rounded border-input bg-background accent-primary"
                   />
-                  <span className="text-gray-600">Remember me</span>
+                  <span className="text-muted-foreground">Remember me</span>
                 </label>
                 <Link
                   href="/forgot-password"
@@ -322,7 +324,7 @@ function LoginForm() {
               </Button>
             </div>
 
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
               <Link
                 href="/register"
@@ -334,7 +336,7 @@ function LoginForm() {
           </CardFooter>
         </Card>
 
-        <div className="mt-6 text-center text-xs text-gray-500">
+        <div className="mt-6 text-center text-xs text-muted-foreground/60">
           <p>By signing in, you agree to our</p>
           <div className="flex justify-center gap-2 mt-1">
             <Link href="/terms" className="hover:underline">
@@ -354,14 +356,14 @@ function LoginForm() {
 // Loading fallback for Suspense
 function LoginFormFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-background to-purple-50/50 dark:from-slate-950 dark:via-background dark:to-slate-950 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4 shadow-lg shadow-primary/20">
             <Building2 className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-600 mt-2">Sign in to your account</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome Back</h1>
+          <p className="text-muted-foreground mt-2">Sign in to your account</p>
         </div>
         <Card>
           <CardContent className="pt-6">

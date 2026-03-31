@@ -22,6 +22,8 @@ import {
   KeyRound,
   Check,
   Clock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/api";
@@ -76,8 +78,9 @@ const ForgotPasswordPage = () => {
       toast.success("OTP sent to your email! Valid for 10 minutes.");
       setStep("verify");
       startResendTimer();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to send OTP. Please try again.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to send OTP. Please try again.";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -107,8 +110,9 @@ const ForgotPasswordPage = () => {
       toast.success("New OTP sent to your email!");
       startResendTimer();
       setOtp("");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to resend OTP");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to resend OTP";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -146,8 +150,9 @@ const ForgotPasswordPage = () => {
 
       toast.success("OTP verified successfully!");
       setStep("reset");
-    } catch (err: any) {
-      toast.error(err.message || "Invalid OTP. Please try again.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Invalid OTP. Please try again.";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -198,8 +203,9 @@ const ForgotPasswordPage = () => {
       setTimeout(() => {
         router.push("/login");
       }, 2000);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to reset password");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to reset password";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -226,12 +232,12 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50/50 via-background to-purple-50/50 dark:from-slate-950 dark:via-background dark:to-slate-950 p-4">
       <div className="w-full max-w-md">
         <div className="mb-4">
           <Link
             href="/login"
-            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to login
@@ -240,7 +246,7 @@ const ForgotPasswordPage = () => {
 
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">
+            <CardTitle className="text-2xl font-bold tracking-tight">
               {step === "request" && "Forgot Password?"}
               {step === "verify" && "Verify OTP"}
               {step === "reset" && "Reset Password"}
@@ -264,7 +270,7 @@ const ForgotPasswordPage = () => {
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/60" />
                     <Input
                       id="email"
                       type="email"
@@ -276,7 +282,7 @@ const ForgotPasswordPage = () => {
                       required
                     />
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground/70">
                     We'll send a 6-digit OTP to this email if an account exists
                   </p>
                 </div>
@@ -300,7 +306,7 @@ const ForgotPasswordPage = () => {
                 <div className="space-y-2">
                   <Label htmlFor="otp">Enter 6-Digit OTP</Label>
                   <div className="relative">
-                    <KeyRound className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/60" />
                     <Input
                       id="otp"
                       type="text"
@@ -316,7 +322,7 @@ const ForgotPasswordPage = () => {
                     />
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500 flex items-center gap-1">
+                    <span className="text-muted-foreground/70 flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       Valid for 10 minutes
                     </span>
@@ -324,7 +330,7 @@ const ForgotPasswordPage = () => {
                       type="button"
                       onClick={handleResendOTP}
                       disabled={resendTimer > 0 || isLoading}
-                      className="text-primary hover:underline disabled:text-gray-400 disabled:cursor-not-allowed"
+                      className="text-primary hover:underline disabled:text-muted-foreground/40 disabled:cursor-not-allowed"
                     >
                       {resendTimer > 0
                         ? `Resend in ${resendTimer}s`
@@ -367,7 +373,7 @@ const ForgotPasswordPage = () => {
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">New Password *</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/60" />
                     <Input
                       id="newPassword"
                       type={showPassword ? "text" : "password"}
@@ -381,43 +387,13 @@ const ForgotPasswordPage = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute right-3 top-3 text-muted-foreground/60 hover:text-foreground transition-colors"
                       tabIndex={-1}
                     >
                       {showPassword ? (
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                          />
-                        </svg>
+                        <EyeOff className="h-4 w-4" />
                       ) : (
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
+                        <Eye className="h-4 w-4" />
                       )}
                     </button>
                   </div>
@@ -426,7 +402,7 @@ const ForgotPasswordPage = () => {
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm New Password *</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/60" />
                     <Input
                       id="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
@@ -442,43 +418,13 @@ const ForgotPasswordPage = () => {
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
-                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute right-3 top-3 text-muted-foreground/60 hover:text-foreground transition-colors"
                       tabIndex={-1}
                     >
                       {showConfirmPassword ? (
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                          />
-                        </svg>
+                        <EyeOff className="h-4 w-4" />
                       ) : (
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
+                        <Eye className="h-4 w-4" />
                       )}
                     </button>
                   </div>
@@ -529,18 +475,18 @@ const ForgotPasswordPage = () => {
             {/* Step 4: Success */}
             {step === "success" && (
               <div className="text-center space-y-4 py-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                  <Check className="w-8 h-8 text-green-600" />
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-950/30 rounded-full mb-4 shadow-lg shadow-green-500/20">
+                  <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Your password has been reset successfully.
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     You can now login with your new password.
                   </p>
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted-foreground/60">
                   Redirecting to login page...
                 </div>
               </div>
@@ -549,7 +495,7 @@ const ForgotPasswordPage = () => {
 
           {step !== "success" && (
             <CardFooter className="flex justify-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Remember your password?{" "}
                 <Link
                   href="/login"
