@@ -1,6 +1,14 @@
 "use client";
 
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 import {
   Card,
   CardContent,
@@ -27,7 +35,7 @@ export interface TopProvidersChartProps {
 
 const formatCurrencyDetailed = (value: number | null | undefined) => {
   if (value == null || isNaN(value)) {
-    return '₹0';
+    return "₹0";
   }
   if (value >= 100000) {
     return `₹${(value / 100000).toFixed(1)}L`;
@@ -42,7 +50,7 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-background border rounded-lg shadow-lg p-3">
+      <div className="bg-background border rounded-md shadow-lg p-3">
         <p className="text-sm font-medium">{data.fullName}</p>
         <p className="text-xs text-muted-foreground">{data.businessName}</p>
         <p className="text-sm text-green-600">
@@ -57,10 +65,13 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-export function TopProvidersChart({ data, totalPlatformFees }: TopProvidersChartProps) {
+export function TopProvidersChart({
+  data,
+  totalPlatformFees,
+}: TopProvidersChartProps) {
   const formatCurrency = (value: number | null | undefined) => {
     if (value == null || isNaN(value)) {
-      return '₹0';
+      return "₹0";
     }
     if (value >= 100000) {
       return `₹${(value / 100000).toFixed(1)}L`;
@@ -73,8 +84,11 @@ export function TopProvidersChart({ data, totalPlatformFees }: TopProvidersChart
 
   // Prepare data for bar chart
   const chartData = data.map((item) => ({
-    name: item.providerName.length > 15 ? item.providerName.substring(0, 15) + "..." : item.providerName,
- fullName: item.providerName,
+    name:
+      item.providerName.length > 15
+        ? item.providerName.substring(0, 15) + "..."
+        : item.providerName,
+    fullName: item.providerName,
     businessName: item.businessName,
     platformFees: item.platformFees,
     bookingCount: item.bookingCount,
@@ -86,7 +100,9 @@ export function TopProvidersChart({ data, totalPlatformFees }: TopProvidersChart
       <Card className="shadow-lg hover:shadow-xl transition-all">
         <CardHeader>
           <CardTitle>Top Providers</CardTitle>
-          <CardDescription>Highest earning providers for the platform</CardDescription>
+          <CardDescription>
+            Highest earning providers for the platform
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
@@ -110,7 +126,9 @@ export function TopProvidersChart({ data, totalPlatformFees }: TopProvidersChart
           <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
           Top Providers
         </CardTitle>
-        <CardDescription className="text-xs sm:text-sm">Highest earning providers by platform fee contribution</CardDescription>
+        <CardDescription className="text-xs sm:text-sm">
+          Highest earning providers by platform fee contribution
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="w-full overflow-x-auto">
@@ -142,13 +160,21 @@ export function TopProvidersChart({ data, totalPlatformFees }: TopProvidersChart
                     tick={{ fill: "#64748b", fontSize: 10 }}
                     width={80}
                   />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="platformFees" fill={BAR_COLOR} radius={[0, 4, 4, 0]}>
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={BAR_COLOR} fillOpacity={0.8 + (index * 0.02)} />
-                ))}
-              </Bar>
-            </BarChart>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar
+                    dataKey="platformFees"
+                    fill={BAR_COLOR}
+                    radius={[0, 4, 4, 0]}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={BAR_COLOR}
+                        fillOpacity={0.8 + index * 0.02}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
@@ -160,17 +186,30 @@ export function TopProvidersChart({ data, totalPlatformFees }: TopProvidersChart
             Top {data.length} Providers by Platform Fees
           </h4>
           {data.map((provider, index) => (
-            <div key={provider.providerId} className="flex items-center justify-between text-xs sm:text-sm">
+            <div
+              key={provider.providerId}
+              className="flex items-center justify-between text-xs sm:text-sm"
+            >
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
-                <span className="text-muted-foreground font-mono text-[10px] sm:text-xs flex-shrink-0">#{index + 1}</span>
+                <span className="text-muted-foreground font-mono text-[10px] sm:text-xs flex-shrink-0">
+                  #{index + 1}
+                </span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium truncate">{provider.providerName}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{provider.businessName}</p>
+                  <p className="font-medium truncate">
+                    {provider.providerName}
+                  </p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                    {provider.businessName}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
-                <span className="text-muted-foreground text-[10px] sm:text-xs hidden sm:inline">{provider.bookingCount} bookings</span>
-                <span className="font-medium text-purple-600 text-[10px] sm:text-xs">{formatCurrency(provider.platformFees)}</span>
+                <span className="text-muted-foreground text-[10px] sm:text-xs hidden sm:inline">
+                  {provider.bookingCount} bookings
+                </span>
+                <span className="font-medium text-purple-600 text-[10px] sm:text-xs">
+                  {formatCurrency(provider.platformFees)}
+                </span>
               </div>
             </div>
           ))}
@@ -179,8 +218,12 @@ export function TopProvidersChart({ data, totalPlatformFees }: TopProvidersChart
         {/* Total */}
         <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t">
           <div className="flex items-center justify-between">
-            <span className="text-xs sm:text-sm font-medium">Total Platform Fees from Top {data.length}</span>
-            <span className="text-base sm:text-lg font-bold text-purple-600">{formatCurrency(totalPlatformFees)}</span>
+            <span className="text-xs sm:text-sm font-medium">
+              Total Platform Fees from Top {data.length}
+            </span>
+            <span className="text-base sm:text-lg font-bold text-purple-600">
+              {formatCurrency(totalPlatformFees)}
+            </span>
           </div>
         </div>
       </CardContent>

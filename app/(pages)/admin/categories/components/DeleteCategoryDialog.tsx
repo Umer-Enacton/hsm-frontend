@@ -54,7 +54,7 @@ export function DeleteCategoryDialog({
 
         {category && (
           <div className="py-4">
-            <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
+            <div className="rounded-md border bg-muted/50 p-4 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-muted-foreground">
                   Name:

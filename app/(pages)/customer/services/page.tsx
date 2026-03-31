@@ -358,7 +358,7 @@ export default function CustomerServicesPage() {
               </div>
 
               {/* Location */}
-              <div className="space-y-3 rounded-lg border p-4">
+              <div className="space-y-3 rounded-md border p-4">
                 <span className="text-xs font-semibold uppercase text-muted-foreground">
                   Location
                 </span>
@@ -403,7 +403,7 @@ export default function CustomerServicesPage() {
               </div>
 
               {/* Category */}
-              <div className="space-y-3 rounded-lg border p-4">
+              <div className="space-y-3 rounded-md border p-4">
                 <span className="text-xs font-semibold uppercase text-muted-foreground">
                   Category
                 </span>
@@ -432,7 +432,7 @@ export default function CustomerServicesPage() {
               </div>
 
               {/* Price */}
-              <div className="space-y-3 rounded-lg border p-4">
+              <div className="space-y-3 rounded-md border p-4">
                 <span className="text-xs font-semibold uppercase text-muted-foreground">
                   Price Range
                 </span>

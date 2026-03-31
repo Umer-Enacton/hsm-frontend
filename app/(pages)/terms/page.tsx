@@ -1,6 +1,12 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Shield,
@@ -16,10 +22,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function TermsPage() {
-  const lastUpdated = new Date().toLocaleDateString('en-US', { 
-    month: 'long', 
-    day: 'numeric', 
-    year: 'numeric' 
+  const lastUpdated = new Date().toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
   });
 
   return (
@@ -27,9 +33,13 @@ export default function TermsPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Breadcrumb-like Back Link */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
+          <Link href="/" className="hover:text-blue-600 trrounded-mdolors">
+            Home
+          </Link>
           <span>/</span>
-          <span className="text-foreground font-medium">Terms & Conditions</span>
+          <span className="text-foreground font-medium">
+            Terms & Conditions
+          </span>
         </div>
 
         {/* Simplified Header */}
@@ -60,9 +70,10 @@ export default function TermsPage() {
               </div>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground leading-relaxed">
-              Welcome to HomeFixCare. By using our platform, you agree to these legal terms. We connect you with local, 
-              verified service providers. While we facilitate the booking and payment, the actual service contract is 
-              between you and the Service Professional.
+              Welcome to HomeFixCare. By using our platform, you agree to these
+              legal terms. We connect you with local, verified service
+              providers. While we facilitate the booking and payment, the actual
+              service contract is between you and the Service Professional.
             </CardContent>
           </Card>
 
@@ -76,7 +87,10 @@ export default function TermsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground">
-                <p className="mb-2">100% upfront payment is required via Razorpay to lock your slot.</p>
+                <p className="mb-2">
+                  100% upfront payment is required via Razorpay to lock your
+                  slot.
+                </p>
                 <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
                   <div className="flex justify-between font-medium text-foreground mb-1">
                     <span>Provider Share</span>
@@ -98,8 +112,11 @@ export default function TermsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground">
-                <p>We verify every provider's identity and skills before they appear on the platform. Review ratings left by 
-                other customers to make informed decisions.</p>
+                <p>
+                  We verify every provider's identity and skills before they
+                  appear on the platform. Review ratings left by other customers
+                  to make informed decisions.
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -114,19 +131,34 @@ export default function TermsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800">
+                <div className="flex items-start gap-3 p-3 rounded-md bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800">
                   <Badge className="bg-blue-600">100% Refund</Badge>
                   <div className="text-sm">
-                    <p className="font-semibold text-foreground">Immediate Rejection or Non-Response</p>
-                    <p className="text-xs text-muted-foreground">If a provider rejects your booking or fails to confirm before the appointment time.</p>
+                    <p className="font-semibold text-foreground">
+                      Immediate Rejection or Non-Response
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      If a provider rejects your booking or fails to confirm
+                      before the appointment time.
+                    </p>
                   </div>
-                </div>
+                </div>rounded-md
 
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                  <Badge variant="outline" className="border-blue-600 text-blue-600">85% Refund</Badge>
+                <div className="flex items-start gap-3 p-3 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <Badge
+                    variant="outline"
+                    className="border-blue-600 text-blue-600"
+                  >
+                    85% Refund
+                  </Badge>
                   <div className="text-sm">
-                    <p className="font-semibold text-foreground">Customer-Led Cancellation (Confirmed)</p>
-                    <p className="text-xs text-muted-foreground">If you cancel a booking that was already accepted by a professional. 15% is retained for costs.</p>
+                    <p className="font-semibold text-foreground">
+                      Customer-Led Cancellation (Confirmed)
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      If you cancel a booking that was already accepted by a
+                      professional. 15% is retained for costs.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -154,9 +186,13 @@ export default function TermsPage() {
                   </p>
                 </div>
                 <div className="text-right">
-                   <p className="text-xs text-muted-foreground uppercase tracking-widest font-black">Flat Fee</p>
-                   <p className="text-2xl font-black text-blue-600">₹100</p>
-                   <p className="text-[10px] text-muted-foreground italic">Non-refundable after request starts</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-black">
+                    Flat Fee
+                  </p>
+                  <p className="text-2xl font-black text-blue-600">₹100</p>
+                  <p className="text-[10px] text-muted-foreground italic">
+                    Non-refundable after request starts
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -167,7 +203,9 @@ export default function TermsPage() {
             <CardContent className="py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
               <div>
                 <h3 className="font-bold">Need clarity on our terms?</h3>
-                <p className="text-xs text-muted-foreground">Our support team is available 24/7 for your help.</p>
+                <p className="text-xs text-muted-foreground">
+                  Our support team is available 24/7 for your help.
+                </p>
               </div>
               <Button asChild size="sm" className="rounded-full shadow-lg">
                 <Link href="/privacy">Privacy Policy</Link>

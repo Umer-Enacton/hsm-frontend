@@ -64,7 +64,7 @@ export function ProviderServicesSkeleton() {
           <Card key={i}>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <Skeleton className="h-12 w-12 rounded-lg flex-shrink-0" />
+                <Skeleton className="h-12 w-12 rounded-md flex-shrink-0" />
                 <div className="space-y-1.5 flex-1">
                   <Skeleton className="h-7 w-16" />
                   <Skeleton className="h-3 w-24" />

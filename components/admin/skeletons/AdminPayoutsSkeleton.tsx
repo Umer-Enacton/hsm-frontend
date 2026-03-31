@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 // Single provider payout card skeleton
 function ProviderPayoutCardSkeleton() {
   return (
-    <div className="bg-card border rounded-lg p-3 sm:p-4">
+    <div className="bg-card border rounded-md p-3 sm:p-4">
       <div className="space-y-3">
         {/* Provider Info */}
         <div className="flex items-start gap-3">
-          <Skeleton className="h-10 w-10 rounded-lg flex-shrink-0" />
+          <Skeleton className="h-10 w-10 rounded-md flex-shrink-0" />
           <div className="flex-1 min-w-0 space-y-1.5">
             <Skeleton className="h-5 w-28 sm:w-36" />
             <Skeleton className="h-3 w-36 sm:w-44" />
@@ -28,7 +28,7 @@ function ProviderPayoutCardSkeleton() {
         </div>
 
         {/* Threshold status pill */}
-        <Skeleton className="h-8 w-full rounded-lg" />
+        <Skeleton className="h-8 w-full rounded-md" />
 
         {/* Pay button */}
         <Skeleton className="h-9 w-full rounded-md" />
@@ -40,7 +40,7 @@ function ProviderPayoutCardSkeleton() {
 // Single payout history row skeleton
 function PayoutHistoryRowSkeleton() {
   return (
-    <div className="bg-card border rounded-lg p-3 sm:p-4">
+    <div className="bg-card border rounded-md p-3 sm:p-4">
       <div className="flex items-start gap-3 sm:gap-4">
         <div className="flex-1 min-w-0 space-y-2">
           {/* Provider name + business */}
@@ -103,7 +103,7 @@ export function AdminPayoutsSkeleton() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <Skeleton className="h-9 w-9 rounded-lg flex-shrink-0" />
+              <Skeleton className="h-9 w-9 rounded-md flex-shrink-0" />
               <div className="space-y-1.5">
                 <Skeleton className="h-5 w-36 sm:w-44" />
                 <Skeleton className="h-3 w-16 sm:w-20" />
@@ -135,7 +135,7 @@ export function AdminPayoutsSkeleton() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <Skeleton className="h-9 w-9 rounded-lg flex-shrink-0" />
+              <Skeleton className="h-9 w-9 rounded-md flex-shrink-0" />
               <div className="space-y-1.5">
                 <Skeleton className="h-5 w-28 sm:w-36" />
                 <Skeleton className="h-3 w-24 sm:w-32" />

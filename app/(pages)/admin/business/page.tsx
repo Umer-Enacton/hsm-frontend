@@ -66,7 +66,8 @@ export default function AdminBusinessPage() {
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
   const [stats, setStats] = useState<BusinessStats | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [blockDialogBusiness, setBlockDialogBusiness] = useState<Business | null>(null);
+  const [blockDialogBusiness, setBlockDialogBusiness] =
+    useState<Business | null>(null);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -230,11 +231,12 @@ export default function AdminBusinessPage() {
 
       {/* Statistics Cards */}
       {stats && (
-        <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-4">
           <StatCard
             title="Total Businesses"
             value={stats.total}
             icon={Building2}
+            variant="blue"
           />
           <StatCard
             title="Verified"
@@ -242,15 +244,26 @@ export default function AdminBusinessPage() {
             change={`${Math.round((stats.verified / stats.total) * 100) || 0}% verified`}
             icon={CheckCircle}
             trend="up"
+            variant="emerald"
           />
           <StatCard
             title="Pending Verification"
             value={stats.pending}
             icon={Clock}
             trend="neutral"
+            variant="orange"
+          />
+          <StatCard
+            title="Blocked"
+            value={stats.blocked}
+            change={stats.blocked > 0 ? `${Math.round((stats.blocked / stats.total) * 100)}% of total` : "No blocked"}
+            icon={Ban}
+            trend="neutral"
+            variant="red"
           />
         </div>
       )}
+
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -301,7 +314,7 @@ export default function AdminBusinessPage() {
           ))}
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border rounded-md overflow-hidden">
           <BusinessListView
             businesses={filteredBusinesses}
             onViewDetails={handleViewDetails}
@@ -376,8 +389,8 @@ function BusinessGridCard({
               business.isBlocked
                 ? "bg-red-500 text-white"
                 : business.isVerified
-                ? "bg-green-500 text-white"
-                : "bg-yellow-500 text-white",
+                  ? "bg-green-500 text-white"
+                  : "bg-yellow-500 text-white",
             )}
           >
             {business.isBlocked ? (
@@ -405,7 +418,7 @@ function BusinessGridCard({
             {/* Logo and Info */}
             <div className="flex items-center gap-3">
               {/* Logo */}
-              <div className="h-14 w-14 rounded-xl border-2 border-white/30 overflow-hidden bg-white/10 backdrop-blur-sm shadow-lg flex-shrink-0">
+              <div className="h-14 w-14 rounded-md border-2 border-white/30 overflow-hidden bg-white/10 backdrop-blur-sm shadow-lg flex-shrink-0">
                 {business.coverImage ? (
                   <img
                     src={business.coverImage}
@@ -469,12 +482,18 @@ function BusinessGridCard({
                     View Details
                   </DropdownMenuItem>
                   {business.isBlocked ? (
-                    <DropdownMenuItem onClick={onUnblock} className="text-green-600">
+                    <DropdownMenuItem
+                      onClick={onUnblock}
+                      className="text-green-600"
+                    >
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Unblock Business
                     </DropdownMenuItem>
                   ) : (
-                    <DropdownMenuItem onClick={onBlock} className="text-destructive">
+                    <DropdownMenuItem
+                      onClick={onBlock}
+                      className="text-destructive"
+                    >
                       <Ban className="h-4 w-4 mr-2" />
                       Block Business
                     </DropdownMenuItem>

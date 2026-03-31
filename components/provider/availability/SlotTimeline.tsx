@@ -14,7 +14,11 @@ interface SlotTimelineProps {
   onDelete: (slotId: number) => void;
 }
 
-export function SlotTimeline({ slots, isLoading, onDelete }: SlotTimelineProps) {
+export function SlotTimeline({
+  slots,
+  isLoading,
+  onDelete,
+}: SlotTimelineProps) {
   // Timeline runs from 6:00 AM to 10:00 PM (16 hours)
   const START_HOUR = 6;
   const END_HOUR = 22;
@@ -49,9 +53,12 @@ export function SlotTimeline({ slots, isLoading, onDelete }: SlotTimelineProps) 
         <div className="rounded-full bg-muted p-6 mb-4">
           <Clock className="h-12 w-12 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">No start times configured</h3>
+        <h3 className="text-lg font-semibold mb-2">
+          No start times configured
+        </h3>
         <p className="text-sm text-muted-foreground text-center max-w-md">
-          You haven't created any start times yet. Click "Add Slot" to get started.
+          You haven't created any start times yet. Click "Add Slot" to get
+          started.
         </p>
       </div>
     );
@@ -66,15 +73,13 @@ export function SlotTimeline({ slots, isLoading, onDelete }: SlotTimelineProps) 
           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
             const hour = START_HOUR + i;
             return (
-              <span key={hour}>
-                {hour.toString().padStart(2, "0")}:00
-              </span>
+              <span key={hour}>{hour.toString().padStart(2, "0")}:00</span>
             );
           })}
         </div>
 
         {/* Timeline Track */}
-        <div className="relative h-16 bg-muted/30 rounded-lg overflow-hidden">
+        <div className="relative h-16 bg-muted/30 rounded-md overflow-hidden">
           {/* Hour grid lines */}
           {Array.from({ length: TOTAL_HOURS }, (_, i) => (
             <div
@@ -108,7 +113,9 @@ export function SlotTimeline({ slots, isLoading, onDelete }: SlotTimelineProps) 
 
       {/* Slot Details List */}
       <div className="space-y-2">
-        <h3 className="text-sm font-medium text-muted-foreground">Start Times</h3>
+        <h3 className="text-sm font-medium text-muted-foreground">
+          Start Times
+        </h3>
         {slots.map((slot) => (
           <SlotCard key={slot.id} slot={slot} onDelete={onDelete} />
         ))}

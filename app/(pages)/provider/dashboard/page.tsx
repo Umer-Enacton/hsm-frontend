@@ -93,7 +93,7 @@ export default function ProviderDashboardPage() {
 
   // Calculate active services
   const activeServices = useMemo(
-    () => services.filter((s: any) => s.isActive || s.is_active).length,
+    () => (Array.isArray(services) ? services : []).filter((s: any) => s.isActive || s.is_active).length,
     [services],
   );
 
@@ -275,15 +275,15 @@ export default function ProviderDashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-400">
               Total Bookings
             </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Calendar className="h-4 w-4 text-blue-500 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
               {computedStats.totalBookings}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -292,13 +292,13 @@ export default function ProviderDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-orange-600" />
+            <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">Pending</CardTitle>
+            <Clock className="h-4 w-4 text-orange-500 dark:text-orange-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
+            <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
               {computedStats.pendingBookings}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -309,17 +309,17 @@ export default function ProviderDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
               Total Earnings
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
+            <DollarSign className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-1">
-              <IndianRupee className="h-5 w-5 text-green-600" />
-              <div className="text-2xl font-bold text-green-600">
+              <IndianRupee className="h-5 w-5 text-emerald-600" />
+              <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
                 {(revenueStats?.totalEarnings || 0).toLocaleString("en-IN", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
@@ -339,16 +339,16 @@ export default function ProviderDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
               Average Rating
             </CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
+            <Star className="h-4 w-4 text-yellow-500 dark:text-yellow-400" />
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
                 {formatRating(business.rating || 0)}
               </div>
               {(business.rating || 0) > 0 && (
@@ -363,6 +363,7 @@ export default function ProviderDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
 
       {/* Earnings Details - Provider's 95% Share */}
       <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40 border-green-200 dark:border-green-800">

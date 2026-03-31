@@ -32,7 +32,7 @@ export function AdminServicesSkeleton() {
                   <Skeleton className="h-7 sm:h-8 w-10 sm:w-12" />
                   <Skeleton className="h-3 w-16 sm:w-24" />
                 </div>
-                <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg flex-shrink-0" />
+                <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-md flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
@@ -49,7 +49,7 @@ export function AdminServicesSkeleton() {
       <Skeleton className="h-4 w-36 sm:w-40" />
 
       {/* Services Table — horizontally scrollable on small screens */}
-      <div className="border rounded-lg overflow-hidden bg-card shadow-sm overflow-x-auto">
+      <div className="border rounded-md overflow-hidden bg-card shadow-sm overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -82,7 +82,7 @@ export function AdminServicesSkeleton() {
                 {/* Service — image + name + description */}
                 <TableCell className="py-3 sm:py-4 px-3 sm:px-4">
                   <div className="flex items-center gap-2 sm:gap-3">
-                    <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg flex-shrink-0" />
+                    <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-md flex-shrink-0" />
                     <div className="flex-1 min-w-0 space-y-1 sm:space-y-1.5">
                       <Skeleton className="h-3.5 sm:h-4 w-3/4" />
                       <Skeleton className="h-3 w-full" />

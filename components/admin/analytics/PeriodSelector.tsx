@@ -18,7 +18,7 @@ const periods = [
 
 export function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
   return (
-    <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg w-fit max-w-full overflow-x-auto">
+    <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-md w-fit max-w-full overflow-x-auto">
       {periods.map((period) => (
         <button
           key={period.value}
@@ -28,7 +28,7 @@ export function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
             "px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md transition-all whitespace-nowrap",
             value === period.value
               ? "bg-background shadow-sm text-foreground font-medium"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           {period.label}

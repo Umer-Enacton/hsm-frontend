@@ -188,7 +188,7 @@ export default function AdminPaymentsPage() {
         <Card className="border-destructive/50 bg-destructive/5">
           <CardContent className="pt-6">
             <div className="flex gap-3 sm:gap-4">
-              <div className="p-2 bg-destructive/10 rounded-lg flex-shrink-0">
+              <div className="p-2 bg-destructive/10 rounded-md flex-shrink-0">
                 <AlertCircle className="h-5 w-5 text-destructive" />
               </div>
               <div className="flex-1 min-w-0">
@@ -216,7 +216,7 @@ export default function AdminPaymentsPage() {
         <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
           <CardContent className="">
             <div className="flex gap-3 sm:gap-4">
-              <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg flex-shrink-0">
+              <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-md flex-shrink-0">
                 <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div className="flex-1 min-w-0">
@@ -278,7 +278,7 @@ export default function AdminPaymentsPage() {
           {paymentDetails.map((detail) => (
             <div
               key={detail.id}
-              className={`group relative bg-card border rounded-lg p-4 hover:border-primary/50 hover:shadow-sm transition-all duration-200 ${
+              className={`group relative bg-card border rounded-md p-4 hover:border-primary/50 hover:shadow-sm transition-all duration-200 ${
                 detail.isActive ? "border-primary" : ""
               }`}
             >
@@ -287,11 +287,11 @@ export default function AdminPaymentsPage() {
                   {/* Icon */}
                   <div className="flex-shrink-0">
                     {detail.paymentType === "upi" ? (
-                      <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-md bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center">
                         <IndianRupee className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                       </div>
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-md bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center">
                         <Building className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       </div>
                     )}
@@ -366,7 +366,7 @@ export default function AdminPaymentsPage() {
       {/* <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
         <CardContent className="pt-6">
           <div className="flex gap-4">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg shrink-0">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-md shrink-0">
               <IndianRupee className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="text-sm text-blue-800 dark:text-blue-300">

@@ -186,10 +186,10 @@ export function RescheduleButton({
 
       // IMPORTANT: Ensure all slots have isAvailable and status fields
       // If backend doesn't provide them, default to available
-      slotsArray = slotsArray.map(slot => ({
+      slotsArray = slotsArray.map((slot) => ({
         ...slot,
         isAvailable: slot.isAvailable ?? true,
-        status: slot.status ?? "available"
+        status: slot.status ?? "available",
       }));
 
       setSlots(slotsArray);
@@ -222,16 +222,21 @@ export function RescheduleButton({
       let slotsArray = response.slots || [];
 
       // IMPORTANT: Ensure all slots have isAvailable and status fields
-      slotsArray = slotsArray.map(slot => ({
+      slotsArray = slotsArray.map((slot) => ({
         ...slot,
         isAvailable: slot.isAvailable ?? true,
-        status: slot.status ?? "available"
+        status: slot.status ?? "available",
       }));
 
       // Debug: log slot availability
       console.log(
         `📊 [RescheduleButton] Slot availability for ${dateStr}:`,
-        slotsArray.map(s => ({ id: s.id, time: s.startTime, available: s.isAvailable, status: s.status }))
+        slotsArray.map((s) => ({
+          id: s.id,
+          time: s.startTime,
+          available: s.isAvailable,
+          status: s.status,
+        })),
       );
 
       setSlots(slotsArray);
@@ -434,7 +439,7 @@ export function RescheduleButton({
           {selectedDate && <SlotLegend />}
 
           {!selectedDate ? (
-            <div className="text-center py-8 bg-muted/50 rounded-lg">
+            <div className="text-center py-8 bg-muted/50 rounded-md">
               <CalendarIcon className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
               <p className="text-sm text-muted-foreground">
                 Select a date to see available times
@@ -443,7 +448,7 @@ export function RescheduleButton({
           ) : isLoading ? (
             <div className="grid grid-cols-3 gap-2 mt-3">
               {Array.from({ length: 12 }).map((_, i) => (
-                <Skeleton key={i} className="h-9 rounded-lg" />
+                <Skeleton key={i} className="h-9 rounded-md" />
               ))}
             </div>
           ) : (
@@ -452,7 +457,7 @@ export function RescheduleButton({
 
               if (displaySlots.length === 0) {
                 return (
-                  <div className="text-center py-8 bg-muted/50 rounded-lg">
+                  <div className="text-center py-8 bg-muted/50 rounded-md">
                     <X className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
                     <p className="text-sm text-muted-foreground">
                       No time slots available for this date
@@ -470,7 +475,9 @@ export function RescheduleButton({
                     const normalizedCurrentDate = currentBookingDate
                       ? new Date(currentBookingDate).toISOString().split("T")[0]
                       : "";
-                    const isCurrent = slot.id === currentSlotId && selectedDate === normalizedCurrentDate;
+                    const isCurrent =
+                      slot.id === currentSlotId &&
+                      selectedDate === normalizedCurrentDate;
                     const isDisabled = booked || isCurrent;
 
                     return (
@@ -479,7 +486,7 @@ export function RescheduleButton({
                         type="button"
                         onClick={() => !isDisabled && setSelectedSlot(slot)}
                         disabled={isDisabled}
-                        className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all relative ${
+                        className={`px-3 py-2 rounded-md border text-sm font-medium transition-all relative ${
                           isSelected
                             ? "bg-black dark:bg-white text-white dark:text-black shadow-lg"
                             : isCurrent
@@ -525,7 +532,7 @@ export function RescheduleButton({
                     setSelectedReasons((prev) => [...prev, reason.id]);
                   }
                 }}
-                className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                className={`px-3 py-2 rounded-md border text-sm font-medium transition-all flex items-center justify-center gap-2 ${
                   selectedReasons.includes(reason.id)
                     ? "border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
                     : "border-border hover:border-purple-300 hover:bg-purple-50/50"
@@ -548,7 +555,7 @@ export function RescheduleButton({
                 value={otherReason}
                 onChange={(e) => setOtherReason(e.target.value)}
                 placeholder="Please specify the reason..."
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
           )}
@@ -556,7 +563,7 @@ export function RescheduleButton({
 
         {/* Selected Summary */}
         {selectedDate && selectedSlot && (
-          <div className="bg-muted/50 rounded-lg p-3">
+          <div className="bg-muted/50 rounded-md p-3">
             <p className="text-sm font-medium mb-1">New Schedule:</p>
             <div className="flex items-center gap-2 text-sm">
               <CalendarDays className="h-4 w-4 text-muted-foreground" />
@@ -637,10 +644,10 @@ export function RescheduleButton({
               </AlertDialogTitle>
               <AlertDialogDescription className="space-y-3">
                 <p>
-                  A <strong>₹100 reschedule fee</strong> will
-                  be charged to change your booking.
+                  A <strong>₹100 reschedule fee</strong> will be charged to
+                  change your booking.
                 </p>
-                <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
+                <div className="bg-muted rounded-md p-3 text-sm space-y-1">
                   <div className="flex justify-between">
                     <span>Service price:</span>
                     <span>{servicePrice} ₹</span>
@@ -695,19 +702,27 @@ export function RescheduleButton({
         <button
           onClick={() => {
             if (rescheduleCount >= MAX_RESCHEDULES) {
-              toast.error(`Maximum reschedule limit (${MAX_RESCHEDULES}) reached`);
+              toast.error(
+                `Maximum reschedule limit (${MAX_RESCHEDULES}) reached`,
+              );
               return;
             }
             setShowModal(true);
           }}
           disabled={isRescheduling || rescheduleCount >= MAX_RESCHEDULES}
           className={className}
-          title={rescheduleCount >= MAX_RESCHEDULES ? `Maximum ${MAX_RESCHEDULES} reschedules allowed` : `Reschedule (${rescheduleCount}/${MAX_RESCHEDULES} used)`}
+          title={
+            rescheduleCount >= MAX_RESCHEDULES
+              ? `Maximum ${MAX_RESCHEDULES} reschedules allowed`
+              : `Reschedule (${rescheduleCount}/${MAX_RESCHEDULES} used)`
+          }
         >
           <CalendarDays className="h-4 w-4 mr-2" />
           Reschedule
           {rescheduleCount > 0 && (
-            <span className="ml-1 text-xs opacity-75">({rescheduleCount}/{MAX_RESCHEDULES})</span>
+            <span className="ml-1 text-xs opacity-75">
+              ({rescheduleCount}/{MAX_RESCHEDULES})
+            </span>
           )}
         </button>
       </>
@@ -733,10 +748,10 @@ export function RescheduleButton({
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
               <p>
-                A <strong>₹100 reschedule fee</strong> will
-                be charged to change your booking.
+                A <strong>₹100 reschedule fee</strong> will be charged to change
+                your booking.
               </p>
-              <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
+              <div className="bg-muted rounded-md p-3 text-sm space-y-1">
                 <div className="flex justify-between">
                   <span>Service price:</span>
                   <span>{servicePrice} ₹</span>
@@ -793,19 +808,27 @@ export function RescheduleButton({
         variant="outline"
         onClick={() => {
           if (rescheduleCount >= MAX_RESCHEDULES) {
-            toast.error(`Maximum reschedule limit (${MAX_RESCHEDULES}) reached`);
+            toast.error(
+              `Maximum reschedule limit (${MAX_RESCHEDULES}) reached`,
+            );
             return;
           }
           setShowModal(true);
         }}
         disabled={rescheduleCount >= MAX_RESCHEDULES}
         className={className}
-        title={rescheduleCount >= MAX_RESCHEDULES ? `Maximum ${MAX_RESCHEDULES} reschedules allowed` : `Reschedule (${rescheduleCount}/${MAX_RESCHEDULES} used)`}
+        title={
+          rescheduleCount >= MAX_RESCHEDULES
+            ? `Maximum ${MAX_RESCHEDULES} reschedules allowed`
+            : `Reschedule (${rescheduleCount}/${MAX_RESCHEDULES} used)`
+        }
       >
         <CalendarDays className="h-3.5 w-3.5" />
         Reschedule
         {rescheduleCount > 0 && (
-          <span className="ml-1 text-xs opacity-75">({rescheduleCount}/{MAX_RESCHEDULES})</span>
+          <span className="ml-1 text-xs opacity-75">
+            ({rescheduleCount}/{MAX_RESCHEDULES})
+          </span>
         )}
       </Button>
     </>

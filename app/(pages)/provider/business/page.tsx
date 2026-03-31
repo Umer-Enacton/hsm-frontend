@@ -214,14 +214,93 @@ export default function ProviderBusinessPage() {
             Manage your business information and view performance
           </p>
         </div>
-        <Button onClick={() => setIsEditDialogOpen(true)} className="gap-2 whitespace-nowrap">
+        <Button
+          onClick={() => setIsEditDialogOpen(true)}
+          className="gap-2 whitespace-nowrap"
+        >
           <Edit className="h-4 w-4" />
           Edit Profile
         </Button>
       </div>
 
-      {/* Verification Alert */}
+      {/* Stats Overview */}
+      {stats && (
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-md bg-blue-100 dark:bg-blue-900/30">
+                  <Package className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                    {stats.activeServices}
+                  </p>
+                  <p className="text-xs text-blue-700/70 dark:text-blue-400/70">
+                    of {stats.totalServices} services
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
+          <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-md bg-orange-100 dark:bg-orange-900/30">
+                  <Calendar className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                    {stats.totalBookings}
+                  </p>
+                  <p className="text-xs text-orange-700/70 dark:text-orange-400/70">
+                    {stats.pendingBookings} pending
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-md bg-emerald-100 dark:bg-emerald-900/30">
+                  <TrendingUp className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                    {stats.completionRate}%
+                  </p>
+                  <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70">
+                    Completion rate
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-md bg-yellow-100 dark:bg-yellow-900/30">
+                  <Star className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
+                    {stats.averageRating > 0
+                      ? stats.averageRating.toFixed(1)
+                      : "N/A"}
+                  </p>
+                  <p className="text-xs text-yellow-700/70 dark:text-yellow-400/70">
+                    {stats.totalReviews} reviews
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       {/* Hero Card with Cover */}
       <Card className="overflow-hidden py-0">
         {/* Cover Image */}
@@ -241,7 +320,7 @@ export default function ProviderBusinessPage() {
           {/* Logo Overlay - Bottom Left */}
           {(business.logo || (!business.logo && !business.coverImage)) && (
             <div className="absolute -bottom-4 sm:-bottom-6 left-3 sm:left-6">
-              <div className="h-14 w-14 sm:h-20 sm:w-20 rounded-xl border-4 border-background overflow-hidden bg-card shadow-lg">
+              <div className="h-14 w-14 sm:h-20 sm:w-20 rounded-md border-4 border-background overflow-hidden bg-card shadow-lg">
                 {business.logo ? (
                   <img
                     src={business.logo}
@@ -339,79 +418,6 @@ export default function ProviderBusinessPage() {
         </div>
       </Card>
 
-      {/* Stats Overview */}
-      {stats && (
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Package className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.activeServices}</p>
-                  <p className="text-xs text-muted-foreground">
-                    of {stats.totalServices} services
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
-                  <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.totalBookings}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.pendingBookings} pending
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
-                  <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.completionRate}%</p>
-                  <p className="text-xs text-muted-foreground">
-                    Completion rate
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
-                  <Star className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">
-                    {stats.averageRating > 0
-                      ? stats.averageRating.toFixed(1)
-                      : "N/A"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.totalReviews} reviews
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Two Column Layout */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column - Contact & Revenue */}
@@ -427,7 +433,7 @@ export default function ProviderBusinessPage() {
             <CardContent>
               <div className="grid gap-3 sm:grid-cols-2">
                 {business.phone && (
-                  <div className="flex items-center gap-3 p-3 rounded-lg border">
+                  <div className="flex items-center gap-3 p-3 rounded-md border">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
                       <Phone className="h-4 w-4 text-primary" />
                     </div>
@@ -443,7 +449,7 @@ export default function ProviderBusinessPage() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-3 p-3 rounded-lg border">
+                <div className="flex items-center gap-3 p-3 rounded-md border">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
                     <Mail className="h-4 w-4 text-primary" />
                   </div>
@@ -455,7 +461,7 @@ export default function ProviderBusinessPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 rounded-lg border sm:col-span-2">
+                <div className="flex items-center gap-3 p-3 rounded-md border sm:col-span-2">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
                     <MapPin className="h-4 w-4 text-primary" />
                   </div>
@@ -468,7 +474,7 @@ export default function ProviderBusinessPage() {
                 </div>
 
                 {business.website && (
-                  <div className="flex items-center gap-3 p-3 rounded-lg border sm:col-span-2">
+                  <div className="flex items-center gap-3 p-3 rounded-md border sm:col-span-2">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
                       <Globe className="h-4 w-4 text-primary" />
                     </div>
@@ -500,35 +506,35 @@ export default function ProviderBusinessPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="p-4 rounded-lg bg-muted/30">
-                    <p className="text-xs text-muted-foreground mb-1">
+                  <div className="p-4 rounded-md bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border border-emerald-200 dark:border-emerald-800">
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium mb-1">
                       Total Revenue
                     </p>
                     <div className="flex items-center gap-1">
-                      <IndianRupee className="h-5 w-5" />
-                      <p className="text-2xl font-bold">
+                      <IndianRupee className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                      <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
                         {stats.totalRevenue.toLocaleString()}
                       </p>
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-lg bg-muted/30">
-                    <p className="text-xs text-muted-foreground mb-1">
+                  <div className="p-4 rounded-md bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border border-purple-200 dark:border-purple-800">
+                    <p className="text-xs text-purple-700 dark:text-purple-400 font-medium mb-1">
                       Avg Job Value
                     </p>
                     <div className="flex items-center gap-1">
-                      <IndianRupee className="h-5 w-5" />
-                      <p className="text-2xl font-bold">
+                      <IndianRupee className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                      <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
                         {stats.averageJobValue}
                       </p>
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-lg bg-muted/30">
-                    <p className="text-xs text-muted-foreground mb-1">
+                  <div className="p-4 rounded-md bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-700 dark:text-blue-400 font-medium mb-1">
                       Jobs Completed
                     </p>
-                    <p className="text-2xl font-bold">
+                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
                       {stats.completedBookings}
                     </p>
                   </div>
@@ -552,7 +558,7 @@ export default function ProviderBusinessPage() {
               <CardContent>
                 <div className="space-y-4">
                   {stats.recentReviews.map((review: any) => (
-                    <div key={review.id} className="p-4 rounded-lg border">
+                    <div key={review.id} className="p-4 rounded-md border">
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -587,31 +593,35 @@ export default function ProviderBusinessPage() {
         {/* Right Column - Status & Quick Actions */}
         <div className="space-y-6">
           {/* Verification Status */}
-          <Card>
+          <Card className={cn(
+            business.isVerified
+              ? "bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800"
+              : "bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800"
+          )}>
             <CardHeader>
-              <CardTitle className="text-base">Account Status</CardTitle>
+              <CardTitle className={cn("text-base", business.isVerified ? "text-emerald-900 dark:text-emerald-100" : "text-yellow-900 dark:text-yellow-100")}>Account Status</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/30">
+              <div className="flex items-center gap-3">
                 <div
                   className={cn(
                     "flex h-12 w-12 items-center justify-center rounded-full",
-                    business.isVerified ? "bg-green-100" : "bg-yellow-100",
+                    business.isVerified ? "bg-emerald-100 dark:bg-emerald-900/30" : "bg-yellow-100 dark:bg-yellow-900/30",
                   )}
                 >
                   {business.isVerified ? (
-                    <CheckCircle className="h-6 w-6 text-green-600" />
+                    <CheckCircle className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                   ) : (
-                    <Clock className="h-6 w-6 text-yellow-600" />
+                    <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
                   )}
                 </div>
                 <div>
-                  <p className="font-semibold">
+                  <p className={cn("font-semibold", business.isVerified ? "text-emerald-900 dark:text-emerald-100" : "text-yellow-900 dark:text-yellow-100")}>
                     {business.isVerified
                       ? "Verified Business"
                       : "Pending Verification"}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className={cn("text-sm", business.isVerified ? "text-emerald-700/70 dark:text-emerald-400/70" : "text-yellow-700/70 dark:text-yellow-400/70")}>
                     {business.isVerified
                       ? "Your business is verified"
                       : "Awaiting admin approval"}
@@ -628,32 +638,32 @@ export default function ProviderBusinessPage() {
                 <CardTitle className="text-base">Quick Stats</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center justify-between p-3 rounded-md bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-800">
                   <div className="flex items-center gap-2">
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Active Services</span>
+                    <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm text-blue-800 dark:text-blue-200">Active Services</span>
                   </div>
-                  <span className="text-lg font-bold">
+                  <span className="text-lg font-bold text-blue-900 dark:text-blue-100">
                     {stats.activeServices}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center justify-between p-3 rounded-md bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-800">
                   <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Total Bookings</span>
+                    <Users className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    <span className="text-sm text-orange-800 dark:text-orange-200">Total Bookings</span>
                   </div>
-                  <span className="text-lg font-bold">
+                  <span className="text-lg font-bold text-orange-900 dark:text-orange-100">
                     {stats.totalBookings}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center justify-between p-3 rounded-md bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-100 dark:border-yellow-800">
                   <div className="flex items-center gap-2">
-                    <Star className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Rating</span>
+                    <Star className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                    <span className="text-sm text-yellow-800 dark:text-yellow-200">Rating</span>
                   </div>
-                  <span className="text-sm font-bold">
+                  <span className="text-sm font-bold text-yellow-900 dark:text-yellow-100">
                     {stats.averageRating > 0
                       ? stats.averageRating.toFixed(1)
                       : "N/A"}

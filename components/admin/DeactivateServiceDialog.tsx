@@ -67,13 +67,14 @@ export function DeactivateServiceDialog({
             Deactivate Service
           </DialogTitle>
           <DialogDescription className="text-sm">
-            This will prevent customers from booking <strong>{serviceName}</strong>.
-            Other services will remain available.
+            This will prevent customers from booking{" "}
+            <strong>{serviceName}</strong>. Other services will remain
+            available.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 py-2">
-          <div className="flex items-start gap-2 p-2 bg-orange-50 dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-800">
+          <div className="flex items-start gap-2 p-2 bg-orange-50 dark:bg-orange-950/30 rounded-md border border-orange-200 dark:border-orange-800">
             <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
             <div className="text-xs">
               <p className="font-semibold text-orange-900 dark:text-orange-200 mb-1">

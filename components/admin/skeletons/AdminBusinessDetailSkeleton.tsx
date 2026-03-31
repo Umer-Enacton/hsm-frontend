@@ -31,7 +31,7 @@ export function AdminBusinessDetailSkeleton() {
 
           {/* Logo - bottom left overlapping */}
           <div className="absolute -bottom-4 sm:-bottom-6 left-3 sm:left-6">
-            <Skeleton className="h-14 w-14 sm:h-20 sm:w-20 rounded-xl border-4 border-background" />
+            <Skeleton className="h-14 w-14 sm:h-20 sm:w-20 rounded-md border-4 border-background" />
           </div>
         </div>
 

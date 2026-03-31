@@ -70,7 +70,15 @@ export interface SidebarProps {
 
 // ─── NavLink ─────────────────────────────────────────────────────────────────
 
-function NavLink({ item, collapsed, onClick }: { item: NavItem; collapsed: boolean; onClick?: () => void }) {
+function NavLink({
+  item,
+  collapsed,
+  onClick,
+}: {
+  item: NavItem;
+  collapsed: boolean;
+  onClick?: () => void;
+}) {
   const pathname = usePathname();
   const isActive =
     pathname === item.href || pathname.startsWith(item.href + "/");
@@ -81,7 +89,7 @@ function NavLink({ item, collapsed, onClick }: { item: NavItem; collapsed: boole
       href={item.href}
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+        "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200",
         "hover:bg-accent hover:text-accent-foreground",
         isActive
           ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:text-primary-foreground"
@@ -154,7 +162,9 @@ export function Sidebar({
         className={cn(
           "flex h-screen flex-col border-r bg-card transition-all duration-300 ease-in-out",
           "fixed inset-y-0 left-0 z-50 md:relative",
-          isMobileOpen ? "translate-x-0 w-[240px]" : "-translate-x-full w-[240px] md:translate-x-0",
+          isMobileOpen
+            ? "translate-x-0 w-[240px]"
+            : "-translate-x-full w-[240px] md:translate-x-0",
           collapsed ? "md:w-[60px]" : "md:w-[240px]",
           className,
         )}
@@ -190,7 +200,12 @@ export function Sidebar({
             className={cn("flex flex-col gap-1", collapsed ? "px-2" : "px-3")}
           >
             {navItems.map((item) => (
-              <NavLink key={item.href} item={item} collapsed={collapsed} onClick={onMobileClose} />
+              <NavLink
+                key={item.href}
+                item={item}
+                collapsed={collapsed}
+                onClick={onMobileClose}
+              />
             ))}
           </nav>
         </ScrollArea>
@@ -206,7 +221,12 @@ export function Sidebar({
               )}
             >
               {bottomItems.map((item) => (
-                <NavLink key={item.href} item={item} collapsed={collapsed} onClick={onMobileClose} />
+                <NavLink
+                  key={item.href}
+                  item={item}
+                  collapsed={collapsed}
+                  onClick={onMobileClose}
+                />
               ))}
             </nav>
           </>
@@ -235,14 +255,20 @@ export function Sidebar({
           <div className="mt-auto border-t p-3 md:hidden">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-3 rounded-lg p-2 hover:bg-accent cursor-pointer transition-colors text-left w-full">
+                <div className="flex items-center gap-3 rounded-md p-2 hover:bg-accent cursor-pointer transition-colors text-left w-full">
                   <Avatar className="h-9 w-9 border shrink-0">
                     <AvatarImage src={user.avatarUrl} alt={user.name} />
-                    <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>
+                      {user.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col overflow-hidden flex-1">
-                    <span className="text-sm font-medium leading-none truncate">{user.name}</span>
-                    <span className="text-xs text-muted-foreground truncate mt-1">{user.email}</span>
+                    <span className="text-sm font-medium leading-none truncate">
+                      {user.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground truncate mt-1">
+                      {user.email}
+                    </span>
                   </div>
                   <ChevronUp className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />
                 </div>
@@ -251,21 +277,36 @@ export function Sidebar({
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.email}
+                    </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => { onProfileClick?.(); onMobileClose?.(); }}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    onProfileClick?.();
+                    onMobileClose?.();
+                  }}
+                >
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { onSettingsClick?.(); onMobileClose?.(); }}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    onSettingsClick?.();
+                    onMobileClose?.();
+                  }}
+                >
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => { onLogout?.(); onMobileClose?.(); }}
+                  onClick={() => {
+                    onLogout?.();
+                    onMobileClose?.();
+                  }}
                   className="text-destructive focus:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />

@@ -396,7 +396,7 @@ export default function ServiceDetailsPage() {
               <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-3 sm:space-y-4">
                 <div className="flex items-start gap-2.5 sm:gap-3">
                   {service.business.logo && (
-                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg overflow-hidden border flex-shrink-0">
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-md overflow-hidden border flex-shrink-0">
                       <img
                         src={service.business.logo}
                         alt={service.business.name}
@@ -530,7 +530,7 @@ export default function ServiceDetailsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="rounded-lg overflow-hidden border">
+                <div className="rounded-md overflow-hidden border">
                   <img
                     src={service.image}
                     alt={service.name}

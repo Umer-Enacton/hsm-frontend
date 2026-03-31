@@ -108,7 +108,8 @@ export default function AdminServicesPage() {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [actionDialogService, setActionDialogService] = useState<Service | null>(null);
+  const [actionDialogService, setActionDialogService] =
+    useState<Service | null>(null);
 
   useEffect(() => {
     fetchServices();
@@ -131,13 +132,13 @@ export default function AdminServicesPage() {
       const servicesResponse: any = await api.get(API_ENDPOINTS.ADMIN_SERVICES);
       const servicesData = Array.isArray(servicesResponse)
         ? servicesResponse
-        : (servicesResponse?.services || servicesResponse?.data || []);
+        : servicesResponse?.services || servicesResponse?.data || [];
 
       // Fetch businesses to get detailed info
       const businessesResponse: any = await api.get(API_ENDPOINTS.BUSINESSES);
       const businesses = Array.isArray(businessesResponse)
         ? businessesResponse
-        : (businessesResponse?.businesses || businessesResponse?.data || []);
+        : businessesResponse?.businesses || businessesResponse?.data || [];
 
       // Create a map of business details
       const businessMap = new Map<number, BusinessMapInfo>(
@@ -152,7 +153,7 @@ export default function AdminServicesPage() {
             logo: b.logo,
             isVerified: b.isVerified,
           },
-        ])
+        ]),
       );
 
       // Enrich services with business data
@@ -177,7 +178,9 @@ export default function AdminServicesPage() {
       setServices(enrichedServices);
 
       // Calculate stats
-      const activeCount = enrichedServices.filter((s: Service) => s.isActive).length;
+      const activeCount = enrichedServices.filter(
+        (s: Service) => s.isActive,
+      ).length;
       setStats({
         total: enrichedServices.length,
         active: activeCount,
@@ -211,7 +214,7 @@ export default function AdminServicesPage() {
           s.name?.toLowerCase().includes(query) ||
           s.business_name?.toLowerCase().includes(query) ||
           s.description?.toLowerCase().includes(query) ||
-          s.business_category?.toLowerCase().includes(query)
+          s.business_category?.toLowerCase().includes(query),
       );
     }
 
@@ -258,19 +261,26 @@ export default function AdminServicesPage() {
 
       {/* Statistics */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
-        <StatCard title="Total Services" value={stats.total} icon={Wrench} />
+        <StatCard
+          title="Total Services"
+          value={stats.total}
+          icon={Wrench}
+          variant="blue"
+        />
         <StatCard
           title="Active Services"
           value={stats.active}
           change={`${stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}% of total`}
           icon={CheckCircle}
           trend="up"
+          variant="emerald"
         />
         <StatCard
           title="Inactive Services"
           value={stats.inactive}
           icon={Ban}
           trend="neutral"
+          variant="red"
         />
       </div>
 
@@ -297,8 +307,8 @@ export default function AdminServicesPage() {
 
       {/* Results count */}
       <div className="text-sm text-muted-foreground">
-        Showing <span className="font-medium">{filteredServices.length}</span> of{" "}
-        <span className="font-medium">{services.length}</span> services
+        Showing <span className="font-medium">{filteredServices.length}</span>{" "}
+        of <span className="font-medium">{services.length}</span> services
       </div>
 
       {/* Services Table */}
@@ -313,7 +323,7 @@ export default function AdminServicesPage() {
           }
         />
       ) : (
-        <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
+        <div className="border rounded-md overflow-hidden bg-card shadow-sm">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -323,7 +333,9 @@ export default function AdminServicesPage() {
                 <TableHead className="w-[12%] py-4 px-4">Duration</TableHead>
                 <TableHead className="w-[10%] py-4 px-4">Rating</TableHead>
                 <TableHead className="w-[10%] py-4 px-4">Status</TableHead>
-                <TableHead className="w-[6%] py-4 px-4 text-right">Actions</TableHead>
+                <TableHead className="w-[6%] py-4 px-4 text-right">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -337,7 +349,7 @@ export default function AdminServicesPage() {
                   <TableCell className="py-4 px-4">
                     <div className="flex items-center gap-3">
                       {/* Service Image */}
-                      <div className="h-12 w-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 border flex items-center justify-center">
+                      <div className="h-12 w-12 rounded-md overflow-hidden bg-muted flex-shrink-0 border flex items-center justify-center">
                         {service.image ? (
                           <img
                             src={service.image}
@@ -372,7 +384,10 @@ export default function AdminServicesPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         {service.business_category && (
-                          <Badge variant="outline" className="text-xs px-1.5 py-0 h-4">
+                          <Badge
+                            variant="outline"
+                            className="text-xs px-1.5 py-0 h-4"
+                          >
                             {service.business_category}
                           </Badge>
                         )}
@@ -395,13 +410,16 @@ export default function AdminServicesPage() {
                   <TableCell className="py-4 px-4">
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
-                      <span>{service.duration || service.EstimateDuration || 0}m</span>
+                      <span>
+                        {service.duration || service.EstimateDuration || 0}m
+                      </span>
                     </div>
                   </TableCell>
 
                   {/* Rating Column */}
                   <TableCell className="py-4 px-4">
-                    {formatRating(service.rating) !== null && formatRating(service.rating)! > 0 ? (
+                    {formatRating(service.rating) !== null &&
+                    formatRating(service.rating)! > 0 ? (
                       <div className="flex items-center gap-1">
                         <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                         <span className="text-sm font-medium">
@@ -414,17 +432,24 @@ export default function AdminServicesPage() {
                         )}
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground">No ratings</span>
+                      <span className="text-xs text-muted-foreground">
+                        No ratings
+                      </span>
                     )}
                   </TableCell>
 
                   {/* Status Column */}
                   <TableCell className="py-4 px-4">
-                    <StatusBadge status={service.isActive ? "active" : "inactive"} />
+                    <StatusBadge
+                      status={service.isActive ? "active" : "inactive"}
+                    />
                   </TableCell>
 
                   {/* Actions Column */}
-                  <TableCell className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
+                  <TableCell
+                    className="py-4 px-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -432,12 +457,16 @@ export default function AdminServicesPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem onClick={() => handleViewDetails(service.id)}>
+                        <DropdownMenuItem
+                          onClick={() => handleViewDetails(service.id)}
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleToggleStatus(service)}>
+                        <DropdownMenuItem
+                          onClick={() => handleToggleStatus(service)}
+                        >
                           {service.isActive ? (
                             <>
                               <Ban className="h-4 w-4 mr-2" />

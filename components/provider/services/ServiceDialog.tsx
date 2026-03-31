@@ -32,7 +32,9 @@ interface ServiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   service: Service | null;
-  onSubmit: (data: Partial<Service> & { imageFile?: File | null }) => void | Promise<void>;
+  onSubmit: (
+    data: Partial<Service> & { imageFile?: File | null },
+  ) => void | Promise<void>;
 }
 
 export function ServiceDialog({
@@ -76,7 +78,8 @@ export function ServiceDialog({
   const validateDescription = (value: string): string => {
     const trimmed = value.trim();
     if (!trimmed) return "Service description is required";
-    if (trimmed.length < 10) return "Service description must be at least 10 characters";
+    if (trimmed.length < 10)
+      return "Service description must be at least 10 characters";
     return "";
   };
 
@@ -98,7 +101,8 @@ export function ServiceDialog({
     if (unit === "hours") durationInMinutes *= 60;
     else if (unit === "days") durationInMinutes *= 1440;
 
-    if (durationInMinutes > 1440) return "Duration cannot exceed 24 hours (1440 minutes)";
+    if (durationInMinutes > 1440)
+      return "Duration cannot exceed 24 hours (1440 minutes)";
     return "";
   };
 
@@ -110,7 +114,8 @@ export function ServiceDialog({
       setPrice(service.price.toString());
 
       // Handle duration safely - use duration or EstimateDuration
-      const serviceDuration = service.duration || service.EstimateDuration || 30;
+      const serviceDuration =
+        service.duration || service.EstimateDuration || 30;
       setDuration(serviceDuration.toString());
       setDurationUnit("minutes"); // Always default to minutes for editing
 
@@ -252,7 +257,7 @@ export function ServiceDialog({
               <Label>Service Image</Label>
               <div className="flex items-start gap-4">
                 {imagePreview ? (
-                  <div className="relative h-24 w-24 flex-shrink-0 rounded-lg overflow-hidden border">
+                  <div className="relative h-24 w-24 flex-shrink-0 rounded-md overflow-hidden border">
                     <img
                       src={imagePreview}
                       alt="Service preview"
@@ -269,7 +274,7 @@ export function ServiceDialog({
                     </Button>
                   </div>
                 ) : (
-                  <div className="h-24 w-24 flex-shrink-0 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
+                  <div className="h-24 w-24 flex-shrink-0 rounded-md border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
                     <ImageIcon className="h-8 w-8 text-muted-foreground" />
                   </div>
                 )}
@@ -399,16 +404,22 @@ export function ServiceDialog({
                       setDuration(e.target.value);
                       // Clear error on input, but re-validate if already touched
                       if (durationTouched) {
-                        setDurationError(validateDuration(e.target.value, durationUnit));
+                        setDurationError(
+                          validateDuration(e.target.value, durationUnit),
+                        );
                       }
                     }}
                     onBlur={() => {
                       setDurationTouched(true);
-                      setDurationError(validateDuration(duration, durationUnit));
+                      setDurationError(
+                        validateDuration(duration, durationUnit),
+                      );
                     }}
                     disabled={isSubmitting}
                     required
-                    className={durationError ? "border-destructive flex-1" : "flex-1"}
+                    className={
+                      durationError ? "border-destructive flex-1" : "flex-1"
+                    }
                   />
                   <Select
                     value={durationUnit}
@@ -438,7 +449,7 @@ export function ServiceDialog({
             </div>
 
             {/* Active Status */}
-            <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center justify-between rounded-md border p-4">
               <div className="space-y-0.5">
                 <Label>Active Status</Label>
                 <p className="text-xs text-muted-foreground">

@@ -17,7 +17,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { categoryValidators, uploadCategoryImage } from "@/lib/category-api";
 import { ImageUpload } from "@/components/common";
-import type { Category, CategoryFormData, CategoryFormErrors } from "@/types/category";
+import type {
+  Category,
+  CategoryFormData,
+  CategoryFormErrors,
+} from "@/types/category";
 
 interface EditCategoryDialogProps {
   open: boolean;
@@ -76,7 +80,7 @@ export function EditCategoryDialog({
   };
 
   const handleFieldChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -88,7 +92,7 @@ export function EditCategoryDialog({
   };
 
   const handleFieldBlur = (
-    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
@@ -96,7 +100,10 @@ export function EditCategoryDialog({
   };
 
   const handleImageSelect = async (file: File | null) => {
-    console.log("🔍 [EditCategory] handleImageSelect called", file?.name || "null");
+    console.log(
+      "🔍 [EditCategory] handleImageSelect called",
+      file?.name || "null",
+    );
     if (!file) {
       setPendingImageFile(null);
       setFormData((prev) => ({ ...prev, image: null }));
@@ -112,7 +119,9 @@ export function EditCategoryDialog({
 
     setErrors((prev) => ({ ...prev, image: undefined }));
     // Store the file locally - don't upload yet
-    console.log("✅ [EditCategory] File stored locally in pendingImageFile state - NO API CALL");
+    console.log(
+      "✅ [EditCategory] File stored locally in pendingImageFile state - NO API CALL",
+    );
     setPendingImageFile(file);
     // The ImageUpload component will show the preview via FileReader
   };
@@ -134,7 +143,10 @@ export function EditCategoryDialog({
 
     // Validate all fields
     const isNameValid = validateField("name", formData.name);
-    const isDescriptionValid = validateField("description", formData.description);
+    const isDescriptionValid = validateField(
+      "description",
+      formData.description,
+    );
 
     if (!isNameValid || !isDescriptionValid) {
       return;
@@ -146,7 +158,10 @@ export function EditCategoryDialog({
       // Step 1: Upload image if there's a pending file
       let imageUrl = formData.image;
       if (pendingImageFile) {
-        console.log("⬆️ [EditCategory] Pending file found - Uploading to Cloudinary NOW:", pendingImageFile.name);
+        console.log(
+          "⬆️ [EditCategory] Pending file found - Uploading to Cloudinary NOW:",
+          pendingImageFile.name,
+        );
         try {
           const result = await uploadCategoryImage(pendingImageFile);
           imageUrl = result.url;
@@ -194,9 +209,7 @@ export function EditCategoryDialog({
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Category</DialogTitle>
-          <DialogDescription>
-            Update category information
-          </DialogDescription>
+          <DialogDescription>Update category information</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -221,11 +234,13 @@ export function EditCategoryDialog({
                 <Input
                   placeholder="https://res.cloudinary.com/..."
                   value={formData.image || ""}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, image: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, image: e.target.value }))
+                  }
                   disabled={isLoading}
                 />
                 {formData.image && (
-                  <div className="relative w-full aspect-video max-w-xs overflow-hidden rounded-lg border">
+                  <div className="relative w-full aspect-video max-w-xs overflow-hidden rounded-md border">
                     <Image
                       src={formData.image}
                       alt="Preview"
@@ -239,7 +254,9 @@ export function EditCategoryDialog({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setFormData((prev) => ({ ...prev, image: null }))}
+                  onClick={() =>
+                    setFormData((prev) => ({ ...prev, image: null }))
+                  }
                 >
                   Clear Image
                 </Button>
@@ -256,7 +273,9 @@ export function EditCategoryDialog({
                   isPending={pendingImageFile !== null}
                 />
                 {touched.image && errors.image && (
-                  <span className="text-destructive text-sm">{errors.image}</span>
+                  <span className="text-destructive text-sm">
+                    {errors.image}
+                  </span>
                 )}
                 {errors.image && !touched.image && (
                   <p className="text-xs text-muted-foreground">
@@ -290,9 +309,7 @@ export function EditCategoryDialog({
               {touched.name && errors.name ? (
                 <span className="text-destructive">{errors.name}</span>
               ) : (
-                <span className="text-muted-foreground">
-                  2-100 characters
-                </span>
+                <span className="text-muted-foreground">2-100 characters</span>
               )}
               <span
                 className={
@@ -330,9 +347,7 @@ export function EditCategoryDialog({
               {touched.description && errors.description ? (
                 <span className="text-destructive">{errors.description}</span>
               ) : (
-                <span className="text-muted-foreground">
-                  10-500 characters
-                </span>
+                <span className="text-muted-foreground">10-500 characters</span>
               )}
               <span
                 className={

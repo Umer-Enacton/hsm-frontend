@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CreditCard, IndianRupee, Building, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  CreditCard,
+  IndianRupee,
+  Building,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,9 +28,11 @@ export function Stage4PaymentDetails({
 }: Stage4PaymentDetailsProps) {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"list" | "upi" | "bank">(
-    existingPaymentDetails.length > 0 ? "list" : "upi"
+    existingPaymentDetails.length > 0 ? "list" : "upi",
   );
-  const [paymentDetails, setPaymentDetails] = useState<any[]>(existingPaymentDetails);
+  const [paymentDetails, setPaymentDetails] = useState<any[]>(
+    existingPaymentDetails,
+  );
   const [upiId, setUpiId] = useState("");
   const [bankAccount, setBankAccount] = useState("");
   const [ifscCode, setIfscCode] = useState("");
@@ -166,10 +174,13 @@ export function Stage4PaymentDetails({
       <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/40">
         <AlertCircle className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-800 dark:text-blue-300">
-          <strong className="block mb-1">Why do I need to add payment details?</strong>
-          To receive bookings and process payments, you must add a payment method. When a customer
-          books your service, the payment is automatically split - you receive your share directly
-          to your added UPI ID or bank account.
+          <strong className="block mb-1">
+            Why do I need to add payment details?
+          </strong>
+          To receive bookings and process payments, you must add a payment
+          method. When a customer books your service, the payment is
+          automatically split - you receive your share directly to your added
+          UPI ID or bank account.
         </AlertDescription>
       </Alert>
 
@@ -178,8 +189,8 @@ export function Stage4PaymentDetails({
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            <strong>Required:</strong> You must add at least one payment method to complete setup
-            and start receiving bookings.
+            <strong>Required:</strong> You must add at least one payment method
+            to complete setup and start receiving bookings.
           </AlertDescription>
         </Alert>
       )}
@@ -189,8 +200,8 @@ export function Stage4PaymentDetails({
         <Alert className="border-green-200 bg-green-50 dark:bg-green-950/40">
           <CheckCircle2 className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800 dark:text-green-300">
-            <strong>Payment method added!</strong> You can now receive bookings. Add another
-            method or click Next to continue.
+            <strong>Payment method added!</strong> You can now receive bookings.
+            Add another method or click Next to continue.
           </AlertDescription>
         </Alert>
       )}
@@ -226,9 +237,11 @@ export function Stage4PaymentDetails({
               <div className="animate-spin h-8 w-8 border-4 border-green-600 border-t-transparent rounded-full" />
             </div>
           ) : paymentDetails.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-muted rounded-lg">
+            <div className="text-center py-12 border-2 border-dashed border-muted rounded-md">
               <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-2">No payment methods added yet</p>
+              <p className="text-muted-foreground mb-2">
+                No payment methods added yet
+              </p>
               <p className="text-sm text-muted-foreground mb-4">
                 Add a UPI ID or bank account to start receiving bookings
               </p>
@@ -246,7 +259,7 @@ export function Stage4PaymentDetails({
               {paymentDetails.map((detail) => (
                 <div
                   key={detail.id}
-                  className={`p-4 rounded-lg border-2 transition-all ${
+                  className={`p-4 rounded-md border-2 transition-all ${
                     detail.isActive
                       ? "border-green-500 bg-green-50 dark:bg-green-950/40 shadow-lg"
                       : "border-muted"
@@ -263,7 +276,9 @@ export function Stage4PaymentDetails({
                       </div>
                       <div>
                         <div className="font-semibold">
-                          {detail.paymentType === "upi" ? "UPI ID" : "Bank Account"}
+                          {detail.paymentType === "upi"
+                            ? "UPI ID"
+                            : "Bank Account"}
                         </div>
                         {detail.isActive && (
                           <Badge className="bg-green-100 text-green-700 mt-1">
@@ -303,12 +318,18 @@ export function Stage4PaymentDetails({
                     ) : (
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <span className="text-muted-foreground">Account:</span>
-                          <p className="font-mono font-medium">{detail.bankAccount}</p>
+                          <span className="text-muted-foreground">
+                            Account:
+                          </span>
+                          <p className="font-mono font-medium">
+                            {detail.bankAccount}
+                          </p>
                         </div>
                         <div>
                           <span className="text-muted-foreground">IFSC:</span>
-                          <p className="font-mono font-medium">{detail.ifscCode}</p>
+                          <p className="font-mono font-medium">
+                            {detail.ifscCode}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -321,7 +342,7 @@ export function Stage4PaymentDetails({
 
         {/* Add UPI ID */}
         <TabsContent value="upi" className="mt-4">
-          <div className="space-y-4 p-4 border rounded-lg">
+          <div className="space-y-4 p-4 border rounded-md">
             <div>
               <Label htmlFor="upi">UPI ID</Label>
               <Input
@@ -332,7 +353,8 @@ export function Stage4PaymentDetails({
                 className="mt-2"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Enter your UPI ID (e.g., merchant@paytm, name@okhdfcbank, name@upi)
+                Enter your UPI ID (e.g., merchant@paytm, name@okhdfcbank,
+                name@upi)
               </p>
             </div>
             <Button
@@ -347,7 +369,7 @@ export function Stage4PaymentDetails({
 
         {/* Add Bank Account */}
         <TabsContent value="bank" className="mt-4">
-          <div className="space-y-4 p-4 border rounded-lg">
+          <div className="space-y-4 p-4 border rounded-md">
             <div>
               <Label htmlFor="accountHolder">Account Holder Name</Label>
               <Input
@@ -402,9 +424,7 @@ export function Stage4PaymentDetails({
               Continue to Dashboard
             </>
           ) : (
-            <>
-              Add Payment Method to Continue
-            </>
+            <>Add Payment Method to Continue</>
           )}
         </Button>
       </div>

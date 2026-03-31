@@ -296,7 +296,7 @@ export function Stage1BusinessDetails({
       </div>
 
       {/* Tips */}
-      <div className="rounded-lg border bg-muted/30 p-4">
+      <div className="rounded-md border bg-muted/30 p-4">
         <h4 className="mb-2 font-medium text-sm">Tips</h4>
         <ul className="space-y-1 text-sm text-muted-foreground">
           <li>• Use a clear business name that customers can easily find</li>

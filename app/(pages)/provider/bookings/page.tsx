@@ -664,57 +664,57 @@ export default function ProviderBookingsPage() {
 
       {/* Statistics */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Package className="h-5 w-5 text-primary" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-blue-100 dark:bg-blue-900/30">
+                <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-xs text-muted-foreground">Total Bookings</p>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.total}</p>
+                <p className="text-xs text-blue-700/70 dark:text-blue-400/70">Total Bookings</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-yellow-100 dark:bg-yellow-900/30">
                 <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.pending}</p>
-                <p className="text-xs text-muted-foreground">Pending</p>
+                <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{stats.pending}</p>
+                <p className="text-xs text-yellow-700/70 dark:text-yellow-400/70">Pending</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
-                <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-purple-100 dark:bg-purple-900/30">
+                <CheckCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.confirmed}</p>
-                <p className="text-xs text-muted-foreground">Confirmed</p>
+                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{stats.confirmed}</p>
+                <p className="text-xs text-purple-700/70 dark:text-purple-400/70">Confirmed</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
-                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-emerald-100 dark:bg-emerald-900/30">
+                <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.completed}</p>
-                <p className="text-xs text-muted-foreground">Completed</p>
+                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{stats.completed}</p>
+                <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70">Completed</p>
               </div>
             </div>
           </CardContent>
@@ -826,8 +826,8 @@ export default function ProviderBookingsPage() {
       {filteredBookings.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="p-16 text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-muted/30 mb-4">
-              <Calendar className="h-7 w-7 text-muted-foreground/40" />
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-50 dark:bg-blue-950/20 mb-4">
+              <Calendar className="h-7 w-7 text-blue-400 dark:text-blue-500" />
             </div>
             <h3 className="text-lg font-semibold mb-2">No bookings found</h3>
             <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
@@ -838,10 +838,10 @@ export default function ProviderBookingsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
+        <div className="border rounded-md overflow-hidden bg-card shadow-sm">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableRow className="bg-primary/5 hover:bg-primary/5 dark:bg-primary/10 dark:hover:bg-primary/10">
                 <TableHead className="w-[1%] py-4 px-4"></TableHead>
                 <TableHead className="w-[20%] py-4 px-4">Customer</TableHead>
                 <TableHead className="w-[25%] py-4 px-4">Service</TableHead>
@@ -1041,7 +1041,7 @@ export default function ProviderBookingsPage() {
                                 {/* Reschedule History - Show for ALL bookings with reschedule outcome */}
                                 {/* {booking.rescheduleOutcome &&
                                   booking.previousSlotId && (
-                                    <div className="bg-background/50 rounded-xl p-5 border">
+                                    <div className="bg-background/50 rounded-md p-5 border">
                                       <div className="flex items-center gap-2 pb-3 border-b">
                                         <HistoryIcon className="h-4 w-4 text-muted-foreground" />
                                         <h4 className="font-semibold text-sm">
@@ -1049,7 +1049,7 @@ export default function ProviderBookingsPage() {
                                         </h4>
                                       </div>
                                       <div className="space-y-3 mt-4">
-                                        <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3">
+                                        <div className="bg-purple-50 dark:bg-purple-950/20 rounded-md p-3">
                                           <div className="flex items-center gap-2 text-sm">
                                             <span className="text-muted-foreground">
                                               Previous:
@@ -1110,7 +1110,7 @@ export default function ProviderBookingsPage() {
                               {/* Completion Photos (if available) */}
                               {(booking.beforePhotoUrl ||
                                 booking.afterPhotoUrl) && (
-                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl p-5 border border-green-200 dark:border-green-800">
+                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-md p-5 border border-green-200 dark:border-green-800">
                                   <div className="flex items-center gap-2 pb-3 border-b border-green-200 dark:border-green-800">
                                     <ImageIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
                                     <h4 className="font-semibold text-sm text-green-900 dark:text-green-100">
@@ -1126,7 +1126,7 @@ export default function ProviderBookingsPage() {
                                         <img
                                           src={booking.beforePhotoUrl}
                                           alt="Before service"
-                                          className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                                          className="w-full h-32 object-cover rounded-md border cursor-pointer hover:opacity-90 transition-opacity"
                                           onClick={() => {
                                             setLightboxImage(
                                               booking.beforePhotoUrl!,
@@ -1144,7 +1144,7 @@ export default function ProviderBookingsPage() {
                                         <img
                                           src={booking.afterPhotoUrl}
                                           alt="After service"
-                                          className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                                          className="w-full h-32 object-cover rounded-md border cursor-pointer hover:opacity-90 transition-opacity"
                                           onClick={() => {
                                             setLightboxImage(
                                               booking.afterPhotoUrl!,
@@ -1173,7 +1173,7 @@ export default function ProviderBookingsPage() {
                             <div className="space-y-4">
                               {/* Reschedule Request Info (for reschedule_pending) */}
                               {booking.status === "reschedule_pending" && (
-                                <div className="bg-purple-50 dark:bg-purple-950/20 rounded-xl p-5 border border-purple-200 dark:border-purple-800">
+                                <div className="bg-purple-50 dark:bg-purple-950/20 rounded-md p-5 border border-purple-200 dark:border-purple-800">
                                   <div className="flex items-center gap-2 pb-3 border-b border-purple-200 dark:border-purple-800">
                                     <HistoryIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                     <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">
@@ -1216,7 +1216,7 @@ export default function ProviderBookingsPage() {
                                   <div className="mt-4 space-y-4">
                                     {/* Slot Comparison - Previous → New */}
                                     {booking.previousBookingDate && (
-                                      <div className="bg-white dark:bg-purple-950/40 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
+                                      <div className="bg-white dark:bg-purple-950/40 rounded-md p-3 border border-purple-200 dark:border-purple-700">
                                         <label className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">
                                           Schedule Change
                                         </label>
@@ -1287,7 +1287,7 @@ export default function ProviderBookingsPage() {
                               )}
 
                               {/* Service Info */}
-                              <div className="bg-background/50 rounded-xl p-5 border">
+                              <div className="bg-background/50 rounded-md p-5 border">
                                 <div className="flex items-center gap-2 pb-3 border-b">
                                   <Package className="h-4 w-4 text-muted-foreground" />
                                   <h4 className="font-semibold text-sm">
@@ -1318,7 +1318,7 @@ export default function ProviderBookingsPage() {
                               {/* Customer Review (if completed) */}
                               {booking.status === "completed" &&
                                 booking.feedback && (
-                                  <div className="bg-background/50 rounded-xl p-5 border">
+                                  <div className="bg-background/50 rounded-md p-5 border">
                                     <div className="flex items-center gap-2 pb-3 border-b">
                                       <MessageSquare className="h-4 w-4 text-primary" />
                                       <h4 className="font-semibold text-sm">
@@ -1359,7 +1359,7 @@ export default function ProviderBookingsPage() {
                               {/* No feedback yet message for completed bookings */}
                               {booking.status === "completed" &&
                                 !booking.feedback && (
-                                  <div className="bg-background/50 rounded-xl p-5 border">
+                                  <div className="bg-background/50 rounded-md p-5 border">
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                       <MessageSquare className="h-4 w-4" />
                                       <span>
@@ -1377,7 +1377,10 @@ export default function ProviderBookingsPage() {
                               <HistoryIcon className="h-5 w-5 text-primary" />
                               Booking Timeline
                             </h4>
-                            <BookingHistoryTimeline bookingId={booking.id} refreshKey={dataUpdatedAt} />
+                            <BookingHistoryTimeline
+                              bookingId={booking.id}
+                              refreshKey={dataUpdatedAt}
+                            />
                           </div>
 
                           {/* Quick Actions - Full Action Buttons */}

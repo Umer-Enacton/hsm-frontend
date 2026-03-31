@@ -61,7 +61,7 @@ const getServiceActivityData = (bookings: any[]) => {
   // Safe date parsing helper
   const parseDate = (dateStr: string | Date) => {
     if (!dateStr) return new Date();
-    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+    const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
     return isNaN(date.getTime()) ? new Date() : date;
   };
 
@@ -77,9 +77,27 @@ const getServiceActivityData = (bookings: any[]) => {
   const completed = bookings.filter((b) => b.status === "completed").length;
 
   return [
-    { name: "Upcoming", count: upcoming, description: "Scheduled services", color: "#3b82f6", status: "services" },
-    { name: "Pending", count: pending, description: "Awaiting confirmation", color: "#f59e0b", status: "requests" },
-    { name: "Completed", count: completed, description: "Finished services", color: "#22c55e", status: "done" },
+    {
+      name: "Upcoming",
+      count: upcoming,
+      description: "Scheduled services",
+      color: "#3b82f6",
+      status: "services",
+    },
+    {
+      name: "Pending",
+      count: pending,
+      description: "Awaiting confirmation",
+      color: "#f59e0b",
+      status: "requests",
+    },
+    {
+      name: "Completed",
+      count: completed,
+      description: "Finished services",
+      color: "#22c55e",
+      status: "done",
+    },
   ];
 };
 
@@ -204,58 +222,58 @@ export default function CustomerDashboardPage() {
 
       {/* Quick Stats */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-400">
               Total Bookings
             </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Calendar className="h-4 w-4 text-blue-500 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalBookings}</div>
+            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalBookings}</div>
             <p className="text-xs text-muted-foreground">All time bookings</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">
               Pending
             </CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Clock className="h-4 w-4 text-orange-500 dark:text-orange-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingBookings}</div>
+            <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">{stats.pendingBookings}</div>
             <p className="text-xs text-muted-foreground">
               Awaiting confirmation
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
               Completed
             </CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <CheckCircle className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.completedBookings}</div>
+            <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{stats.completedBookings}</div>
             <p className="text-xs text-muted-foreground">
               Successfully completed
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-400">
               Total Spent
             </CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
+            <Wallet className="h-4 w-4 text-purple-500 dark:text-purple-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold flex items-center gap-1">
+            <div className="text-xl font-bold flex items-center gap-1 text-purple-900 dark:text-purple-100">
               <IndianRupee className="h-4 w-4" />
               {analytics.totalSpent.toLocaleString("en-IN")}
             </div>
@@ -278,38 +296,77 @@ export default function CustomerDashboardPage() {
             {recentBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Calendar className="h-12 w-12 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground mb-1">No service activity yet</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  No service activity yet
+                </p>
                 <Link href="/customer/services">
                   <Button size="sm">Browse Services</Button>
                 </Link>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={220} className="text-foreground">
+              <ResponsiveContainer
+                width="100%"
+                height={220}
+                className="text-foreground"
+              >
                 <BarChart
                   data={getServiceActivityData(recentBookings)}
                   layout="vertical"
                   margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
-                  <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: "currentColor", fontSize: 11 }} allowDecimals={false} />
-                  <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "currentColor", fontSize: 12 }} width={80} />
-                  <Tooltip content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-background border rounded-lg shadow-lg p-3">
-                          <p className="font-semibold text-sm">{data.name}</p>
-                          <p className="text-xs text-muted-foreground mb-1">{data.description}</p>
-                          <p className="text-lg font-bold" style={{ color: data.color }}>{data.count} {data.status}</p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }} />
-                  <Bar dataKey="count" radius={[0, 8, 8, 0]} isAnimationActive={false}>
-                    {getServiceActivityData(recentBookings).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="hsl(var(--border))"
+                    opacity={0.5}
+                  />
+                  <XAxis
+                    type="number"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: "currentColor", fontSize: 11 }}
+                    allowDecimals={false}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: "currentColor", fontSize: 12 }}
+                    width={80}
+                  />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-background border rounded-md shadow-lg p-3">
+                            <p className="font-semibold text-sm">{data.name}</p>
+                            <p className="text-xs text-muted-foreground mb-1">
+                              {data.description}
+                            </p>
+                            <p
+                              className="text-lg font-bold"
+                              style={{ color: data.color }}
+                            >
+                              {data.count} {data.status}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar
+                    dataKey="count"
+                    radius={[0, 8, 8, 0]}
+                    isAnimationActive={false}
+                  >
+                    {getServiceActivityData(recentBookings).map(
+                      (entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ),
+                    )}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -560,11 +617,11 @@ export default function CustomerDashboardPage() {
       </div>
 
       {/* Trust Badges */}
-      <Card className="bg-muted/30">
+      <Card className="bg-gradient-to-r from-indigo-50 via-purple-50 to-blue-50 dark:from-indigo-950/20 dark:via-purple-950/20 dark:to-blue-950/20 border-indigo-200/50 dark:border-indigo-800/50">
         <CardContent className="py-6">
           <div className="grid gap-6 md:grid-cols-3">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-purple-100 dark:bg-purple-950/30 rounded-lg">
+              <div className="p-2 bg-purple-100 dark:bg-purple-950/30 rounded-md">
                 <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
@@ -575,7 +632,7 @@ export default function CustomerDashboardPage() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-blue-100 dark:bg-blue-950/30 rounded-lg">
+              <div className="p-2 bg-blue-100 dark:bg-blue-950/30 rounded-md">
                 <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
@@ -586,7 +643,7 @@ export default function CustomerDashboardPage() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-green-100 dark:bg-green-950/30 rounded-lg">
+              <div className="p-2 bg-green-100 dark:bg-green-950/30 rounded-md">
                 <Wallet className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>

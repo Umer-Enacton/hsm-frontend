@@ -62,7 +62,7 @@ export function PaymentStatusChart({
       const item = payload[0].payload;
       const StatusIcon = statusIcons[item.status as keyof typeof statusIcons];
       return (
-        <div className="bg-background border rounded-lg shadow-lg p-3">
+        <div className="bg-background border rounded-md shadow-lg p-3">
           <div className="flex items-center gap-2 mb-2">
             {StatusIcon && (
               <StatusIcon className="h-4 w-4" style={{ color: item.fill }} />

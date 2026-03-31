@@ -15,7 +15,11 @@ import { AddCategoryDialog } from "./components/AddCategoryDialog";
 import { EditCategoryDialog } from "./components/EditCategoryDialog";
 import { DeleteCategoryDialog } from "./components/DeleteCategoryDialog";
 import type { Category, CategoryFormData } from "@/types/category";
-import { AdminPageHeader, LoadingState, ErrorState } from "@/components/admin/shared";
+import {
+  AdminPageHeader,
+  LoadingState,
+  ErrorState,
+} from "@/components/admin/shared";
 import { AdminCategoriesSkeleton } from "@/components/admin/skeletons";
 
 // Pagination constants
@@ -29,7 +33,9 @@ export default function CategoriesPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+    null,
+  );
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -38,7 +44,7 @@ export default function CategoriesPage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   // Fetch categories on mount
   useEffect(() => {
@@ -117,7 +123,11 @@ export default function CategoriesPage() {
 
       // Adjust page if deleting last item on current page
       const totalPages = Math.ceil(categories.length / pageSize);
-      if (currentPage > 1 && currentPage === totalPages && categories.length % pageSize === 1) {
+      if (
+        currentPage > 1 &&
+        currentPage === totalPages &&
+        categories.length % pageSize === 1
+      ) {
         setCurrentPage(currentPage - 1);
       }
 
@@ -130,7 +140,6 @@ export default function CategoriesPage() {
       setIsDeleting(false);
     }
   };
-
 
   // Reset to page 1 when page size changes
   useEffect(() => {

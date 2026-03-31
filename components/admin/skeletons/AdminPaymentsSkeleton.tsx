@@ -48,7 +48,7 @@ export function AdminPaymentsSkeleton() {
             <CardContent className="pt-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <Skeleton className="h-10 w-10 rounded-lg" />
+                  <Skeleton className="h-10 w-10 rounded-md" />
                   <div className="flex-1 space-y-1.5">
                     <Skeleton className="h-4 w-28" />
                     <Skeleton className="h-3 w-20" />

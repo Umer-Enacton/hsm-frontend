@@ -30,7 +30,7 @@ export function CustomerBookingsSkeleton() {
           <Card key={i}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <Skeleton className="h-10 w-10 rounded-lg" />
+                <Skeleton className="h-10 w-10 rounded-md" />
                 <div className="space-y-1">
                   <Skeleton className="h-7 w-8" />
                   <Skeleton className={`h-3 w-${labelW}`} />
@@ -52,7 +52,7 @@ export function CustomerBookingsSkeleton() {
       <Skeleton className="h-5 w-48" />
 
       {/* Bookings Table Skeleton */}
-      <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
+      <div className="border rounded-md overflow-hidden bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -85,7 +85,7 @@ export function CustomerBookingsSkeleton() {
                 {/* Service Column */}
                 <TableCell className="py-4 px-4">
                   <div className="flex items-center gap-3">
-                    <Skeleton className="h-12 w-12 rounded-lg flex-shrink-0" />
+                    <Skeleton className="h-12 w-12 rounded-md flex-shrink-0" />
                     <div className="flex-1 min-w-0 space-y-2">
                       <Skeleton className="h-4 w-3/4" />
                       <div className="flex items-center gap-1">

@@ -8,7 +8,7 @@ export function ServiceDetailSkeleton() {
       {/* LEFT COLUMN */}
       <div className="lg:col-span-2 space-y-6">
         {/* Hero Banner Skeleton */}
-        <div className="relative w-full aspect-[21/9] rounded-2xl overflow-hidden bg-muted animate-pulse">
+        <div className="relative w-full aspect-[21/9] rounded-md overflow-hidden bg-muted animate-pulse">
           {/* Simulated gradient overlay info at bottom */}
           <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 space-y-4">
             <div className="flex items-start justify-between gap-4">
@@ -61,7 +61,7 @@ export function ServiceDetailSkeleton() {
             <div className="grid sm:grid-cols-2 gap-4 mt-3 pt-6 border-t">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <Skeleton className="h-10 w-10 rounded-lg flex-shrink-0" />
+                  <Skeleton className="h-10 w-10 rounded-md flex-shrink-0" />
                   <div className="space-y-1.5">
                     <Skeleton className="h-4 w-16" />
                     <Skeleton className="h-3 w-24" />
@@ -149,7 +149,7 @@ export function ServiceDetailSkeleton() {
                 <Skeleton className="h-4 w-24 mb-4" />
                 <Skeleton className="h-3 w-32 mb-3" />
                 {/* Legend */}
-                <div className="mb-3 p-2 bg-muted/30 rounded-lg">
+                <div className="mb-3 p-2 bg-muted/30 rounded-md">
                   <div className="flex items-center gap-4">
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="flex items-center gap-1.5">
@@ -162,7 +162,7 @@ export function ServiceDetailSkeleton() {
                 {/* Time slots */}
                 <div className="grid grid-cols-3 gap-2">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-                    <Skeleton key={i} className="h-9 rounded-lg" />
+                    <Skeleton key={i} className="h-9 rounded-md" />
                   ))}
                 </div>
               </div>
@@ -176,7 +176,7 @@ export function ServiceDetailSkeleton() {
                   {[1, 2].map((i) => (
                     <div
                       key={i}
-                      className="w-full p-4 rounded-lg border-2 border-border space-y-1.5"
+                      className="w-full p-4 rounded-md border-2 border-border space-y-1.5"
                     >
                       <Skeleton className="h-4 w-16" />
                       <Skeleton className="h-3 w-full" />

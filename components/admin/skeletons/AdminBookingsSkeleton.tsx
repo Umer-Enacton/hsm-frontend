@@ -53,7 +53,7 @@ export function AdminBookingsSkeleton() {
         <CardContent>
           <div className="space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="border rounded-lg p-4 hover:bg-muted/50">
+              <div key={i} className="border rounded-md p-4 hover:bg-muted/50">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-2">
                     {/* ID + Status badge */}

@@ -94,7 +94,7 @@ export function CancelBookingButton({
                       </strong>{" "}
                       (85% refund)
                     </p>
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                    <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm">
                       <div className="flex items-start gap-2">
                         <Info className="h-4 w-4 text-amber-600 mt-0.5" />
                         <div>
@@ -177,7 +177,7 @@ export function CancelBookingButton({
                     </strong>{" "}
                     (85% refund)
                   </p>
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                  <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm">
                     <div className="flex items-start gap-2">
                       <Info className="h-4 w-4 text-amber-600 mt-0.5" />
                       <div>

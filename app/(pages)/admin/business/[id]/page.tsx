@@ -313,7 +313,7 @@ export default function BusinessDetailsPage() {
           {/* Logo Overlay - Bottom Left */}
           {(business.logo || (!business.logo && !business.coverImage)) && (
             <div className="absolute -bottom-4 sm:-bottom-6 left-3 sm:left-6">
-              <div className="h-14 w-14 sm:h-20 sm:w-20 rounded-xl border-4 border-background overflow-hidden bg-card shadow-lg">
+              <div className="h-14 w-14 sm:h-20 sm:w-20 rounded-md border-4 border-background overflow-hidden bg-card shadow-lg">
                 {business.logo ? (
                   <img
                     src={business.logo}

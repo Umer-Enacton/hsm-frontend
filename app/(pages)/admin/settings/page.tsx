@@ -92,7 +92,7 @@ export default function AdminSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-3">
-            <div className="p-2 bg-purple-50 dark:bg-purple-950/30 rounded-lg w-fit">
+            <div className="p-2 bg-purple-50 dark:bg-purple-950/30 rounded-md w-fit">
               <Percent className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div className="flex-1">
@@ -124,7 +124,7 @@ export default function AdminSettingsPage() {
           </div>
 
           {/* Example */}
-          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+          <div className="bg-muted/50 rounded-md p-4 space-y-2">
             <p className="text-sm font-medium">Example (₹500 booking):</p>
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">You receive:</span>
@@ -146,7 +146,7 @@ export default function AdminSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="p-2 bg-green-50 dark:bg-green-950/30 rounded-lg w-fit">
+            <div className="p-2 bg-green-50 dark:bg-green-950/30 rounded-md w-fit">
               <Wallet className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
             <div className="flex-1">
@@ -159,7 +159,7 @@ export default function AdminSettingsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-            <div className="p-2 bg-muted rounded-lg w-fit">
+            <div className="p-2 bg-muted rounded-md w-fit">
               <IndianRupee className="h-5 w-5 text-muted-foreground" />
             </div>
             <Input
@@ -176,7 +176,7 @@ export default function AdminSettingsPage() {
             </div>
           </div>
 
-          <div className="bg-green-50/50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+          <div className="bg-green-50/50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-md p-4">
             <div className="flex gap-3">
               <TrendingUp className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
               <div className="text-sm text-green-800 dark:text-green-300">
@@ -205,7 +205,7 @@ export default function AdminSettingsPage() {
       <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
         <CardContent className="">
           <div className="flex gap-3 sm:gap-4">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg shrink-0">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-md shrink-0">
               <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="text-sm text-blue-800 dark:text-blue-300">

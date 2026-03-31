@@ -206,7 +206,7 @@ export function ReschedulePendingActions({
     <>
       <div className="space-y-4">
         {/* Slot Comparison Card */}
-        {/* <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 rounded-xl border border-purple-200 dark:border-purple-800">
+        {/* <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 rounded-md border border-purple-200 dark:border-purple-800">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-10 w-10 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center">
               <HistoryIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -223,7 +223,7 @@ export function ReschedulePendingActions({
 
         {/* Slot Comparison */}
         {/* {(previousDate || previousTime) && (
-            <div className="bg-white/60 dark:bg-gray-900/40 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
+            <div className="bg-white/60 dark:bg-gray-900/40 rounded-md p-3 border border-purple-200 dark:border-purple-700">
               <div className="flex items-center justify-between gap-4">
                 {/* Previous Slot */}
         {/* <div className="flex-1">

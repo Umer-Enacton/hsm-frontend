@@ -32,7 +32,7 @@ export interface StatusChartProps {
 
 const formatCurrency = (value: number | null | undefined) => {
   if (value == null || isNaN(value)) {
-    return '₹0';
+    return "₹0";
   }
   if (value >= 100000) {
     return `₹${(value / 100000).toFixed(1)}L`;
@@ -45,7 +45,7 @@ const formatCurrency = (value: number | null | undefined) => {
 
 // Format status name for display
 const formatStatusName = (status: any) => {
-  if (typeof status !== 'string' || !status) return String(status || '');
+  if (typeof status !== "string" || !status) return String(status || "");
   return status.charAt(0).toUpperCase() + status.slice(1);
 };
 
@@ -53,7 +53,7 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-background border rounded-lg shadow-lg p-3">
+      <div className="bg-background border rounded-md shadow-lg p-3">
         <p className="text-sm font-medium">{formatStatusName(data.status)}</p>
         <p className="text-sm" style={{ color: data.fill }}>
           Platform Fees: {formatCurrency(data.platformFees)}

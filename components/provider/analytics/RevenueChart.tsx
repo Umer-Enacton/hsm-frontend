@@ -208,7 +208,7 @@ export function RevenueChart({
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div className="bg-background border rounded-lg shadow-lg p-2 text-xs">
+                        <div className="bg-background border rounded-md shadow-lg p-2 text-xs">
                           <p className="font-medium">
                             {payload[0].payload.date}
                           </p>
@@ -217,8 +217,13 @@ export function RevenueChart({
                               key={entry.dataKey}
                               style={{ color: entry.color }}
                             >
-                              {entry.name === "rescheduleRevenue" ? "Reschedule Fee" : entry.name}:{" "}
-                              {entry.dataKey === "revenue" || entry.dataKey === "rescheduleRevenue" || entry.dataKey === "totalRevenue"
+                              {entry.name === "rescheduleRevenue"
+                                ? "Reschedule Fee"
+                                : entry.name}
+                              :{" "}
+                              {entry.dataKey === "revenue" ||
+                              entry.dataKey === "rescheduleRevenue" ||
+                              entry.dataKey === "totalRevenue"
                                 ? formatCurrency(Number(entry.value ?? 0))
                                 : (entry.value ?? 0)}
                             </p>
@@ -238,7 +243,9 @@ export function RevenueChart({
                   fill="url(#colorBookings)"
                   fillOpacity={1}
                 />
-                {data.some((d) => d.rescheduleRevenue && d.rescheduleRevenue > 0) && (
+                {data.some(
+                  (d) => d.rescheduleRevenue && d.rescheduleRevenue > 0,
+                ) && (
                   <Area
                     yAxisId="revenue"
                     type="monotone"
@@ -272,7 +279,9 @@ export function RevenueChart({
               <div className="w-3 h-3 rounded-full bg-green-600"></div>
               <span className="text-muted-foreground">Revenue (₹)</span>
             </div>
-            {data.some((d) => d.rescheduleRevenue && d.rescheduleRevenue > 0) && (
+            {data.some(
+              (d) => d.rescheduleRevenue && d.rescheduleRevenue > 0,
+            ) && (
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 rounded-full bg-purple-500"></div>
                 <span className="text-muted-foreground">Reschedule Fees</span>

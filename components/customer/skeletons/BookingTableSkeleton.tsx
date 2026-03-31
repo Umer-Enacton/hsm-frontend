@@ -1,4 +1,11 @@
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function BookingsTableSkeletonRow({ index }: { index: number }) {
@@ -40,7 +47,7 @@ function BookingsTableSkeletonRow({ index }: { index: number }) {
 
 export function BookingsTableSkeleton({ rows = 5 }) {
   return (
-    <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
+    <div className="border rounded-md overflow-hidden bg-card shadow-sm">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50 hover:bg-muted/50">

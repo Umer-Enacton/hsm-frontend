@@ -90,7 +90,7 @@ export function ServiceTable({
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 overflow-hidden">
+    <div className="rounded-md border border-gray-200 overflow-hidden">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -113,7 +113,7 @@ export function ServiceTable({
               >
                 {/* Image */}
                 <TableCell>
-                  <div className="h-12 w-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                  <div className="h-12 w-12 rounded-md overflow-hidden bg-gray-100 border border-gray-200">
                     {service.image ? (
                       <img
                         src={service.image}
@@ -154,7 +154,11 @@ export function ServiceTable({
                 <TableCell>
                   <div className="flex items-center gap-1 text-sm text-gray-700">
                     <Clock className="h-3.5 w-3.5 text-gray-400" />
-                    <span>{formatDuration(service.duration || service.EstimateDuration)}</span>
+                    <span>
+                      {formatDuration(
+                        service.duration || service.EstimateDuration,
+                      )}
+                    </span>
                   </div>
                 </TableCell>
 
@@ -172,9 +176,7 @@ export function ServiceTable({
                 </TableCell>
 
                 {/* Status */}
-                <TableCell>
-                  {getStatusBadge(service.isActive)}
-                </TableCell>
+                <TableCell>{getStatusBadge(service.isActive)}</TableCell>
 
                 {/* Actions */}
                 <TableCell className="text-right">
@@ -183,12 +185,14 @@ export function ServiceTable({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onToggleStatus(service.id, !service.isActive)}
+                      onClick={() =>
+                        onToggleStatus(service.id, !service.isActive)
+                      }
                       className={cn(
                         "h-8 px-2",
                         service.isActive
                           ? "border-green-300 text-green-700 hover:bg-green-50"
-                          : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                          : "border-gray-300 text-gray-600 hover:bg-gray-50",
                       )}
                     >
                       {service.isActive ? (
@@ -218,13 +222,18 @@ export function ServiceTable({
                           <span>Edit Service</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => onViewReviews && onViewReviews(service)}
+                          onClick={() =>
+                            onViewReviews && onViewReviews(service)
+                          }
                           className="cursor-pointer"
                         >
                           <MessageSquare className="h-4 w-4 mr-2 text-gray-600" />
                           <span>View Reviews</span>
                           {(service.totalReviews || 0) > 0 && (
-                            <Badge variant="secondary" className="ml-auto text-xs">
+                            <Badge
+                              variant="secondary"
+                              className="ml-auto text-xs"
+                            >
                               {service.totalReviews || 0}
                             </Badge>
                           )}

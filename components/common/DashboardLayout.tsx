@@ -41,15 +41,15 @@ export function DashboardLayout({
     >
       {/* Mobile Backdrop */}
       {isMobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-background/40 md:hidden transition-opacity"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <Sidebar 
-        {...sidebar} 
+      <Sidebar
+        {...sidebar}
         isMobileOpen={isMobileOpen}
         onMobileClose={() => setIsMobileOpen(false)}
         user={header?.user}
@@ -63,7 +63,7 @@ export function DashboardLayout({
         <Button
           size="icon"
           onClick={() => setIsMobileOpen(true)}
-          className="fixed bottom-6 left-6 z-40 h-14 w-14 rounded-full shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 md:hidden transition-all hover:scale-105 active:scale-95 border-2 border-background"
+          className="fixed bottom-6 left-6 z-40 h-14 w-14 rounded-lg shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 md:hidden transition-all hover:scale-105 active:scale-95 border-2 border-background"
           aria-label="Open sidebar"
         >
           <Menu className="h-6 w-6" />
@@ -73,14 +73,10 @@ export function DashboardLayout({
       {/* Main area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        {header && (
-          <Header 
-            {...header} 
-          />
-        )}
+        {header && <Header {...header} />}
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-muted/30">
           <div className="h-full p-4 md:p-6 max-w-7xl mx-auto">{children}</div>
         </main>
 

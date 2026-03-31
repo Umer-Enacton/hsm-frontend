@@ -50,7 +50,9 @@ export function ImageUpload({
 
       // Validate file size
       if (file.size > maxSize) {
-        setError(`File size must be less than ${Math.round(maxSize / 1024 / 1024)}MB`);
+        setError(
+          `File size must be less than ${Math.round(maxSize / 1024 / 1024)}MB`,
+        );
         return;
       }
 
@@ -66,7 +68,7 @@ export function ImageUpload({
       // Pass file to parent
       onImageSelect(file);
     },
-    [maxSize, onImageSelect]
+    [maxSize, onImageSelect],
   );
 
   const handleRemove = () => {
@@ -82,7 +84,7 @@ export function ImageUpload({
       {preview ? (
         // Image Preview
         <div className="relative group">
-          <div className="relative overflow-hidden rounded-lg border-2 border-muted bg-muted/30 aspect-video flex items-center justify-center">
+          <div className="relative overflow-hidden rounded-md border-2 border-muted bg-muted/30 aspect-video flex items-center justify-center">
             <img
               src={preview}
               alt="Preview"
@@ -128,8 +130,8 @@ export function ImageUpload({
           <label
             htmlFor="image-upload"
             className={cn(
-              "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 aspect-video cursor-pointer hover:border-muted-foreground/50 hover:bg-muted/50 transition-colors",
-              (disabled || isLoading) && "cursor-not-allowed opacity-50"
+              "flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-muted-foreground/25 bg-muted/30 aspect-video cursor-pointer hover:border-muted-foreground/50 hover:bg-muted/50 transition-colors",
+              (disabled || isLoading) && "cursor-not-allowed opacity-50",
             )}
           >
             {isLoading ? (
@@ -144,7 +146,8 @@ export function ImageUpload({
                     Upload an image
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    JPG, PNG, GIF, or WEBP (max {Math.round(maxSize / 1024 / 1024)}MB)
+                    JPG, PNG, GIF, or WEBP (max{" "}
+                    {Math.round(maxSize / 1024 / 1024)}MB)
                   </p>
                 </div>
               </>

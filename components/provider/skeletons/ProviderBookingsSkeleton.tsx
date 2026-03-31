@@ -27,7 +27,7 @@ export function ProviderBookingsSkeleton() {
           <Card key={i}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <Skeleton className="h-10 w-10 rounded-lg flex-shrink-0" />
+                <Skeleton className="h-10 w-10 rounded-md flex-shrink-0" />
                 <div className="space-y-1.5">
                   <Skeleton className="h-7 w-8" />
                   <Skeleton className="h-3 w-24" />
@@ -49,7 +49,7 @@ export function ProviderBookingsSkeleton() {
       <Skeleton className="h-4 w-40" />
 
       {/* Bookings Table */}
-      <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
+      <div className="border rounded-md overflow-hidden bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -59,7 +59,9 @@ export function ProviderBookingsSkeleton() {
               <TableHead className="w-[20%] py-4 px-4">Date & Time</TableHead>
               <TableHead className="w-[20%] py-4 px-4">Address</TableHead>
               <TableHead className="w-[10%] py-4 px-4">Status</TableHead>
-              <TableHead className="w-[9%] py-4 px-4 text-right">Price</TableHead>
+              <TableHead className="w-[9%] py-4 px-4 text-right">
+                Price
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

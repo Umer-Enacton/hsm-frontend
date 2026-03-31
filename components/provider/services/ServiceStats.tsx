@@ -17,12 +17,59 @@ interface ServiceStatsProps {
   stats: ServiceStats | null;
 }
 
+type CardVariant = "blue" | "emerald" | "red" | "purple" | "yellow" | "orange";
+
+const variantStyles: Record<CardVariant, { card: string; icon: string; iconBg: string; title: string; value: string }> = {
+  blue: {
+    card: "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800",
+    icon: "text-blue-600 dark:text-blue-400",
+    iconBg: "bg-blue-100 dark:bg-blue-900/30",
+    title: "text-blue-700 dark:text-blue-400",
+    value: "text-blue-900 dark:text-blue-100",
+  },
+  emerald: {
+    card: "bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800",
+    icon: "text-emerald-600 dark:text-emerald-400",
+    iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
+    title: "text-emerald-700 dark:text-emerald-400",
+    value: "text-emerald-900 dark:text-emerald-100",
+  },
+  red: {
+    card: "bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 border-red-200 dark:border-red-800",
+    icon: "text-red-600 dark:text-red-400",
+    iconBg: "bg-red-100 dark:bg-red-900/30",
+    title: "text-red-700 dark:text-red-400",
+    value: "text-red-900 dark:text-red-100",
+  },
+  purple: {
+    card: "bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800",
+    icon: "text-purple-600 dark:text-purple-400",
+    iconBg: "bg-purple-100 dark:bg-purple-900/30",
+    title: "text-purple-700 dark:text-purple-400",
+    value: "text-purple-900 dark:text-purple-100",
+  },
+  yellow: {
+    card: "bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800",
+    icon: "text-yellow-600 dark:text-yellow-400",
+    iconBg: "bg-yellow-100 dark:bg-yellow-900/30",
+    title: "text-yellow-700 dark:text-yellow-400",
+    value: "text-yellow-900 dark:text-yellow-100",
+  },
+  orange: {
+    card: "bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800",
+    icon: "text-orange-600 dark:text-orange-400",
+    iconBg: "bg-orange-100 dark:bg-orange-900/30",
+    title: "text-orange-700 dark:text-orange-400",
+    value: "text-orange-900 dark:text-orange-100",
+  },
+};
+
 export function ServiceStats({ stats }: ServiceStatsProps) {
   if (!stats) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 animate-pulse bg-muted rounded-lg" />
+          <div key={i} className="h-24 animate-pulse bg-muted rounded-md" />
         ))}
       </div>
     );
@@ -38,23 +85,25 @@ export function ServiceStats({ stats }: ServiceStatsProps) {
           title="Total Services"
           value={stats.total}
           icon={Briefcase}
+          variant="blue"
         />
         <StatsCard
           title="Active"
           value={stats.active}
           icon={CheckCircle}
-          valueClassName="text-green-600"
+          variant="emerald"
         />
         <StatsCard
           title="Inactive"
           value={stats.inactive}
           icon={XCircle}
-          valueClassName="text-gray-600"
+          variant="red"
         />
         <StatsCard
           title="Avg Price"
           value={`₹${stats.averagePrice || 0}`}
           icon={IndianRupee}
+          variant="purple"
         />
       </div>
 
@@ -66,15 +115,15 @@ export function ServiceStats({ stats }: ServiceStatsProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">
                     Total Bookings
                   </p>
-                  <p className="text-2xl font-bold text-green-700 dark:text-green-400">
+                  <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
                     {stats.totalBookings || 0}
                   </p>
                 </div>
-                <div className="rounded-full bg-green-100 p-3">
-                  <Calendar className="h-6 w-6 text-green-600" />
+                <div className="rounded-full bg-emerald-100 dark:bg-emerald-900/30 p-3">
+                  <Calendar className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                 </div>
               </div>
             </CardContent>
@@ -84,10 +133,10 @@ export function ServiceStats({ stats }: ServiceStatsProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-purple-700 dark:text-purple-400 font-medium">
                     Total Earnings (95%)
                   </p>
-                  <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
                     ₹
                     {totalRevenueInRupees.toLocaleString("en-IN", {
                       minimumFractionDigits: 2,
@@ -95,57 +144,14 @@ export function ServiceStats({ stats }: ServiceStatsProps) {
                     })}
                   </p>
                 </div>
-                <div className="rounded-full bg-purple-100 p-3">
-                  <IndianRupee className="h-6 w-6 text-purple-600" />
+                <div className="rounded-full bg-purple-100 dark:bg-purple-900/30 p-3">
+                  <IndianRupee className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
       )}
-
-      {/* Per-service breakdown */}
-      {/* {stats.services && stats.services.length > 0 && (
-        <Card className="p-0">
-          <CardContent className="p-6">
-            <h3 className="font-semibold mb-4">Earnings by Service</h3>
-            <div className="space-y-3">
-              {stats.services
-                .filter((s) => s.totalBookings > 0)
-                .sort((a, b) => b.revenue - a.revenue)
-                .map((service) => (
-                  <div
-                    key={service.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium">{service.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {service.totalBookings} booking
-                        {service.totalBookings !== 1 ? "s" : ""}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-green-600">
-                        ₹
-                        {(service.revenue / 100).toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              {stats.services.filter((s) => s.totalBookings > 0).length ===
-                0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No bookings yet
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )} */}
     </div>
   );
 }
@@ -154,28 +160,30 @@ function StatsCard({
   title,
   value,
   icon: Icon,
-  valueClassName = "",
+  variant = "blue",
 }: {
   title: string;
   value: number | string;
   icon: React.ComponentType<{ className?: string }>;
-  valueClassName?: string;
+  variant?: CardVariant;
 }) {
+  const styles = variantStyles[variant];
   return (
-    <Card>
+    <Card className={styles.card}>
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className={`text-2xl font-bold mt-1 ${valueClassName}`}>
+            <p className={`text-sm font-medium ${styles.title}`}>{title}</p>
+            <p className={`text-2xl font-bold mt-1 ${styles.value}`}>
               {value}
             </p>
           </div>
-          <div className="rounded-full bg-primary/10 p-3">
-            <Icon className="h-6 w-6 text-primary" />
+          <div className={`rounded-full ${styles.iconBg} p-3`}>
+            <Icon className={`h-6 w-6 ${styles.icon}`} />
           </div>
         </div>
       </CardContent>
     </Card>
   );
 }
+

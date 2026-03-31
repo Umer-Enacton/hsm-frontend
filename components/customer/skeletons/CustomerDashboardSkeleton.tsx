@@ -151,7 +151,7 @@ export function CustomerDashboardSkeleton() {
           <div className="grid gap-6 md:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center gap-4">
-                <Skeleton className="h-10 w-10 rounded-lg" />
+                <Skeleton className="h-10 w-10 rounded-md" />
                 <div className="space-y-1">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-3 w-40" />

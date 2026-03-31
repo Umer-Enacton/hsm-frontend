@@ -27,7 +27,7 @@ export function AdminRevenueSkeleton() {
                   <Skeleton className="h-8 w-24" />
                   <Skeleton className="h-3 w-44" />
                 </div>
-                <Skeleton className="h-12 w-12 rounded-lg flex-shrink-0" />
+                <Skeleton className="h-12 w-12 rounded-md flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
@@ -47,7 +47,7 @@ export function AdminRevenueSkeleton() {
           </div>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-64 w-full rounded-lg" />
+          <Skeleton className="h-64 w-full rounded-md" />
         </CardContent>
       </Card>
 

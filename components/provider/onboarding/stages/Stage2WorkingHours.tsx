@@ -12,10 +12,7 @@ import { cn } from "@/lib/utils";
 interface Stage2WorkingHoursProps {
   initialWorkingHours?: WorkingHours;
   initialBreakTime?: BreakTime;
-  onNext: (data: {
-    workingHours: WorkingHours;
-    breakTime?: BreakTime;
-  }) => void;
+  onNext: (data: { workingHours: WorkingHours; breakTime?: BreakTime }) => void;
 }
 
 export function Stage2WorkingHours({
@@ -23,8 +20,11 @@ export function Stage2WorkingHours({
   initialBreakTime,
   onNext,
 }: Stage2WorkingHoursProps) {
-  const [workingHours, setWorkingHours] = useState<WorkingHours>(initialWorkingHours);
-  const [breakTime, setBreakTime] = useState<BreakTime | undefined>(initialBreakTime);
+  const [workingHours, setWorkingHours] =
+    useState<WorkingHours>(initialWorkingHours);
+  const [breakTime, setBreakTime] = useState<BreakTime | undefined>(
+    initialBreakTime,
+  );
   const [hasBreak, setHasBreak] = useState(!!initialBreakTime);
 
   const defaultBreakTime: BreakTime = { startTime: "13:00", endTime: "14:00" };
@@ -33,7 +33,7 @@ export function Stage2WorkingHours({
   useEffect(() => {
     const data = {
       workingHours,
-      breakTime: hasBreak ? (breakTime || defaultBreakTime) : undefined,
+      breakTime: hasBreak ? breakTime || defaultBreakTime : undefined,
     };
     const dataString = JSON.stringify(data);
 
@@ -44,7 +44,7 @@ export function Stage2WorkingHours({
   }, [workingHours, breakTime, hasBreak, onNext]);
 
   const timeToMinutes = (timeStr: string) => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
+    const [hours, minutes] = timeStr.split(":").map(Number);
     return hours * 60 + minutes;
   };
 
@@ -55,10 +55,10 @@ export function Stage2WorkingHours({
   };
 
   const formatTime12Hour = (timeStr: string) => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const period = hours >= 12 ? 'PM' : 'AM';
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    const period = hours >= 12 ? "PM" : "AM";
     const displayHours = hours % 12 || 12;
-    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
   };
 
   const calculateWorkTime = () => {
@@ -68,7 +68,8 @@ export function Stage2WorkingHours({
 
     let breakMinutes = 0;
     if (hasBreak && breakTime) {
-      breakMinutes = timeToMinutes(breakTime.endTime) - timeToMinutes(breakTime.startTime);
+      breakMinutes =
+        timeToMinutes(breakTime.endTime) - timeToMinutes(breakTime.startTime);
     }
 
     const effectiveMinutes = totalMinutes - breakMinutes;
@@ -114,7 +115,7 @@ export function Stage2WorkingHours({
     }
 
     return (
-      <div className="relative h-12 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden">
+      <div className="relative h-12 bg-neutral-100 dark:bg-neutral-900 rounded-md overflow-hidden">
         {/* Work hours block */}
         <div
           className="absolute h-full bg-neutral-800 dark:bg-neutral-700"
@@ -164,11 +165,15 @@ export function Stage2WorkingHours({
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <div className="flex items-center gap-3 flex-1">
-            <span className="text-sm text-muted-foreground w-20">Start time:</span>
+            <span className="text-sm text-muted-foreground w-20">
+              Start time:
+            </span>
             <Input
               type="time"
               value={workingHours.startTime}
-              onChange={(e) => setWorkingHours({ ...workingHours, startTime: e.target.value })}
+              onChange={(e) =>
+                setWorkingHours({ ...workingHours, startTime: e.target.value })
+              }
               className="w-40"
             />
           </div>
@@ -176,24 +181,33 @@ export function Stage2WorkingHours({
           <div className="hidden sm:block text-muted-foreground">—</div>
 
           <div className="flex items-center gap-3 flex-1">
-            <span className="text-sm text-muted-foreground w-20">End time:</span>
+            <span className="text-sm text-muted-foreground w-20">
+              End time:
+            </span>
             <Input
               type="time"
               value={workingHours.endTime}
-              onChange={(e) => setWorkingHours({ ...workingHours, endTime: e.target.value })}
+              onChange={(e) =>
+                setWorkingHours({ ...workingHours, endTime: e.target.value })
+              }
               className="w-40"
             />
           </div>
         </div>
 
         {/* Work Time Summary */}
-        <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+        <div className="mt-4 p-4 bg-muted/50 rounded-md">
           <div className="flex items-center justify-between">
             <span className="text-sm">Total working time:</span>
-            <span className="font-semibold">{workTime.totalWorkTime} per day</span>
+            <span className="font-semibold">
+              {workTime.totalWorkTime} per day
+            </span>
           </div>
           <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
-            <span>({formatTime12Hour(workingHours.startTime)} - {formatTime12Hour(workingHours.endTime)})</span>
+            <span>
+              ({formatTime12Hour(workingHours.startTime)} -{" "}
+              {formatTime12Hour(workingHours.endTime)})
+            </span>
           </div>
         </div>
       </Card>
@@ -205,7 +219,9 @@ export function Stage2WorkingHours({
             <Coffee className="h-5 w-5 text-muted-foreground" />
             <div>
               <Label className="text-base font-semibold">Break Time</Label>
-              <p className="text-xs text-muted-foreground">Optional - when you're not available</p>
+              <p className="text-xs text-muted-foreground">
+                Optional - when you're not available
+              </p>
             </div>
           </div>
           <Switch checked={hasBreak} onCheckedChange={handleToggleBreak} />
@@ -215,12 +231,17 @@ export function Stage2WorkingHours({
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="flex items-center gap-3 flex-1">
-                <span className="text-sm text-muted-foreground w-20">Break from:</span>
+                <span className="text-sm text-muted-foreground w-20">
+                  Break from:
+                </span>
                 <Input
                   type="time"
                   value={breakTime?.startTime || defaultBreakTime.startTime}
                   onChange={(e) =>
-                    setBreakTime({ ...(breakTime || defaultBreakTime), startTime: e.target.value })
+                    setBreakTime({
+                      ...(breakTime || defaultBreakTime),
+                      startTime: e.target.value,
+                    })
                   }
                   className="w-40"
                 />
@@ -229,12 +250,17 @@ export function Stage2WorkingHours({
               <div className="hidden sm:block text-muted-foreground">—</div>
 
               <div className="flex items-center gap-3 flex-1">
-                <span className="text-sm text-muted-foreground w-20">Break until:</span>
+                <span className="text-sm text-muted-foreground w-20">
+                  Break until:
+                </span>
                 <Input
                   type="time"
                   value={breakTime?.endTime || defaultBreakTime.endTime}
                   onChange={(e) =>
-                    setBreakTime({ ...(breakTime || defaultBreakTime), endTime: e.target.value })
+                    setBreakTime({
+                      ...(breakTime || defaultBreakTime),
+                      endTime: e.target.value,
+                    })
                   }
                   className="w-40"
                 />
@@ -242,7 +268,7 @@ export function Stage2WorkingHours({
             </div>
 
             {/* Break Summary */}
-            <div className="p-4 bg-muted/50 rounded-lg">
+            <div className="p-4 bg-muted/50 rounded-md">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Break duration:</span>
                 <span className="font-semibold">{workTime.breakTime}</span>
@@ -252,7 +278,7 @@ export function Stage2WorkingHours({
         )}
 
         {!hasBreak && (
-          <div className="p-4 bg-muted/30 rounded-lg text-center text-sm text-muted-foreground">
+          <div className="p-4 bg-muted/30 rounded-md text-center text-sm text-muted-foreground">
             No break time configured
           </div>
         )}
@@ -261,8 +287,12 @@ export function Stage2WorkingHours({
       {/* Daily Timeline Card */}
       <Card className="p-6">
         <div className="mb-4">
-          <Label className="text-base font-semibold">Daily Timeline Preview</Label>
-          <p className="text-xs text-muted-foreground mt-1">Visual representation of your work day</p>
+          <Label className="text-base font-semibold">
+            Daily Timeline Preview
+          </Label>
+          <p className="text-xs text-muted-foreground mt-1">
+            Visual representation of your work day
+          </p>
         </div>
 
         {/* Timeline Bar */}
@@ -291,7 +321,9 @@ export function Stage2WorkingHours({
               <Clock className="h-5 w-5" />
               <span className="font-medium">Effective working time:</span>
             </div>
-            <span className="text-lg font-bold">{workTime.effectiveWorkTime} per day</span>
+            <span className="text-lg font-bold">
+              {workTime.effectiveWorkTime} per day
+            </span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             (Total working time excluding break time)

@@ -1,6 +1,13 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from "recharts";
 import {
   Card,
   CardContent,
@@ -37,36 +44,36 @@ const CATEGORY_COLORS = [
   "#6366f1", // Indigo
 ];
 
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-background border rounded-lg shadow-lg p-3">
-          <p className="text-sm font-medium">{data.name}</p>
-          <p className="text-sm" style={{ color: data.color }}>
-            Platform Fees: {formatCurrencyWithDecimals(data.value)}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {data.percentage}% of total
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-background border rounded-md shadow-lg p-3">
+        <p className="text-sm font-medium">{data.name}</p>
+        <p className="text-sm" style={{ color: data.color }}>
+          Platform Fees: {formatCurrencyWithDecimals(data.value)}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {data.percentage}% of total
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
-  const formatCurrencyWithDecimals = (value: number | null | undefined) => {
-    if (value == null || isNaN(value)) {
-      return '₹0';
-    }
-    if (value >= 100000) {
-      return `₹${(value / 100000).toFixed(1)}L`;
-    }
-    if (value >= 1000) {
-      return `₹${(value / 1000).toFixed(1)}K`;
-    }
-    return `₹${Number(value).toFixed(2)}`;
-  };
+const formatCurrencyWithDecimals = (value: number | null | undefined) => {
+  if (value == null || isNaN(value)) {
+    return "₹0";
+  }
+  if (value >= 100000) {
+    return `₹${(value / 100000).toFixed(1)}L`;
+  }
+  if (value >= 1000) {
+    return `₹${(value / 1000).toFixed(1)}K`;
+  }
+  return `₹${Number(value).toFixed(2)}`;
+};
 
 export function CategoryChart({ data, totalPlatformFees }: CategoryChartProps) {
   // Prepare data for pie chart
@@ -82,7 +89,9 @@ export function CategoryChart({ data, totalPlatformFees }: CategoryChartProps) {
       <Card className="shadow-lg hover:shadow-xl transition-all">
         <CardHeader>
           <CardTitle>Revenue by Category</CardTitle>
-          <CardDescription>Platform fee earnings by service category</CardDescription>
+          <CardDescription>
+            Platform fee earnings by service category
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
@@ -99,8 +108,12 @@ export function CategoryChart({ data, totalPlatformFees }: CategoryChartProps) {
   return (
     <Card className="shadow-lg hover:shadow-xl transition-all overflow-hidden">
       <CardHeader>
-        <CardTitle className="text-lg sm:text-xl">Revenue by Category</CardTitle>
-        <CardDescription className="text-xs sm:text-sm">Platform fee earnings by service category</CardDescription>
+        <CardTitle className="text-lg sm:text-xl">
+          Revenue by Category
+        </CardTitle>
+        <CardDescription className="text-xs sm:text-sm">
+          Platform fee earnings by service category
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="w-full overflow-x-auto">
@@ -131,19 +144,31 @@ export function CategoryChart({ data, totalPlatformFees }: CategoryChartProps) {
 
         {/* Category breakdown list */}
         <div className="mt-3 sm:mt-4 space-y-1.5 sm:space-y-2">
-          <h4 className="text-xs sm:text-sm font-medium text-muted-foreground">Top Categories</h4>
+          <h4 className="text-xs sm:text-sm font-medium text-muted-foreground">
+            Top Categories
+          </h4>
           {data.slice(0, 5).map((category, index) => (
-            <div key={category.categoryId} className="flex items-center justify-between text-xs sm:text-sm">
+            <div
+              key={category.categoryId}
+              className="flex items-center justify-between text-xs sm:text-sm"
+            >
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <div
                   className="w-2 h-2 sm:w-3 sm:h-3 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }}
+                  style={{
+                    backgroundColor:
+                      CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+                  }}
                 />
                 <span className="truncate">{category.categoryName}</span>
               </div>
               <div className="flex items-center gap-1.5 sm:gap-3">
-                <span className="text-muted-foreground text-[10px] sm:text-xs">{category.bookingCount} bookings</span>
-                <span className="font-medium text-green-600 text-[10px] sm:text-xs">{formatCurrencyWithDecimals(category.platformFees)}</span>
+                <span className="text-muted-foreground text-[10px] sm:text-xs">
+                  {category.bookingCount} bookings
+                </span>
+                <span className="font-medium text-green-600 text-[10px] sm:text-xs">
+                  {formatCurrencyWithDecimals(category.platformFees)}
+                </span>
               </div>
             </div>
           ))}

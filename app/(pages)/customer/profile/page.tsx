@@ -31,10 +31,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Plus, List, Grid3x3, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getAllStates, getCitiesByState } from "@/lib/data/india-locations";
 import { CustomerProfileSkeleton } from "@/components/customer/skeletons";
 
@@ -65,7 +76,8 @@ export default function CustomerProfilePage() {
 
   // React Query hooks
   const { data: user, isLoading: isLoadingProfile, error } = useProfile();
-  const { data: addresses = [], isLoading: isLoadingAddresses } = useAddresses();
+  const { data: addresses = [], isLoading: isLoadingAddresses } =
+    useAddresses();
   const updateProfileMutation = useUpdateProfile();
   const uploadAvatarMutation = useUploadAvatar();
   const createAddressMutation = useCreateAddress();
@@ -73,9 +85,10 @@ export default function CustomerProfilePage() {
   const deleteAddressMutation = useDeleteAddress();
 
   const isLoading = isLoadingProfile || isLoadingAddresses;
-  const isSubmittingAddress = createAddressMutation.isPending ||
-                           updateAddressMutation.isPending ||
-                           deleteAddressMutation.isPending;
+  const isSubmittingAddress =
+    createAddressMutation.isPending ||
+    updateAddressMutation.isPending ||
+    deleteAddressMutation.isPending;
 
   // Memoize available cities
   const availableCities = React.useMemo(() => {
@@ -104,7 +117,11 @@ export default function CustomerProfilePage() {
     }
   };
 
-  const handleProfileUpdate = async (updates: { name?: string; email?: string; phone?: string }) => {
+  const handleProfileUpdate = async (updates: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  }) => {
     updateProfileMutation.mutate(updates);
   };
 
@@ -150,7 +167,7 @@ export default function CustomerProfilePage() {
     if (editingAddress) {
       updateAddressMutation.mutate({
         addressId: editingAddress.id,
-        updates: addressForm
+        updates: addressForm,
       });
     } else {
       createAddressMutation.mutate(addressForm);
@@ -203,7 +220,9 @@ export default function CustomerProfilePage() {
           size="icon"
           disabled={isRefreshing}
         >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
         </Button>
       </div>
 
@@ -218,8 +237,8 @@ export default function CustomerProfilePage() {
 
       {/* Tab Content */}
       <div className="mt-6">
-        {activeTab === "overview" && (
-          isLoading ? (
+        {activeTab === "overview" &&
+          (isLoading ? (
             // ProfileOverview Skeleton
             <div className="space-y-6">
               <Card>
@@ -248,9 +267,11 @@ export default function CustomerProfilePage() {
               </Card>
             </div>
           ) : (
-            <ProfileOverview user={user} onEditClick={() => setIsEditModalOpen(true)} />
-          )
-        )}
+            <ProfileOverview
+              user={user}
+              onEditClick={() => setIsEditModalOpen(true)}
+            />
+          ))}
 
         {activeTab === "security" && <PasswordChangeForm />}
 
@@ -259,7 +280,9 @@ export default function CustomerProfilePage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold">My Addresses</h2>
-                <p className="text-muted-foreground">Manage your service addresses</p>
+                <p className="text-muted-foreground">
+                  Manage your service addresses
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 {/* View Toggle */}
@@ -292,7 +315,9 @@ export default function CustomerProfilePage() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No addresses saved</h3>
+                  <h3 className="text-lg font-semibold mb-2">
+                    No addresses saved
+                  </h3>
                   <p className="text-sm text-muted-foreground text-center mb-4">
                     Add addresses to quickly select them during booking
                   </p>
@@ -306,24 +331,24 @@ export default function CustomerProfilePage() {
                 {addresses.map((address) => (
                   <div
                     key={address.id}
-                    className="group relative bg-card border rounded-lg p-4 hover:border-primary/50 hover:shadow-sm transition-all duration-200"
+                    className="group relative bg-card border rounded-md p-4 hover:border-primary/50 hover:shadow-sm transition-all duration-200"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1 min-w-0">
                         {/* Icon */}
                         <div className="flex-shrink-0 mt-1">
-                          {address.addressType === 'home' && (
-                            <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                          {address.addressType === "home" && (
+                            <div className="w-10 h-10 rounded-md bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                               🏠
                             </div>
                           )}
-                          {address.addressType === 'work' && (
-                            <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                          {address.addressType === "work" && (
+                            <div className="w-10 h-10 rounded-md bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
                               💼
                             </div>
                           )}
-                          {address.addressType === 'other' && (
-                            <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
+                          {address.addressType === "other" && (
+                            <div className="w-10 h-10 rounded-md bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
                               📍
                             </div>
                           )}
@@ -378,24 +403,24 @@ export default function CustomerProfilePage() {
                 {addresses.map((address) => (
                   <div
                     key={address.id}
-                    className="group relative bg-card border rounded-lg p-5 hover:border-primary/50 hover:shadow-sm transition-all duration-200"
+                    className="group relative bg-card border rounded-md p-5 hover:border-primary/50 hover:shadow-sm transition-all duration-200"
                   >
                     <div className="flex flex-col h-full">
                       {/* Header with icon and actions */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          {address.addressType === 'home' && (
-                            <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                          {address.addressType === "home" && (
+                            <div className="w-12 h-12 rounded-md bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                               🏠
                             </div>
                           )}
-                          {address.addressType === 'work' && (
-                            <div className="w-12 h-12 rounded-lg bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                          {address.addressType === "work" && (
+                            <div className="w-12 h-12 rounded-md bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
                               💼
                             </div>
                           )}
-                          {address.addressType === 'other' && (
-                            <div className="w-12 h-12 rounded-lg bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
+                          {address.addressType === "other" && (
+                            <div className="w-12 h-12 rounded-md bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
                               📍
                             </div>
                           )}
@@ -496,7 +521,9 @@ export default function CustomerProfilePage() {
                 <Input
                   placeholder="House no., building, street area"
                   value={addressForm.street}
-                  onChange={(e) => setAddressForm({ ...addressForm, street: e.target.value })}
+                  onChange={(e) =>
+                    setAddressForm({ ...addressForm, street: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -527,12 +554,18 @@ export default function CustomerProfilePage() {
                 <Label>City *</Label>
                 <Select
                   value={addressForm.city}
-                  onValueChange={(value) => setAddressForm({ ...addressForm, city: value })}
+                  onValueChange={(value) =>
+                    setAddressForm({ ...addressForm, city: value })
+                  }
                   disabled={!addressForm.state}
                   required
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={addressForm.state ? "Select city" : "Select state first"} />
+                    <SelectValue
+                      placeholder={
+                        addressForm.state ? "Select city" : "Select state first"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {availableCities.map((city: string) => (
@@ -549,7 +582,9 @@ export default function CustomerProfilePage() {
                 <Input
                   placeholder="Enter zip code"
                   value={addressForm.zipCode}
-                  onChange={(e) => setAddressForm({ ...addressForm, zipCode: e.target.value })}
+                  onChange={(e) =>
+                    setAddressForm({ ...addressForm, zipCode: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -565,7 +600,12 @@ export default function CustomerProfilePage() {
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmittingAddress}>
-                {isSubmittingAddress ? "Saving..." : editingAddress ? "Update" : "Add"} Address
+                {isSubmittingAddress
+                  ? "Saving..."
+                  : editingAddress
+                    ? "Update"
+                    : "Add"}{" "}
+                Address
               </Button>
             </div>
           </form>

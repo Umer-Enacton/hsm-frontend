@@ -12,7 +12,11 @@ import {
 } from "@/components/ui/table";
 import { User as UserIcon } from "lucide-react";
 import type { AppUser } from "@/types/user";
-import { ViewToggleButtons, AdminPagination, EmptyState } from "@/components/admin/shared";
+import {
+  ViewToggleButtons,
+  AdminPagination,
+  EmptyState,
+} from "@/components/admin/shared";
 
 export type ViewMode = "grid" | "list";
 
@@ -58,9 +62,14 @@ export function UserList({
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="text-sm text-muted-foreground">
-          Showing <span className="font-medium text-foreground">{totalItems}</span> users
+          Showing{" "}
+          <span className="font-medium text-foreground">{totalItems}</span>{" "}
+          users
         </div>
-        <ViewToggleButtons viewMode={viewMode} onViewModeChange={onViewModeChange} />
+        <ViewToggleButtons
+          viewMode={viewMode}
+          onViewModeChange={onViewModeChange}
+        />
       </div>
 
       {/* Content */}
@@ -77,7 +86,7 @@ export function UserList({
           ))}
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border rounded-md overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>

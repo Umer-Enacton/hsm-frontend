@@ -79,9 +79,14 @@ export function ServiceActionDialog({
       } else if (error.message?.includes("already active")) {
         toast.error("Service is already active");
       } else {
-        toast.error(isDeactivateAction ? "Failed to deactivate service" : "Failed to reactivate service", {
-          description: error.message || "Please try again",
-        });
+        toast.error(
+          isDeactivateAction
+            ? "Failed to deactivate service"
+            : "Failed to reactivate service",
+          {
+            description: error.message || "Please try again",
+          },
+        );
       }
     } finally {
       setIsProcessing(false);
@@ -92,7 +97,9 @@ export function ServiceActionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle className={`flex items-center gap-2 ${isDeactivateAction ? "text-orange-600" : "text-green-600"}`}>
+          <DialogTitle
+            className={`flex items-center gap-2 ${isDeactivateAction ? "text-orange-600" : "text-green-600"}`}
+          >
             {isDeactivateAction ? (
               <>
                 <Power className="h-4 w-4" />
@@ -107,16 +114,22 @@ export function ServiceActionDialog({
           </DialogTitle>
           <DialogDescription className="text-sm">
             {isDeactivateAction ? (
-              <>Prevent customers from booking <strong>{serviceName}</strong>. Other services will remain available.</>
+              <>
+                Prevent customers from booking <strong>{serviceName}</strong>.
+                Other services will remain available.
+              </>
             ) : (
-              <>Make <strong>{serviceName}</strong> available for customer bookings again.</>
+              <>
+                Make <strong>{serviceName}</strong> available for customer
+                bookings again.
+              </>
             )}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 py-2">
           {isDeactivateAction && (
-            <div className="flex items-start gap-2 p-2 bg-orange-50 dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-800">
+            <div className="flex items-start gap-2 p-2 bg-orange-50 dark:bg-orange-950/30 rounded-md border border-orange-200 dark:border-orange-800">
               <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
               <div className="text-xs">
                 <p className="font-semibold text-orange-900 dark:text-orange-200 mb-1">
@@ -159,15 +172,19 @@ export function ServiceActionDialog({
           </Button>
           <Button
             size="sm"
-            className={isDeactivateAction ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"}
+            className={
+              isDeactivateAction
+                ? "bg-orange-600 hover:bg-orange-700"
+                : "bg-green-600 hover:bg-green-700"
+            }
             onClick={handleAction}
             disabled={isProcessing || (isDeactivateAction && !reason.trim())}
           >
             {isProcessing
               ? "Processing..."
               : isDeactivateAction
-              ? "Deactivate"
-              : "Reactivate"}
+                ? "Deactivate"
+                : "Reactivate"}
           </Button>
         </DialogFooter>
       </DialogContent>

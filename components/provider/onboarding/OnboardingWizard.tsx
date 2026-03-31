@@ -6,7 +6,12 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { OnboardingStage, type OnboardingData, WorkingHours, BreakTime } from "@/types/provider";
+import {
+  OnboardingStage,
+  type OnboardingData,
+  WorkingHours,
+  BreakTime,
+} from "@/types/provider";
 import { Stage1BusinessDetails } from "./stages/Stage1BusinessDetails";
 import { Stage2WorkingHours } from "./stages/Stage2WorkingHours";
 import { Stage3SlotGeneration } from "./stages/Stage3SlotGeneration";
@@ -17,7 +22,10 @@ interface OnboardingWizardProps {
   existingData?: Partial<OnboardingData>;
   onComplete: (data: OnboardingData) => Promise<void>;
   onCancel: () => void;
-  onStageChange?: (stage: OnboardingStage, data: Partial<OnboardingData>) => void;
+  onStageChange?: (
+    stage: OnboardingStage,
+    data: Partial<OnboardingData>,
+  ) => void;
 }
 
 const STAGES = [
@@ -48,7 +56,8 @@ export function OnboardingWizard({
   onCancel,
   onStageChange,
 }: OnboardingWizardProps) {
-  const [currentStage, setCurrentStage] = useState<OnboardingStage>(initialStage);
+  const [currentStage, setCurrentStage] =
+    useState<OnboardingStage>(initialStage);
   const [isCompleting, setIsCompleting] = useState(false);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     businessDetails: existingData?.businessDetails || {
@@ -63,7 +72,10 @@ export function OnboardingWizard({
       logo: null,
       coverImage: null,
     },
-    workingHours: existingData?.workingHours || { startTime: "09:00", endTime: "18:00" },
+    workingHours: existingData?.workingHours || {
+      startTime: "09:00",
+      endTime: "18:00",
+    },
     breakTime: existingData?.breakTime,
     slotInterval: existingData?.slotInterval || 30,
   });
@@ -71,24 +83,27 @@ export function OnboardingWizard({
   const currentStageIndex = STAGES.findIndex((s) => s.id === currentStage);
   const progress = ((currentStageIndex + 1) / STAGES.length) * 100;
 
-  const handleStageData = useCallback((stageData: any) => {
-    setOnboardingData((prev) => {
-      switch (currentStage) {
-        case OnboardingStage.BUSINESS_DETAILS:
-          return { ...prev, businessDetails: stageData };
-        case OnboardingStage.WORKING_HOURS:
-          return { ...prev, ...stageData };
-        case OnboardingStage.SLOT_GENERATION:
-          return { ...prev, slotInterval: stageData };
-        default:
-          return prev;
-      }
-    });
-  }, [currentStage]);
+  const handleStageData = useCallback(
+    (stageData: any) => {
+      setOnboardingData((prev) => {
+        switch (currentStage) {
+          case OnboardingStage.BUSINESS_DETAILS:
+            return { ...prev, businessDetails: stageData };
+          case OnboardingStage.WORKING_HOURS:
+            return { ...prev, ...stageData };
+          case OnboardingStage.SLOT_GENERATION:
+            return { ...prev, slotInterval: stageData };
+          default:
+            return prev;
+        }
+      });
+    },
+    [currentStage],
+  );
 
   const handleNext = () => {
     if (currentStage < OnboardingStage.SLOT_GENERATION) {
-      const nextStage = currentStage + 1 as OnboardingStage;
+      const nextStage = (currentStage + 1) as OnboardingStage;
       setCurrentStage(nextStage);
       // Notify parent of stage change
       onStageChange?.(nextStage, onboardingData);
@@ -99,7 +114,7 @@ export function OnboardingWizard({
 
   const handleBack = () => {
     if (currentStage > OnboardingStage.BUSINESS_DETAILS) {
-      const prevStage = currentStage - 1 as OnboardingStage;
+      const prevStage = (currentStage - 1) as OnboardingStage;
       setCurrentStage(prevStage);
       // Notify parent of stage change
       onStageChange?.(prevStage, onboardingData);
@@ -120,13 +135,19 @@ export function OnboardingWizard({
       return;
     }
 
-    if (!onboardingData.businessDetails.state || !onboardingData.businessDetails.city) {
+    if (
+      !onboardingData.businessDetails.state ||
+      !onboardingData.businessDetails.city
+    ) {
       toast.error("Business location is required");
       setCurrentStage(OnboardingStage.BUSINESS_DETAILS);
       return;
     }
 
-    if (!onboardingData.workingHours.startTime || !onboardingData.workingHours.endTime) {
+    if (
+      !onboardingData.workingHours.startTime ||
+      !onboardingData.workingHours.endTime
+    ) {
       toast.error("Working hours are required");
       setCurrentStage(OnboardingStage.WORKING_HOURS);
       return;
@@ -174,13 +195,16 @@ export function OnboardingWizard({
     <div className="mx-auto max-w-4xl relative">
       {/* Loading Overlay */}
       {isCompleting && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md">
           <div className="flex flex-col items-center gap-4 p-8">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
             <div className="text-center space-y-2">
-              <p className="text-lg font-semibold">Setting up your business...</p>
+              <p className="text-lg font-semibold">
+                Setting up your business...
+              </p>
               <p className="text-sm text-muted-foreground">
-                This may take a moment as we upload your images and create your profile
+                This may take a moment as we upload your images and create your
+                profile
               </p>
             </div>
           </div>
@@ -191,7 +215,9 @@ export function OnboardingWizard({
       <div className="mb-8">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold">{STAGES[currentStageIndex].title}</h2>
+            <h2 className="text-2xl font-bold">
+              {STAGES[currentStageIndex].title}
+            </h2>
             <p className="text-sm text-muted-foreground">
               {STAGES[currentStageIndex].description}
             </p>
@@ -212,7 +238,9 @@ export function OnboardingWizard({
             <span className="text-muted-foreground">
               Step {currentStageIndex + 1} of {STAGES.length}
             </span>
-            <span className="font-medium">{Math.round(progress)}% Complete</span>
+            <span className="font-medium">
+              {Math.round(progress)}% Complete
+            </span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
@@ -228,15 +256,17 @@ export function OnboardingWizard({
               <div
                 key={stage.id}
                 className={cn(
-                  "flex-1 rounded-lg border-2 p-3 text-center transition-colors",
+                  "flex-1 rounded-md border-2 p-3 text-center transition-colors",
                   isCompleted && "border-primary bg-primary/5",
                   isCurrent && "border-primary bg-primary/10",
-                  isUpcoming && "border-muted bg-muted/5"
+                  isUpcoming && "border-muted bg-muted/5",
                 )}
               >
                 <div className="text-xs font-medium">{stage.title}</div>
                 {stage.isRequired && isUpcoming && (
-                  <div className="mt-1 text-[10px] text-muted-foreground">Required</div>
+                  <div className="mt-1 text-[10px] text-muted-foreground">
+                    Required
+                  </div>
                 )}
               </div>
             );
@@ -275,11 +305,7 @@ export function OnboardingWizard({
       <div className="mt-6 flex items-center justify-between">
         <div className="flex gap-2">
           {currentStage > OnboardingStage.BUSINESS_DETAILS && (
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              className="gap-2"
-            >
+            <Button variant="outline" onClick={handleBack} className="gap-2">
               <ChevronLeft className="h-4 w-4" />
               Back
             </Button>

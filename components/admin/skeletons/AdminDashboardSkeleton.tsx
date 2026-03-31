@@ -64,7 +64,7 @@ export function AdminDashboardSkeleton() {
           </div>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[200px] sm:h-[280px] w-full rounded-lg" />
+          <Skeleton className="h-[200px] sm:h-[280px] w-full rounded-md" />
         </CardContent>
       </Card>
 

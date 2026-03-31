@@ -33,7 +33,9 @@ export function AdminPageHeader({
             onClick={onRefresh}
             disabled={isRefreshing}
           >
-            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+            <RefreshCw
+              className={cn("h-4 w-4", isRefreshing && "animate-spin")}
+            />
           </Button>
         )}
         {actions}

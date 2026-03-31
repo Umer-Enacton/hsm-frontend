@@ -274,7 +274,7 @@ export function PaymentModal({
     // Success state
     if (step === "success") {
       return (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-md p-8 max-w-md w-full text-center">
           <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2 text-green-700 dark:text-green-400">
             Payment Successful!
@@ -292,7 +292,7 @@ export function PaymentModal({
     // Expired state
     if (step === "expired") {
       return (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-md p-8 max-w-md w-full text-center">
           <Clock className="h-16 w-16 text-slate-950 dark:text-slate-300 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2 text-slate-700 dark:text-slate-300">
             Session Expired
@@ -303,7 +303,7 @@ export function PaymentModal({
           </p>
           <button
             onClick={onCancel}
-            className="w-full border border-gray-300 dark:border-gray-600 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium"
+            className="w-full border border-gray-300 dark:border-gray-600 py-3 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium"
           >
             Close
           </button>
@@ -314,7 +314,7 @@ export function PaymentModal({
     // Failed state
     if (step === "failed") {
       return (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-md p-8 max-w-md w-full text-center">
           <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
             Payment Failed
@@ -326,7 +326,7 @@ export function PaymentModal({
                 // Reset and allow parent to retry
                 onCancel?.();
               }}
-              className="flex-1 bg-purple-600 dark:bg-purple-700 text-white py-3 rounded-xl hover:bg-purple-700 dark:hover:bg-purple-800 transition font-medium"
+              className="flex-1 bg-purple-600 dark:bg-purple-700 text-white py-3 rounded-md hover:bg-purple-700 dark:hover:bg-purple-800 transition font-medium"
             >
               Close
             </button>
@@ -338,7 +338,7 @@ export function PaymentModal({
     // Processing state
     if (step === "processing") {
       return (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full text-center">
+        <div className="bg-white dark:bg-gray-900 rounded-md p-8 max-w-md w-full text-center">
           <Loader2 className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Confirming Payment</h3>
           <p className="text-muted-foreground">Please wait...</p>
@@ -348,7 +348,7 @@ export function PaymentModal({
 
     // Payment ready state (main UI)
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full">
+      <div className="bg-white dark:bg-gray-900 rounded-md p-6 max-w-md w-full">
         {/* Header with timer */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -380,7 +380,7 @@ export function PaymentModal({
 
         {/* Warning about time limit */}
         {step === "ready" && timeRemaining < 30 && (
-          <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 rounded-lg flex items-start gap-2">
+          <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 rounded-md flex items-start gap-2">
             <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
             <p className="text-sm text-orange-800 dark:text-orange-300">
               {timeRemaining < 15
@@ -397,7 +397,7 @@ export function PaymentModal({
         </div>
 
         {/* Booking Summary */}
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-4 space-y-3">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-4 mb-4 space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">Service</span>
             <span className="font-medium text-sm">{serviceName}</span>
@@ -453,7 +453,7 @@ export function PaymentModal({
               // Close the modal
               onCancel?.();
             }}
-            className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl hover:bg-gray-800 dark:hover:bg-gray-200 transition font-semibold text-lg shadow-lg hover:shadow-xl"
+            className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-md hover:bg-gray-800 dark:hover:bg-gray-200 transition font-semibold text-lg shadow-lg hover:shadow-xl"
           >
             Pay ₹{formatAmount(orderData.amount)}
           </RazorpayCheckoutButton>
@@ -478,7 +478,7 @@ export function PaymentModal({
             }
             onCancel?.();
           }}
-          className="w-full mt-3 border border-gray-300 dark:border-gray-600 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium text-gray-700 dark:text-gray-300"
+          className="w-full mt-3 border border-gray-300 dark:border-gray-600 py-3 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium text-gray-700 dark:text-gray-300"
         >
           Cancel Payment
         </button>

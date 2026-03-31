@@ -65,7 +65,7 @@ export function DeleteUserDialog({
 
         <div className="space-y-4">
           {/* User Preview */}
-          <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border">
+          <div className="flex items-center gap-3 p-4 rounded-md bg-muted/50 border">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
               {initials}
             </div>
@@ -81,7 +81,7 @@ export function DeleteUserDialog({
           </div>
 
           {/* Warning Message */}
-          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+          <div className="rounded-md border border-destructive/20 bg-destructive/5 p-4">
             <p className="text-sm text-destructive font-medium mb-1">
               Warning: This will permanently delete this user account
             </p>

@@ -24,7 +24,7 @@ export function BusinessCardSkeleton() {
           <div className="flex items-end justify-between gap-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               {/* Logo */}
-              <Skeleton className="h-14 w-14 rounded-xl flex-shrink-0 bg-white/20" />
+              <Skeleton className="h-14 w-14 rounded-md flex-shrink-0 bg-white/20" />
               {/* Name & meta */}
               <div className="space-y-1.5 min-w-0">
                 <Skeleton className="h-5 w-32 sm:w-36 bg-white/20" />

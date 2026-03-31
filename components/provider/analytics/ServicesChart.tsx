@@ -51,7 +51,9 @@ export function ServicesChart({ data, totalBookings }: ServicesChartProps) {
   };
 
   // Sort by booking count and take top 5
-  const topServices = [...data].sort((a, b) => b.bookingCount - a.bookingCount).slice(0, 5);
+  const topServices = [...data]
+    .sort((a, b) => b.bookingCount - a.bookingCount)
+    .slice(0, 5);
 
   return (
     <Card className="shadow-lg hover:shadow-xl transition-all overflow-hidden">
@@ -76,7 +78,11 @@ export function ServicesChart({ data, totalBookings }: ServicesChartProps) {
                   bottom: 5,
                 }}
               >
-                <CartesianGrid horizontal={true} strokeDasharray="3 3" className="stroke-muted/30" />
+                <CartesianGrid
+                  horizontal={true}
+                  strokeDasharray="3 3"
+                  className="stroke-muted/30"
+                />
                 <XAxis
                   type="number"
                   tickLine={false}
@@ -92,12 +98,11 @@ export function ServicesChart({ data, totalBookings }: ServicesChartProps) {
                   tickMargin={8}
                   width={80}
                   className="text-muted-foreground text-xs"
-                  tickFormatter={(value) => (value.length > 10 ? `${value.slice(0, 10)}...` : value)}
+                  tickFormatter={(value) =>
+                    value.length > 10 ? `${value.slice(0, 10)}...` : value
+                  }
                 />
-                <ChartTooltip
-                  cursor={true}
-                  content={<ChartTooltipContent />}
-                />
+                <ChartTooltip cursor={true} content={<ChartTooltipContent />} />
                 <Bar
                   dataKey="bookingCount"
                   fill="var(--color-bookings)"
@@ -113,14 +118,16 @@ export function ServicesChart({ data, totalBookings }: ServicesChartProps) {
           {topServices.map((service, index) => (
             <div
               key={service.serviceId}
-              className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+              className="flex items-center justify-between p-2 sm:p-3 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                 <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-xs sm:text-sm font-bold flex-shrink-0">
                   {index + 1}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-xs sm:text-sm truncate">{service.serviceName}</p>
+                  <p className="font-medium text-xs sm:text-sm truncate">
+                    {service.serviceName}
+                  </p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{service.bookingCount} bookings</span>
                     <span>•</span>

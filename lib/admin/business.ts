@@ -27,6 +27,7 @@ export interface BusinessStats {
   total: number;
   pending: number;
   verified: number;
+  blocked: number;
   suspended: number;
 }
 
@@ -155,8 +156,9 @@ export async function getBusinessStats(): Promise<BusinessStats> {
 
     const stats: BusinessStats = {
       total: result.businesses.length,
-      pending: result.businesses.filter(b => !b.isVerified).length,
-      verified: result.businesses.filter(b => b.isVerified).length,
+      pending: result.businesses.filter(b => !b.isVerified && !b.isBlocked).length,
+      verified: result.businesses.filter(b => b.isVerified && !b.isBlocked).length,
+      blocked: result.businesses.filter(b => b.isBlocked).length,
       suspended: 0, // No suspended state yet
     };
 
@@ -167,6 +169,7 @@ export async function getBusinessStats(): Promise<BusinessStats> {
       total: 0,
       pending: 0,
       verified: 0,
+      blocked: 0,
       suspended: 0,
     };
   }

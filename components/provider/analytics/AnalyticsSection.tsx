@@ -39,8 +39,14 @@ export function AnalyticsSection({ businessId }: AnalyticsSectionProps) {
     queryClient.invalidateQueries({ queryKey: ["provider", "analytics"] });
   }, [period, queryClient]);
 
-  const { revenueData, servicesData, statusData, isLoading, isRefreshing, refetch } =
-    useProviderAnalytics(period);
+  const {
+    revenueData,
+    servicesData,
+    statusData,
+    isLoading,
+    isRefreshing,
+    refetch,
+  } = useProviderAnalytics(period);
 
   if (isLoading) {
     return (
@@ -52,7 +58,7 @@ export function AnalyticsSection({ businessId }: AnalyticsSectionProps) {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-80 bg-muted/30 rounded-lg animate-pulse"
+              className="h-80 bg-muted/30 rounded-md animate-pulse"
             />
           ))}
         </div>

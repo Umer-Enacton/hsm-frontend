@@ -13,7 +13,22 @@ export function BusinessProfileSkeleton() {
         </div>
         <Skeleton className="h-9 w-32 rounded-md" />
       </div>
-
+      {/* Stats Overview - 4 Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-12 w-12 rounded-md flex-shrink-0" />
+                <div className="space-y-1.5">
+                  <Skeleton className="h-7 w-12" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
       {/* Hero Card */}
       <Card className="overflow-hidden py-0">
         {/* Cover Image */}
@@ -21,7 +36,7 @@ export function BusinessProfileSkeleton() {
           <Skeleton className="h-full w-full" />
           {/* Logo Overlay - Bottom Left */}
           <div className="absolute -bottom-4 sm:-bottom-6 left-3 sm:left-6">
-            <Skeleton className="h-14 w-14 sm:h-20 sm:w-20 rounded-xl border-4 border-background" />
+            <Skeleton className="h-14 w-14 sm:h-20 sm:w-20 rounded-md border-4 border-background" />
           </div>
           {/* Badges - Top Right */}
           <div className="absolute top-2 sm:top-4 right-2 sm:right-4">
@@ -56,23 +71,6 @@ export function BusinessProfileSkeleton() {
         </div>
       </Card>
 
-      {/* Stats Overview - 4 Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i}>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-12 w-12 rounded-lg flex-shrink-0" />
-                <div className="space-y-1.5">
-                  <Skeleton className="h-7 w-12" />
-                  <Skeleton className="h-3 w-24" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       {/* Two Column Layout */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column */}
@@ -88,7 +86,7 @@ export function BusinessProfileSkeleton() {
             <CardContent>
               <div className="grid gap-3 sm:grid-cols-2">
                 {/* Phone */}
-                <div className="flex items-center gap-3 p-3 rounded-lg border">
+                <div className="flex items-center gap-3 p-3 rounded-md border">
                   <Skeleton className="h-9 w-9 rounded-full flex-shrink-0" />
                   <div className="space-y-1.5">
                     <Skeleton className="h-3 w-10" />
@@ -96,7 +94,7 @@ export function BusinessProfileSkeleton() {
                   </div>
                 </div>
                 {/* Email */}
-                <div className="flex items-center gap-3 p-3 rounded-lg border">
+                <div className="flex items-center gap-3 p-3 rounded-md border">
                   <Skeleton className="h-9 w-9 rounded-full flex-shrink-0" />
                   <div className="space-y-1.5">
                     <Skeleton className="h-3 w-10" />
@@ -104,7 +102,7 @@ export function BusinessProfileSkeleton() {
                   </div>
                 </div>
                 {/* Location - full width */}
-                <div className="flex items-center gap-3 p-3 rounded-lg border sm:col-span-2">
+                <div className="flex items-center gap-3 p-3 rounded-md border sm:col-span-2">
                   <Skeleton className="h-9 w-9 rounded-full flex-shrink-0" />
                   <div className="space-y-1.5">
                     <Skeleton className="h-3 w-14" />
@@ -112,7 +110,7 @@ export function BusinessProfileSkeleton() {
                   </div>
                 </div>
                 {/* Website - full width */}
-                <div className="flex items-center gap-3 p-3 rounded-lg border sm:col-span-2">
+                <div className="flex items-center gap-3 p-3 rounded-md border sm:col-span-2">
                   <Skeleton className="h-9 w-9 rounded-full flex-shrink-0" />
                   <div className="space-y-1.5">
                     <Skeleton className="h-3 w-14" />
@@ -134,7 +132,7 @@ export function BusinessProfileSkeleton() {
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="p-4 rounded-lg bg-muted/30 space-y-2">
+                  <div key={i} className="p-4 rounded-md bg-muted/30 space-y-2">
                     <Skeleton className="h-3 w-24" />
                     <div className="flex items-center gap-1">
                       <Skeleton className="h-5 w-5" />
@@ -160,7 +158,7 @@ export function BusinessProfileSkeleton() {
             <CardContent>
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="p-4 rounded-lg border space-y-2">
+                  <div key={i} className="p-4 rounded-md border space-y-2">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 space-y-1.5">
                         <div className="flex items-center gap-2">
@@ -188,7 +186,7 @@ export function BusinessProfileSkeleton() {
               <Skeleton className="h-5 w-32" />
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/30">
+              <div className="flex items-center gap-3 p-4 rounded-md bg-muted/30">
                 <Skeleton className="h-12 w-12 rounded-full flex-shrink-0" />
                 <div className="space-y-1.5">
                   <Skeleton className="h-4 w-36" />
@@ -207,7 +205,7 @@ export function BusinessProfileSkeleton() {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
+                  className="flex items-center justify-between p-3 rounded-md bg-muted/30"
                 >
                   <div className="flex items-center gap-2">
                     <Skeleton className="h-4 w-4" />

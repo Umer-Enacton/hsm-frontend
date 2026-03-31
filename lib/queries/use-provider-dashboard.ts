@@ -94,7 +94,7 @@ export function useProviderDashboardStats(businessId?: number) {
         .reduce((sum: number, b: ProviderBooking) => sum + (b.price || 0), 0);
 
       // Calculate active services
-      const activeServices = services.filter((s: any) => s.isActive || s.is_active).length;
+      const activeServices = (Array.isArray(services) ? services : []).filter((s: any) => s.isActive || s.is_active).length;
 
       return {
         totalBookings: bookings.length,

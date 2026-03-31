@@ -229,7 +229,7 @@ export function InvoicePreviewModal({
         ) : bookingData ? (
           <div className="overflow-y-auto max-h-[calc(95vh-80px)] bg-slate-100/50 p-4">
             {/* Invoice Container - ALWAYS LIGHT (It's a paper document!) */}
-            <div className="w-full bg-white rounded-xl shadow-lg text-slate-900 p-10">
+            <div className="w-full bg-white rounded-md shadow-lg text-slate-900 p-10">
               {/* ============================================ */}
               {/* HEADER SECTION */}
               {/* ============================================ */}
@@ -292,7 +292,9 @@ export function InvoicePreviewModal({
                     }
 
                     return (
-                      <div className={`inline-flex items-center justify-center px-4 py-1.5 ${badgeBg} border-2 ${badgeBorder} rounded-full mt-3`}>
+                      <div
+                        className={`inline-flex items-center justify-center px-4 py-1.5 ${badgeBg} border-2 ${badgeBorder} rounded-full mt-3`}
+                      >
                         <span className={`text-sm font-bold ${badgeText}`}>
                           {text}
                         </span>
@@ -308,7 +310,7 @@ export function InvoicePreviewModal({
               {/* ============================================ */}
               {/* ADDRESSES SECTION */}
               {/* ============================================ */}
-              <div className="bg-slate-50 rounded-xl p-6 mb-8">
+              <div className="bg-slate-50 rounded-md p-6 mb-8">
                 <div className="grid grid-cols-2 gap-8">
                   {/* Bill To */}
                   <div>
@@ -428,36 +430,55 @@ export function InvoicePreviewModal({
                 </div>
 
                 {/* Right - Totals Box */}
-                <div className="bg-slate-100 border-2 border-slate-200 rounded-xl p-6">
+                <div className="bg-slate-100 border-2 border-slate-200 rounded-md p-6">
                   <div className="space-y-4">
                     {/* Service Charge */}
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-slate-600">Service Charge</span>
+                      <span className="text-sm text-slate-600">
+                        Service Charge
+                      </span>
                       <span className="text-sm text-slate-900 font-semibold">
-                        {formatCurrency(bookingData.service?.price || bookingData.totalPrice)}
+                        {formatCurrency(
+                          bookingData.service?.price || bookingData.totalPrice,
+                        )}
                       </span>
                     </div>
 
                     {/* Reschedule Fee (if applicable) */}
-                    {bookingData.rescheduleOutcome === "pending" || bookingData.rescheduleOutcome === "accepted" ? (
+                    {bookingData.rescheduleOutcome === "pending" ||
+                    bookingData.rescheduleOutcome === "accepted" ? (
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-slate-600">Reschedule Fee</span>
+                        <span className="text-sm text-slate-600">
+                          Reschedule Fee
+                        </span>
                         <span className="text-sm text-purple-700 font-semibold">
-                          ₹{bookingData.lastRescheduleFee ? bookingData.lastRescheduleFee / 100 : 100}
+                          ₹
+                          {bookingData.lastRescheduleFee
+                            ? bookingData.lastRescheduleFee / 100
+                            : 100}
                         </span>
                       </div>
-                    ) : bookingData.rescheduleOutcome === "rejected" || bookingData.rescheduleOutcome === "cancelled" ? (
+                    ) : bookingData.rescheduleOutcome === "rejected" ||
+                      bookingData.rescheduleOutcome === "cancelled" ? (
                       <>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-600">Reschedule Fee</span>
+                          <span className="text-sm text-slate-600">
+                            Reschedule Fee
+                          </span>
                           <span className="text-sm text-slate-900 font-semibold">
-                            ₹{bookingData.lastRescheduleFee ? bookingData.lastRescheduleFee / 100 : 100}
+                            ₹
+                            {bookingData.lastRescheduleFee
+                              ? bookingData.lastRescheduleFee / 100
+                              : 100}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-green-700">Refund</span>
                           <span className="text-sm text-green-700 font-semibold">
-                            -₹{bookingData.lastRescheduleFee ? bookingData.lastRescheduleFee / 100 : 100}
+                            -₹
+                            {bookingData.lastRescheduleFee
+                              ? bookingData.lastRescheduleFee / 100
+                              : 100}
                           </span>
                         </div>
                       </>
@@ -475,25 +496,38 @@ export function InvoicePreviewModal({
 
                     {/* Cancellation & Refund Logic */}
                     {(() => {
-                      if ((bookingData.status === 'cancelled' || bookingData.status === 'rejected') && bookingData.isRefunded) {
-                        const servicePrice = bookingData.service?.price || bookingData.totalPrice;
-                        const rawRefund = bookingData.refundAmount || servicePrice;
+                      if (
+                        (bookingData.status === "cancelled" ||
+                          bookingData.status === "rejected") &&
+                        bookingData.isRefunded
+                      ) {
+                        const servicePrice =
+                          bookingData.service?.price || bookingData.totalPrice;
+                        const rawRefund =
+                          bookingData.refundAmount || servicePrice;
                         // Determine if rawRefund is in paise (if it's unreasonably large compared to totalPrice)
-                        const displayRefund = rawRefund > servicePrice * 10 ? Math.round(rawRefund / 100) : rawRefund;
+                        const displayRefund =
+                          rawRefund > servicePrice * 10
+                            ? Math.round(rawRefund / 100)
+                            : rawRefund;
                         const cancelCharge = servicePrice - displayRefund;
 
                         return (
                           <div className="mt-2 space-y-2">
                             {cancelCharge > 0 && (
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-red-600">Cancel Charge</span>
+                                <span className="text-sm text-red-600">
+                                  Cancel Charge
+                                </span>
                                 <span className="text-sm text-red-700 font-semibold">
                                   {formatCurrency(cancelCharge)}
                                 </span>
                               </div>
                             )}
                             <div className="flex justify-between items-center">
-                              <span className="text-sm text-green-600">Amount Refunded</span>
+                              <span className="text-sm text-green-600">
+                                Amount Refunded
+                              </span>
                               <span className="text-sm text-green-700 font-semibold">
                                 -{formatCurrency(displayRefund)}
                               </span>
@@ -509,16 +543,32 @@ export function InvoicePreviewModal({
 
                     {/* Total Amount */}
                     {(() => {
-                      const servicePrice = bookingData.service?.price || bookingData.totalPrice;
-                      const rescheduleFee = bookingData.lastRescheduleFee ? bookingData.lastRescheduleFee / 100 : 100;
-                      const hasRefund = bookingData.rescheduleOutcome === "rejected" || bookingData.rescheduleOutcome === "cancelled";
-                      
-                      let finalTotal = hasRefund ? servicePrice : (servicePrice + (bookingData.rescheduleOutcome ? rescheduleFee : 0));
+                      const servicePrice =
+                        bookingData.service?.price || bookingData.totalPrice;
+                      const rescheduleFee = bookingData.lastRescheduleFee
+                        ? bookingData.lastRescheduleFee / 100
+                        : 100;
+                      const hasRefund =
+                        bookingData.rescheduleOutcome === "rejected" ||
+                        bookingData.rescheduleOutcome === "cancelled";
+
+                      let finalTotal = hasRefund
+                        ? servicePrice
+                        : servicePrice +
+                          (bookingData.rescheduleOutcome ? rescheduleFee : 0);
 
                       // Subtract refund if applicable
-                      if ((bookingData.status === 'cancelled' || bookingData.status === 'rejected') && bookingData.isRefunded) {
-                        const rawRefund = bookingData.refundAmount || servicePrice;
-                        const displayRefund = rawRefund > servicePrice * 10 ? Math.round(rawRefund / 100) : rawRefund;
+                      if (
+                        (bookingData.status === "cancelled" ||
+                          bookingData.status === "rejected") &&
+                        bookingData.isRefunded
+                      ) {
+                        const rawRefund =
+                          bookingData.refundAmount || servicePrice;
+                        const displayRefund =
+                          rawRefund > servicePrice * 10
+                            ? Math.round(rawRefund / 100)
+                            : rawRefund;
                         finalTotal -= displayRefund;
                       }
 
@@ -542,39 +592,46 @@ export function InvoicePreviewModal({
               {/* ============================================ */}
               {/* RESCHEDULE DETAILS (if applicable) */}
               {/* ============================================ */}
-              {bookingData.rescheduleOutcome && bookingData.previousBookingDate && (
-                <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-8">
-                  <p className="text-xs font-bold text-purple-700 uppercase tracking-wide mb-2">
-                    Reschedule Details
-                  </p>
-                  <div className="text-sm text-purple-900">
-                    <div className="flex items-center gap-2">
-                      <span className="text-purple-700">From:</span>
-                      <span className="font-medium">
-                        {formatDate(bookingData.previousBookingDate)}
-                        {bookingData.previousSlotTime && ` at ${formatTime(bookingData.previousSlotTime)}`}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 ml-6">
-                      <span className="text-purple-700">To:</span>
-                      <span className="font-medium">
-                        {formatDate(bookingData.bookingDate)} at {formatTime(bookingData.slot?.startTime)}
-                      </span>
-                    </div>
-                    <div className="text-xs text-purple-700 mt-1">
-                      Status: {bookingData.rescheduleOutcome === "pending" ? "Pending approval" :
-                        bookingData.rescheduleOutcome === "accepted" ? "Approved" :
-                        bookingData.rescheduleOutcome === "rejected" ? "Declined by provider" :
-                        "Cancelled"}
+              {bookingData.rescheduleOutcome &&
+                bookingData.previousBookingDate && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-md p-4 mb-8">
+                    <p className="text-xs font-bold text-purple-700 uppercase tracking-wide mb-2">
+                      Reschedule Details
+                    </p>
+                    <div className="text-sm text-purple-900">
+                      <div className="flex items-center gap-2">
+                        <span className="text-purple-700">From:</span>
+                        <span className="font-medium">
+                          {formatDate(bookingData.previousBookingDate)}
+                          {bookingData.previousSlotTime &&
+                            ` at ${formatTime(bookingData.previousSlotTime)}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 ml-6">
+                        <span className="text-purple-700">To:</span>
+                        <span className="font-medium">
+                          {formatDate(bookingData.bookingDate)} at{" "}
+                          {formatTime(bookingData.slot?.startTime)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-purple-700 mt-1">
+                        Status:{" "}
+                        {bookingData.rescheduleOutcome === "pending"
+                          ? "Pending approval"
+                          : bookingData.rescheduleOutcome === "accepted"
+                            ? "Approved"
+                            : bookingData.rescheduleOutcome === "rejected"
+                              ? "Declined by provider"
+                              : "Cancelled"}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* ============================================ */}
               {/* FOOTER SECTION */}
               {/* ============================================ */}
-              <div className="bg-slate-100 rounded-xl p-6">
+              <div className="bg-slate-100 rounded-md p-6">
                 <p className="text-xs text-slate-500 text-center mb-3">
                   For questions, contact support@homeservice.com or call +91
                   9876543210

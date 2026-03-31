@@ -1,6 +1,12 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Shield,
@@ -15,10 +21,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function PrivacyPolicyPage() {
-  const lastUpdated = new Date().toLocaleDateString('en-US', { 
-    month: 'long', 
-    day: 'numeric', 
-    year: 'numeric' 
+  const lastUpdated = new Date().toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
   });
 
   return (
@@ -26,13 +32,15 @@ export default function PrivacyPolicyPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Navigation */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
+          <Link href="/" className="hover:text-blue-600 transition-colors">
+            Home
+          </Link>
           <span>/</span>
           <span className="text-foreground font-medium">Privacy Policy</span>
         </div>
 
         {/* Header */}
-        <div className="bg-white dark:bg-slate-900 border rounded-xl p-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border rounded-md p-6 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
@@ -42,7 +50,10 @@ export default function PrivacyPolicyPage() {
                 How we protect and handle your personal data.
               </p>
             </div>
-            <Badge variant="outline" className="w-fit h-fit py-1 px-3 border-blue-200 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-900">
+            <Badge
+              variant="outline"
+              className="w-fit h-fit py-1 px-3 border-blue-200 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-900"
+            >
               Revised: {lastUpdated}
             </Badge>
           </div>
@@ -59,8 +70,9 @@ export default function PrivacyPolicyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground leading-relaxed">
-              We focus on data minimization. We only collect what is absolutely necessary to connect you with 
-              top-tier service professionals and process your payments securely via Razorpay.
+              We focus on data minimization. We only collect what is absolutely
+              necessary to connect you with top-tier service professionals and
+              process your payments securely via Razorpay.
             </CardContent>
           </Card>
 
@@ -105,22 +117,38 @@ export default function PrivacyPolicyPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-x-8 gap-y-3">
-                 <div className="flex gap-3 text-sm">
-                    <span className="text-blue-600 font-bold tracking-tighter shrink-0">01.</span>
-                    <span className="text-slate-600 dark:text-slate-400">To match you with nearby professionals.</span>
-                 </div>
-                 <div className="flex gap-3 text-sm">
-                    <span className="text-blue-600 font-bold tracking-tighter shrink-0">02.</span>
-                    <span className="text-slate-600 dark:text-slate-400">To verify transactions via Razorpay.</span>
-                 </div>
-                 <div className="flex gap-3 text-sm">
-                    <span className="text-blue-600 font-bold tracking-tighter shrink-0">03.</span>
-                    <span className="text-slate-600 dark:text-slate-400">To send booking alerts and e-invoices.</span>
-                 </div>
-                 <div className="flex gap-3 text-sm">
-                    <span className="text-blue-600 font-bold tracking-tighter shrink-0">04.</span>
-                    <span className="text-slate-600 dark:text-slate-400">To manage refunds and reschedules.</span>
-                 </div>
+                <div className="flex gap-3 text-sm">
+                  <span className="text-blue-600 font-bold tracking-tighter shrink-0">
+                    01.
+                  </span>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    To match you with nearby professionals.
+                  </span>
+                </div>
+                <div className="flex gap-3 text-sm">
+                  <span className="text-blue-600 font-bold tracking-tighter shrink-0">
+                    02.
+                  </span>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    To verify transactions via Razorpay.
+                  </span>
+                </div>
+                <div className="flex gap-3 text-sm">
+                  <span className="text-blue-600 font-bold tracking-tighter shrink-0">
+                    03.
+                  </span>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    To send booking alerts and e-invoices.
+                  </span>
+                </div>
+                <div className="flex gap-3 text-sm">
+                  <span className="text-blue-600 font-bold tracking-tighter shrink-0">
+                    04.
+                  </span>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    To manage refunds and reschedules.
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -135,11 +163,16 @@ export default function PrivacyPolicyPage() {
               <div className="grid sm:grid-cols-2 gap-6 text-xs text-slate-400">
                 <div className="space-y-1">
                   <p className="font-semibold text-white">Encryption</p>
-                  <p>All data is encrypted in transit using SSL/TLS protocols.</p>
+                  <p>
+                    All data is encrypted in transit using SSL/TLS protocols.
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <p className="font-semibold text-white">Escrow Payment</p>
-                  <p>Payments are held securely and only finalized on service completion.</p>
+                  <p>
+                    Payments are held securely and only finalized on service
+                    completion.
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -148,14 +181,21 @@ export default function PrivacyPolicyPage() {
           {/* Contact Support */}
           <Card className="shadow-sm border-dashed text-center py-10 bg-muted/10">
             <CardContent className="space-y-4">
-               <Mail className="h-8 w-8 text-blue-600 mx-auto" />
-               <div>
-                  <h4 className="font-bold">Privacy Questions?</h4>
-                  <p className="text-xs text-muted-foreground mt-1">Contact our privacy team at support@homefixcare.com</p>
-               </div>
-               <Button asChild variant="outline" size="sm" className="rounded-full px-8">
-                  <Link href="/terms">Terms & Conditions</Link>
-               </Button>
+              <Mail className="h-8 w-8 text-blue-600 mx-auto" />
+              <div>
+                <h4 className="font-bold">Privacy Questions?</h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Contact our privacy team at support@homefixcare.com
+                </p>
+              </div>
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="rounded-full px-8"
+              >
+                <Link href="/terms">Terms & Conditions</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>

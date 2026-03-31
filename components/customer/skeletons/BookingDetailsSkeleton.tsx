@@ -52,7 +52,7 @@ export function BookingDetailsSkeleton() {
       </Card>
 
       {/* Bookings Table Skeleton */}
-      <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
+      <div className="border rounded-md overflow-hidden bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -77,7 +77,7 @@ export function BookingDetailsSkeleton() {
                 {/* Service Column */}
                 <TableCell className="py-4 px-4">
                   <div className="flex items-center gap-3">
-                    <Skeleton className="h-12 w-12 rounded-lg flex-shrink-0" />
+                    <Skeleton className="h-12 w-12 rounded-md flex-shrink-0" />
                     <div className="flex-1 min-w-0 space-y-2">
                       <Skeleton className="h-4 w-3/4" />
                       <div className="flex items-center gap-1">

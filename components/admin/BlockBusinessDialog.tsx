@@ -74,7 +74,7 @@ export function BlockBusinessDialog({
         </DialogHeader>
 
         <div className="space-y-3 py-2">
-          <div className="flex items-start gap-2 p-2 bg-destructive/10 rounded-lg border border-destructive/20">
+          <div className="flex items-start gap-2 p-2 bg-destructive/10 rounded-md border border-destructive/20">
             <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
             <div className="text-xs text-destructive">
               <p className="font-semibold mb-1">Blocking consequences:</p>

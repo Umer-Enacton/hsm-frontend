@@ -108,6 +108,7 @@ export default function AdminRevenuePage() {
           change="Platform commission from all bookings"
           icon={TrendingUp}
           trend="up"
+          variant="emerald"
         />
         <StatCard
           title="Total Bookings Value"
@@ -115,6 +116,7 @@ export default function AdminRevenuePage() {
           change="Total amount processed (for reference)"
           icon={DollarSign}
           trend="neutral"
+          variant="blue"
         />
         <StatCard
           title="Provider Payouts"
@@ -122,6 +124,7 @@ export default function AdminRevenuePage() {
           change="95% paid to service providers"
           icon={IndianRupee}
           trend="up"
+          variant="purple"
         />
         <StatCard
           title="Total Bookings"
@@ -129,6 +132,7 @@ export default function AdminRevenuePage() {
           change="All time bookings"
           icon={Calendar}
           trend="neutral"
+          variant="orange"
         />
       </div>
 

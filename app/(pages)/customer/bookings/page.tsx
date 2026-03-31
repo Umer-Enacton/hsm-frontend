@@ -525,57 +525,57 @@ export default function CustomerBookingsPage() {
 
       {/* Statistics */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Package className="h-5 w-5 text-primary" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-blue-100 dark:bg-blue-900/30">
+                <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-xs text-muted-foreground">Total Bookings</p>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.total}</p>
+                <p className="text-xs text-blue-700/70 dark:text-blue-400/70">Total Bookings</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-yellow-100 dark:bg-yellow-900/30">
                 <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.pending}</p>
-                <p className="text-xs text-muted-foreground">Pending</p>
+                <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{stats.pending}</p>
+                <p className="text-xs text-yellow-700/70 dark:text-yellow-400/70">Pending</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
-                <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-purple-100 dark:bg-purple-900/30">
+                <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.confirmed}</p>
-                <p className="text-xs text-muted-foreground">Confirmed</p>
+                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{stats.confirmed}</p>
+                <p className="text-xs text-purple-700/70 dark:text-purple-400/70">Confirmed</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
-                <Calendar className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-emerald-100 dark:bg-emerald-900/30">
+                <Calendar className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.completed}</p>
-                <p className="text-xs text-muted-foreground">Completed</p>
+                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{stats.completed}</p>
+                <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70">Completed</p>
               </div>
             </div>
           </CardContent>
@@ -722,8 +722,8 @@ export default function CustomerBookingsPage() {
       {filteredBookings.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="p-16 text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-muted/30 mb-4">
-              <Calendar className="h-7 w-7 text-muted-foreground/40" />
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-50 dark:bg-blue-950/20 mb-4">
+              <Calendar className="h-7 w-7 text-blue-400 dark:text-blue-500" />
             </div>
             <h3 className="text-lg font-semibold mb-2">No bookings found</h3>
             <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
@@ -737,10 +737,10 @@ export default function CustomerBookingsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
+        <div className="border rounded-md overflow-hidden bg-card shadow-sm">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableRow className="bg-primary/5 hover:bg-primary/5 dark:bg-primary/10 dark:hover:bg-primary/10">
                 <TableHead className="w-[1%] py-4 px-4"></TableHead>
                 <TableHead className="w-[35%] py-4 px-4">Service</TableHead>
                 <TableHead className="w-[25%] py-4 px-4">Provider</TableHead>
@@ -877,14 +877,14 @@ export default function CustomerBookingsPage() {
                             <div className="grid lg:grid-cols-2 gap-8">
                               <div className="space-y-4">
                                 <div className="flex items-center gap-2 pb-2 border-b">
-                                  <Skeleton className="h-8 w-8 rounded-lg" />
+                                  <Skeleton className="h-8 w-8 rounded-md" />
                                   <div className="space-y-1.5">
                                     <Skeleton className="h-3.5 w-24" />
                                     <Skeleton className="h-2.5 w-20" />
                                   </div>
                                 </div>
                                 <div className="flex gap-3">
-                                  <Skeleton className="w-20 h-20 rounded-lg flex-shrink-0" />
+                                  <Skeleton className="w-20 h-20 rounded-md flex-shrink-0" />
                                   <div className="flex-1 space-y-2">
                                     <Skeleton className="h-3 w-20" />
                                     <Skeleton className="h-2.5 w-full" />
@@ -892,19 +892,19 @@ export default function CustomerBookingsPage() {
                                   </div>
                                 </div>
                                 <div className="grid grid-cols-4 gap-2">
-                                  <Skeleton className="h-12 w-full rounded-lg" />
-                                  <Skeleton className="h-12 w-full rounded-lg" />
-                                  <Skeleton className="h-12 w-full rounded-lg" />
-                                  <Skeleton className="h-12 w-full rounded-lg" />
+                                  <Skeleton className="h-12 w-full rounded-md" />
+                                  <Skeleton className="h-12 w-full rounded-md" />
+                                  <Skeleton className="h-12 w-full rounded-md" />
+                                  <Skeleton className="h-12 w-full rounded-md" />
                                 </div>
                               </div>
                               <div className="space-y-6">
-                                <div className="bg-background/50 rounded-xl p-5 border space-y-3">
+                                <div className="bg-background/50 rounded-md p-5 border space-y-3">
                                   <Skeleton className="h-4 w-28" />
                                   <Skeleton className="h-4 w-full" />
                                   <Skeleton className="h-4 w-3/4" />
                                 </div>
-                                <div className="bg-background/50 rounded-xl p-5 border space-y-3">
+                                <div className="bg-background/50 rounded-md p-5 border space-y-3">
                                   <Skeleton className="h-4 w-28" />
                                   <div className="grid grid-cols-2 gap-4">
                                     <Skeleton className="h-10 w-full" />
@@ -920,7 +920,7 @@ export default function CustomerBookingsPage() {
                               {(service || fullServiceDetails) && (
                                 <div className="space-y-4">
                                   <div className="flex items-center gap-2 pb-2 border-b">
-                                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                                    <div className="h-8 w-8 rounded-md bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                                       <Package className="h-4 w-4 text-primary" />
                                     </div>
                                     <div>
@@ -937,7 +937,7 @@ export default function CustomerBookingsPage() {
                                   <div className="flex gap-3">
                                     {fullServiceDetails?.image ||
                                     service?.imageUrl ? (
-                                      <div className="rounded-lg overflow-hidden border flex-shrink-0">
+                                      <div className="rounded-md overflow-hidden border flex-shrink-0">
                                         <img
                                           src={
                                             fullServiceDetails?.image ||
@@ -953,7 +953,7 @@ export default function CustomerBookingsPage() {
                                         />
                                       </div>
                                     ) : (
-                                      <div className="rounded-lg w-20 h-20 bg-gradient-to-br from-muted/50 to-muted border flex items-center justify-center flex-shrink-0">
+                                      <div className="rounded-md w-20 h-20 bg-gradient-to-br from-muted/50 to-muted border flex items-center justify-center flex-shrink-0">
                                         <Package className="h-8 w-8 text-muted-foreground/30" />
                                       </div>
                                     )}
@@ -975,7 +975,7 @@ export default function CustomerBookingsPage() {
 
                                   {/* Compact stats grid */}
                                   <div className="grid grid-cols-4 gap-2">
-                                    <div className="bg-muted/30 rounded-lg p-5 text-center">
+                                    <div className="bg-muted/30 rounded-md p-5 text-center">
                                       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block">
                                         Price
                                       </label>
@@ -986,7 +986,7 @@ export default function CustomerBookingsPage() {
                                       </p>
                                     </div>
 
-                                    <div className="bg-muted/30 rounded-lg p-5 text-center">
+                                    <div className="bg-muted/30 rounded-md p-5 text-center">
                                       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block">
                                         Duration
                                       </label>
@@ -998,7 +998,7 @@ export default function CustomerBookingsPage() {
                                       </p>
                                     </div>
 
-                                    <div className="bg-muted/30 rounded-lg p-5 text-center">
+                                    <div className="bg-muted/30 rounded-md p-5 text-center">
                                       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block">
                                         Rating
                                       </label>
@@ -1011,7 +1011,7 @@ export default function CustomerBookingsPage() {
                                       </p>
                                     </div>
 
-                                    <div className="bg-muted/30 rounded-lg p-5 text-center">
+                                    <div className="bg-muted/30 rounded-md p-5 text-center">
                                       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block">
                                         Reviews
                                       </label>
@@ -1024,7 +1024,7 @@ export default function CustomerBookingsPage() {
                                   </div>
                                   {/* Address Details */}
                                   {address && (
-                                    <div className="bg-background/50 rounded-xl p-5 border">
+                                    <div className="bg-background/50 rounded-md p-5 border">
                                       <div className="flex items-center gap-2 pb-3 border-b">
                                         <MapPin className="h-4 w-4 text-muted-foreground" />
                                         <h4 className="font-semibold text-sm">
@@ -1049,7 +1049,7 @@ export default function CustomerBookingsPage() {
                               <div className="space-y-6">
                                 {/* Row 1: Provider Details */}
                                 {(fullServiceDetails?.provider || provider) && (
-                                  <div className="bg-background/50 rounded-xl p-5 border">
+                                  <div className="bg-background/50 rounded-md p-5 border">
                                     <div className="flex items-center gap-2 pb-3 border-b">
                                       <Building2 className="h-4 w-4 text-muted-foreground" />
                                       <h4 className="font-semibold text-sm">
@@ -1081,7 +1081,7 @@ export default function CustomerBookingsPage() {
                                 )}
 
                                 {/* Row 2: Booking Logistics */}
-                                <div className="bg-background/50 rounded-xl p-5 border">
+                                <div className="bg-background/50 rounded-md p-5 border">
                                   <div className="flex items-center gap-2 pb-3 border-b">
                                     <Calendar className="h-4 w-4 text-muted-foreground" />
                                     <h4 className="font-semibold text-sm">
@@ -1134,7 +1134,7 @@ export default function CustomerBookingsPage() {
                                 {/* Reschedule Details - Show when rescheduleOutcome exists */}
                                 {booking.rescheduleOutcome &&
                                   booking.previousSlotId && (
-                                    <div className="bg-background/50 rounded-xl p-5 border">
+                                    <div className="bg-background/50 rounded-md p-5 border">
                                       <div className="flex items-center gap-2 pb-3 border-b">
                                         <History className="h-4 w-4 text-muted-foreground" />
                                         <h4 className="font-semibold text-sm">
@@ -1142,7 +1142,7 @@ export default function CustomerBookingsPage() {
                                         </h4>
                                       </div>
                                       <div className="space-y-3 mt-4">
-                                        <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3">
+                                        <div className="bg-purple-50 dark:bg-purple-950/20 rounded-md p-3">
                                           <div className="flex items-center gap-2 text-sm">
                                             <span className="text-muted-foreground">
                                               Previous:
@@ -1206,7 +1206,7 @@ export default function CustomerBookingsPage() {
                           {/* Completion Photos (if available) */}
                           {(booking.beforePhotoUrl ||
                             booking.afterPhotoUrl) && (
-                            <div className="bg-background/50 rounded-xl p-5 border mt-5">
+                            <div className="bg-background/50 rounded-md p-5 border mt-5">
                               <div className="flex items-center gap-2 pb-3 border-b ">
                                 <ImageIcon className="h-4 w-4  text-muted-foreground" />
                                 <h4 className="font-semibold text-sm">
@@ -1222,7 +1222,7 @@ export default function CustomerBookingsPage() {
                                     <img
                                       src={booking.beforePhotoUrl}
                                       alt="Before service"
-                                      className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                                      className="w-full h-32 object-cover rounded-md border cursor-pointer hover:opacity-90 transition-opacity"
                                       onClick={() => {
                                         setLightboxImage(
                                           booking.beforePhotoUrl!,
@@ -1240,7 +1240,7 @@ export default function CustomerBookingsPage() {
                                     <img
                                       src={booking.afterPhotoUrl}
                                       alt="After service"
-                                      className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                                      className="w-full h-32 object-cover rounded-md border cursor-pointer hover:opacity-90 transition-opacity"
                                       onClick={() => {
                                         setLightboxImage(
                                           booking.afterPhotoUrl!,
@@ -1266,7 +1266,10 @@ export default function CustomerBookingsPage() {
 
                           {/* Booking History Timeline */}
                           <div className="mt-6 pt-5 border-t">
-                            <BookingHistoryTimeline bookingId={booking.id} refreshKey={dataUpdatedAt} />
+                            <BookingHistoryTimeline
+                              bookingId={booking.id}
+                              refreshKey={dataUpdatedAt}
+                            />
                           </div>
 
                           {/* Quick Actions - Using modular BookingActions component */}

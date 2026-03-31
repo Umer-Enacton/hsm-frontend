@@ -43,7 +43,7 @@ function CategoryCardSkeleton() {
 // Category list (table) skeleton
 function CategoryListSkeleton() {
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-md overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -82,7 +82,11 @@ function CategoryListSkeleton() {
   );
 }
 
-export function AdminCategoriesSkeleton({ viewMode = "grid" }: { viewMode?: "grid" | "list" }) {
+export function AdminCategoriesSkeleton({
+  viewMode = "grid",
+}: {
+  viewMode?: "grid" | "list";
+}) {
   return (
     <div className="space-y-6">
       {/* Header */}

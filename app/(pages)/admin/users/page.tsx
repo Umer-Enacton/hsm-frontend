@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Users } from "lucide-react";
+import { Users, UserCheck, Briefcase, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { getUsers, deleteUser, filterUsers } from "@/lib/user-api";
 import { getUserData } from "@/lib/auth-utils";
@@ -12,7 +12,7 @@ import { UserFilters } from "./components/UserFilters";
 import { ViewUserDialog } from "./components/ViewUserDialog";
 import { DeleteUserDialog } from "./components/DeleteUserDialog";
 import type { AppUser, UserFilters as UserFiltersType } from "@/types/user";
-import { AdminPageHeader, LoadingState, ErrorState } from "@/components/admin/shared";
+import { AdminPageHeader, StatCard, LoadingState, ErrorState } from "@/components/admin/shared";
 import { AdminUsersSkeleton } from "@/components/admin/skeletons";
 
 // Pagination constants
@@ -133,6 +133,14 @@ export default function UsersPage() {
     setCurrentPage(1);
   }, [pageSize]);
 
+  // Calculate user stats by role
+  const userStats = useMemo(() => {
+    const customers = allUsers.filter((u) => u.roleId === 1).length;
+    const providers = allUsers.filter((u) => u.roleId === 2).length;
+    const admins = allUsers.filter((u) => u.roleId === 3).length;
+    return { total: allUsers.length, customers, providers, admins };
+  }, [allUsers]);
+
   // Calculate pagination
   const totalPages = Math.ceil(filteredUsers.length / pageSize);
   const paginatedUsers = useMemo(() => {
@@ -161,6 +169,34 @@ export default function UsersPage() {
         }}
         isRefreshing={isRefreshing}
       />
+
+      {/* User Stats */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-4">
+        <StatCard
+          title="Total Users"
+          value={userStats.total}
+          icon={Users}
+          variant="blue"
+        />
+        <StatCard
+          title="Customers"
+          value={userStats.customers}
+          icon={UserCheck}
+          variant="emerald"
+        />
+        <StatCard
+          title="Providers"
+          value={userStats.providers}
+          icon={Briefcase}
+          variant="purple"
+        />
+        <StatCard
+          title="Admins"
+          value={userStats.admins}
+          icon={Shield}
+          variant="orange"
+        />
+      </div>
 
       {/* Filters */}
       <UserFilters

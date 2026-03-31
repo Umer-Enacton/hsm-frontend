@@ -135,7 +135,9 @@ export default function ProviderAvailabilityPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Availability</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Availability
+          </h1>
           <p className="text-muted-foreground">
             Manage your booking time slots
           </p>
@@ -151,7 +153,10 @@ export default function ProviderAvailabilityPage() {
               className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
             />
           </Button>
-          <Button onClick={handleOpenCreateDialog} className="whitespace-nowrap">
+          <Button
+            onClick={handleOpenCreateDialog}
+            className="whitespace-nowrap"
+          >
             <Plus className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Add Time Slot</span>
             <span className="sm:hidden">Add Slot</span>
@@ -207,7 +212,7 @@ function SlotCard({
   onDelete: (slotId: number) => void;
 }) {
   return (
-    <Card className="rounded-lg ">
+    <Card className="rounded-md ">
       <div className="p-0">
         <div className="flex items-center justify-around gap-0">
           <span className="text-base font-semibold">

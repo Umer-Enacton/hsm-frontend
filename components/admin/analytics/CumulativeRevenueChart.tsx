@@ -1,6 +1,14 @@
 "use client";
 
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import {
   Card,
   CardContent,
@@ -31,13 +39,29 @@ export function CumulativeRevenueChart({
   const formatDate = (dateStr: string) => {
     const isMonthly = dateStr.length === 7;
     if (isMonthly) {
-      const [year, month] = dateStr.split('-');
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const [year, month] = dateStr.split("-");
+      const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
       const shortYear = year.slice(-2);
       return `${monthNames[parseInt(month) - 1]} '${shortYear}`;
     } else {
-      const date = new Date(dateStr + 'T00:00:00');
-      return date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+      const date = new Date(dateStr + "T00:00:00");
+      return date.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+      });
     }
   };
 
@@ -57,9 +81,10 @@ export function CumulativeRevenueChart({
   const hasGrowth = data.length >= 2;
   const startRevenue = data[0]?.cumulativeRevenue || 0;
   const endRevenue = data[data.length - 1]?.cumulativeRevenue || 0;
-  const growth = hasGrowth && startRevenue > 0
-    ? ((endRevenue - startRevenue) / startRevenue) * 100
-    : 0;
+  const growth =
+    hasGrowth && startRevenue > 0
+      ? ((endRevenue - startRevenue) / startRevenue) * 100
+      : 0;
 
   return (
     <Card className="shadow-lg hover:shadow-xl transition-all">
@@ -85,11 +110,15 @@ export function CumulativeRevenueChart({
           >
             <defs>
               <linearGradient id="colorCumulative" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
+                <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="#e5e7eb"
+            />
             <XAxis
               dataKey="date"
               tickLine={false}
@@ -109,10 +138,13 @@ export function CumulativeRevenueChart({
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {
                   return (
-                    <div className="bg-background border rounded-lg shadow-lg p-2">
-                      <p className="text-sm font-medium">{formatDate(payload[0].payload.date)}</p>
+                    <div className="bg-background border rounded-md shadow-lg p-2">
+                      <p className="text-sm font-medium">
+                        {formatDate(payload[0].payload.date)}
+                      </p>
                       <p className="text-sm text-green-600">
-                        Cumulative Fees: {formatCurrency(payload[0].payload.cumulativeRevenue)}
+                        Cumulative Fees:{" "}
+                        {formatCurrency(payload[0].payload.cumulativeRevenue)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {payload[0].payload.cumulativeBookings} bookings
@@ -151,8 +183,11 @@ export function CumulativeRevenueChart({
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Growth</p>
-            <p className={`text-lg font-semibold ${growth >= 0 ? "text-green-600" : "text-red-600"}`}>
-              {growth >= 0 ? "+" : ""}{growth.toFixed(1)}%
+            <p
+              className={`text-lg font-semibold ${growth >= 0 ? "text-green-600" : "text-red-600"}`}
+            >
+              {growth >= 0 ? "+" : ""}
+              {growth.toFixed(1)}%
             </p>
           </div>
         </div>

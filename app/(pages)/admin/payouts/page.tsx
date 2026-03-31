@@ -293,14 +293,14 @@ export default function AdminPayoutsPage() {
       {/* Summary Cards */}
       {summary && (
         <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-          <Card className="gap-0">
+          <Card className="gap-0 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">
                 Pending to Pay
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
+              <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
                 {formatCurrency(summary.totalPendingAmount)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -310,14 +310,14 @@ export default function AdminPayoutsPage() {
             </CardContent>
           </Card>
 
-          <Card className="gap-0">
+          <Card className="gap-0 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
                 Total Paid Out
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
                 {formatCurrency(summary.totalPaidAmount)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -326,14 +326,14 @@ export default function AdminPayoutsPage() {
             </CardContent>
           </Card>
 
-          <Card className="gap-0">
+          <Card className="gap-0 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-400">
                 Providers Ready
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
                 {providersReadyToPay.length}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -342,14 +342,14 @@ export default function AdminPayoutsPage() {
             </CardContent>
           </Card>
 
-          <Card className="gap-0">
+          <Card className="gap-0 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-400">
                 Minimum Payout
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
                 {formatCurrency(summary.minimumPayoutAmount)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -366,7 +366,7 @@ export default function AdminPayoutsPage() {
           <CardHeader>
             <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                <div className="p-2 bg-blue-50 dark:bg-blue-950/30 rounded-md">
                   <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
@@ -424,7 +424,7 @@ export default function AdminPayoutsPage() {
                 providerPayouts.map((provider) => (
                   <div
                     key={provider.providerId}
-                    className={`group relative bg-card border rounded-lg p-4 transition-all ${
+                    className={`group relative bg-card border rounded-md p-4 transition-all ${
                       !provider.canProcessPayout
                         ? "bg-muted/30 opacity-60"
                         : "hover:border-primary/50 hover:shadow-sm"
@@ -433,7 +433,7 @@ export default function AdminPayoutsPage() {
                     <div className="space-y-3">
                       {/* Provider Info */}
                       <div className="flex items-start gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold">
+                        <div className="h-10 w-10 rounded-md bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold">
                           {provider.providerName.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -464,7 +464,7 @@ export default function AdminPayoutsPage() {
 
                       {/* Payment Details for Manual Transfer */}
                       {provider.canProcessPayout && provider.paymentDetails && (
-                        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
                           <div className="flex items-center gap-2 text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
                             <Wallet className="h-4 w-4" />
                             Payment Details for Transfer
@@ -531,7 +531,7 @@ export default function AdminPayoutsPage() {
                       {/* No Payment Details Warning */}
                       {provider.canProcessPayout &&
                         !provider.paymentDetails && (
-                          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm">
+                          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 text-sm">
                             <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
                               <AlertCircle className="h-4 w-4" />
                               <span>
@@ -543,12 +543,12 @@ export default function AdminPayoutsPage() {
 
                       {/* Threshold Status */}
                       {provider.canProcessPayout ? (
-                        <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 dark:bg-green-950/40 px-3 py-1.5 rounded-lg">
+                        <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 dark:bg-green-950/40 px-3 py-1.5 rounded-md">
                           <CheckCircle className="h-4 w-4" />
                           Ready to pay
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-3 py-1.5 rounded-lg">
+                        <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-3 py-1.5 rounded-md">
                           <Clock className="h-4 w-4" />
                           {formatCurrency(
                             provider.minimumPayoutAmount -
@@ -596,7 +596,7 @@ export default function AdminPayoutsPage() {
                 paid.
               </p>
               {summary.totalPaidAmount > 0 && (
-                <div className="inline-flex items-center gap-2 text-sm bg-green-50 dark:bg-green-950/40 px-4 py-2 rounded-lg">
+                <div className="inline-flex items-center gap-2 text-sm bg-green-50 dark:bg-green-950/40 px-4 py-2 rounded-md">
                   <IndianRupee className="h-4 w-4 text-green-600" />
                   <span className="font-semibold text-green-600">
                     {formatCurrency(summary.totalPaidAmount)}
@@ -616,7 +616,7 @@ export default function AdminPayoutsPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3">
-              <div className="p-2 bg-muted rounded-lg">
+              <div className="p-2 bg-muted rounded-md">
                 <CreditCard className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
@@ -659,7 +659,7 @@ export default function AdminPayoutsPage() {
               {payouts.map((payout) => (
                 <div
                   key={payout.paymentId}
-                  className="bg-card border rounded-lg p-4 hover:border-primary/50 hover:shadow-sm transition-all"
+                  className="bg-card border rounded-md p-4 hover:border-primary/50 hover:shadow-sm transition-all"
                 >
                   <div className="flex items-start gap-4">
                     <div className="flex-1 min-w-0">
@@ -734,7 +734,7 @@ export default function AdminPayoutsPage() {
 
           {selectedProvider && (
             <div className="py-4 space-y-4">
-              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+              <div className="bg-muted/50 rounded-md p-4 space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Provider:</span>
                   <span className="font-medium">
@@ -763,7 +763,7 @@ export default function AdminPayoutsPage() {
 
               {/* Payment Details for Manual Transfer */}
               {selectedProvider.paymentDetails && (
-                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-4 space-y-3">
                   <div className="flex items-center gap-2 text-sm font-semibold text-blue-800 dark:text-blue-300">
                     <Wallet className="h-4 w-4" />
                     Transfer Money To:
@@ -829,7 +829,7 @@ export default function AdminPayoutsPage() {
                 </div>
               )}
 
-              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-300">
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md p-4 text-sm text-amber-800 dark:text-amber-300">
                 <AlertCircle className="h-4 w-4 inline mr-2" />
                 <strong>IMPORTANT:</strong> Mark as "Paid"{" "}
                 <strong>ONLY AFTER</strong> you manually transfer ₹
@@ -837,7 +837,7 @@ export default function AdminPayoutsPage() {
                 provider via UPI/bank.
               </div>
 
-              <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-300">
+              <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-4 text-sm text-blue-800 dark:text-blue-300">
                 <CheckCircle className="h-4 w-4 inline mr-2" />
                 This will mark {selectedProvider.bookingCount} pending payouts
                 as paid in the system.
@@ -875,7 +875,7 @@ export default function AdminPayoutsPage() {
           </DialogHeader>
 
           <div className="py-4 space-y-4">
-            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+            <div className="bg-muted/50 rounded-md p-4 space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Total Providers:</span>
                 <span className="font-medium">
@@ -922,7 +922,7 @@ export default function AdminPayoutsPage() {
               </div>
             </div>
 
-            <div className="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-300">
+            <div className="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md p-4 text-sm text-amber-800 dark:text-amber-300">
               <AlertCircle className="h-4 w-4 inline mr-2" />
               This will process payments for {providersReadyToPay.length}{" "}
               provider{providersReadyToPay.length > 1 ? "s" : ""}. Make sure you

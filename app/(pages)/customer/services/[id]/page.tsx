@@ -169,7 +169,7 @@ export default function ServiceDetailsPage({
 
       // Load slots for this business for TODAY's date
       // IMPORTANT: Always pass date so backend checks availability per service
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
       if (serviceData?.provider?.id) {
         console.log(
           `🔄 Loading initial slots for business ${serviceData.provider.id}, service ${serviceData.id}, date ${today}`,
@@ -224,7 +224,11 @@ export default function ServiceDetailsPage({
     }
   };
 
-  const loadSlots = async (businessId: number, date?: string, serviceId?: number) => {
+  const loadSlots = async (
+    businessId: number,
+    date?: string,
+    serviceId?: number,
+  ) => {
     try {
       setIsLoadingSlots(true);
       const slotData = await getAvailableSlots(businessId, date, serviceId);
@@ -448,14 +452,16 @@ export default function ServiceDetailsPage({
       </div>
 
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {showSkeleton ? <ServiceDetailSkeleton /> : (
+        {showSkeleton ? (
+          <ServiceDetailSkeleton />
+        ) : (
           service && (
             <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
               {/* LEFT COLUMN - Service Details */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Hero Banner Section - Image with Info Overlay */}
                 <section>
-                  <div className="relative w-full aspect-[21/9] rounded-2xl overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-background border">
+                  <div className="relative w-full aspect-[21/9] rounded-md overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-background border">
                     {service.image ? (
                       <Image
                         src={service.image}
@@ -553,7 +559,7 @@ export default function ServiceDetailsPage({
                       {/* Service Features Grid */}
                       <div className="grid sm:grid-cols-2 gap-4 mt-3 pt-6 border-t">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
                             <Clock className="h-5 w-5 text-primary" />
                           </div>
                           <div>
@@ -564,7 +570,7 @@ export default function ServiceDetailsPage({
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
                             <Star className="h-5 w-5 text-primary" />
                           </div>
                           <div>
@@ -575,7 +581,7 @@ export default function ServiceDetailsPage({
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
                             <Users className="h-5 w-5 text-primary" />
                           </div>
                           <div>
@@ -586,7 +592,7 @@ export default function ServiceDetailsPage({
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
                             <MapPin className="h-5 w-5 text-primary" />
                           </div>
                           <div>
@@ -853,7 +859,7 @@ export default function ServiceDetailsPage({
 
                         {/* Slot Availability Legend */}
                         {selectedDate && (
-                          <div className="mb-3 p-2 bg-muted/30 rounded-lg">
+                          <div className="mb-3 p-2 bg-muted/30 rounded-md">
                             <div className="flex items-center gap-4 text-xs flex-wrap">
                               <div className="flex items-center gap-1.5">
                                 <div className="w-3 h-3 rounded bg-green-100 border-2 border-green-500"></div>
@@ -884,7 +890,7 @@ export default function ServiceDetailsPage({
 
                           if (!selectedDate) {
                             return (
-                              <div className="text-center py-8 bg-muted/50 rounded-lg">
+                              <div className="text-center py-8 bg-muted/50 rounded-md">
                                 <CalendarIcon className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
                                 <p className="text-sm text-muted-foreground">
                                   Select a date to see available times
@@ -897,7 +903,10 @@ export default function ServiceDetailsPage({
                             return (
                               <div className="grid grid-cols-3 gap-2">
                                 {Array.from({ length: 12 }).map((_, i) => (
-                                  <Skeleton key={i} className="h-9 rounded-lg" />
+                                  <Skeleton
+                                    key={i}
+                                    className="h-9 rounded-md"
+                                  />
                                 ))}
                               </div>
                             );
@@ -905,7 +914,7 @@ export default function ServiceDetailsPage({
 
                           if (availableSlots.length === 0) {
                             return (
-                              <div className="text-center py-8 bg-muted/50 rounded-lg">
+                              <div className="text-center py-8 bg-muted/50 rounded-md">
                                 <X className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
                                 <p className="text-sm text-muted-foreground">
                                   No time slots available for this date
@@ -929,7 +938,7 @@ export default function ServiceDetailsPage({
                                       !isBooked && handleSlotSelect(slot)
                                     }
                                     disabled={isBooked}
-                                    className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                                    className={`px-3 py-2 rounded-md border text-sm font-medium transition-all ${
                                       isSelected
                                         ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
                                         : isBooked
@@ -975,7 +984,7 @@ export default function ServiceDetailsPage({
                               <button
                                 key={address.id}
                                 onClick={() => setSelectedAddress(address)}
-                                className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
+                                className={`w-full p-4 rounded-md border-2 text-left transition-all ${
                                   selectedAddress?.id === address.id
                                     ? "border-primary bg-primary/5"
                                     : "border-border hover:border-primary/50 hover:bg-muted/50"

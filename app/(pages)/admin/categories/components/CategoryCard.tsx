@@ -51,7 +51,7 @@ export function CategoryCard({
         </div>
       ) : (
         <div className="w-full aspect-video bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+          <div className="flex h-16 w-16 items-center justify-center rounded-md bg-primary/10">
             <FolderOpen className="h-8 w-8 text-primary" />
           </div>
         </div>

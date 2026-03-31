@@ -16,7 +16,7 @@ export function BusinessStats({ stats }: BusinessStatsProps) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 animate-pulse bg-muted rounded-lg" />
+          <div key={i} className="h-24 animate-pulse bg-muted rounded-md" />
         ))}
       </div>
     );

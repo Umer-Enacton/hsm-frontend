@@ -170,6 +170,7 @@ export default function AdminDashboardPage() {
           change={`total users`}
           icon={Users}
           trend="up"
+          variant="blue"
         />
         <StatCard
           title="Total Businesses"
@@ -177,6 +178,7 @@ export default function AdminDashboardPage() {
           change={`${stats?.businesses.pending || 0} pending`}
           icon={Building2}
           trend="up"
+          variant="purple"
         />
         <StatCard
           title="Total Services"
@@ -184,6 +186,7 @@ export default function AdminDashboardPage() {
           change={`${stats?.services.active || 0} active`}
           icon={Wrench}
           trend="up"
+          variant="emerald"
         />
         <StatCard
           title="Total Bookings"
@@ -191,6 +194,7 @@ export default function AdminDashboardPage() {
           change={`${stats?.bookings.completed || 0} completed`}
           icon={Calendar}
           trend="neutral"
+          variant="orange"
         />
       </div>
 
@@ -202,6 +206,7 @@ export default function AdminDashboardPage() {
           change={`total revenue by providers`}
           icon={IndianRupee}
           trend="up"
+          variant="emerald"
         />
         <StatCard
           title="Platform Fees"
@@ -209,6 +214,7 @@ export default function AdminDashboardPage() {
           change={`your earnings`}
           icon={DollarSign}
           trend="up"
+          variant="purple"
         />
         <StatCard
           title="Pending Payouts"
@@ -216,6 +222,7 @@ export default function AdminDashboardPage() {
           change={`${stats?.payouts.pendingCount || 0} pending`}
           icon={Wallet}
           trend="neutral"
+          variant="orange"
         />
         <StatCard
           title="Min Payout"
@@ -223,6 +230,7 @@ export default function AdminDashboardPage() {
           change={`the minimum amount for payouts`}
           icon={Clock}
           trend="neutral"
+          variant="yellow"
         />
       </div>
 
@@ -233,12 +241,14 @@ export default function AdminDashboardPage() {
           value={stats?.businesses.verified || 0}
           icon={CheckCircle}
           trend="up"
+          variant="emerald"
         />
         <StatCard
           title="Pending Verification"
           value={stats?.businesses.pending || 0}
           icon={Clock}
           trend="neutral"
+          variant="orange"
         />
       </div>
 

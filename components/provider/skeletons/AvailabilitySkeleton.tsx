@@ -19,7 +19,7 @@ export function AvailabilitySkeleton({ count = 12 }: { count?: number }) {
       {/* Slots Grid */}
       <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
         {Array.from({ length: count }).map((_, i) => (
-          <Card key={i} className="rounded-lg">
+          <Card key={i} className="rounded-md">
             <div className="p-0">
               <div className="flex items-center justify-around gap-0 px-3 py-2">
                 <Skeleton className="h-5 w-16" />

@@ -31,15 +31,15 @@ export function Stage3SlotGeneration({
   }, [slotInterval, onNext]);
 
   const timeToMinutes = (timeStr: string) => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
+    const [hours, minutes] = timeStr.split(":").map(Number);
     return hours * 60 + minutes;
   };
 
   const formatTime12Hour = (timeStr: string) => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const period = hours >= 12 ? 'PM' : 'AM';
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    const period = hours >= 12 ? "PM" : "AM";
     const displayHours = hours % 12 || 12;
-    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
   };
 
   const calculateSlots = () => {
@@ -49,7 +49,8 @@ export function Stage3SlotGeneration({
 
     let breakMinutes = 0;
     if (breakTime) {
-      breakMinutes = timeToMinutes(breakTime.endTime) - timeToMinutes(breakTime.startTime);
+      breakMinutes =
+        timeToMinutes(breakTime.endTime) - timeToMinutes(breakTime.startTime);
     }
 
     const effectiveMinutes = totalMinutes - breakMinutes;
@@ -73,7 +74,7 @@ export function Stage3SlotGeneration({
     while (current < endMins) {
       const hours = Math.floor(current / 60);
       const minutes = current % 60;
-      const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      const timeStr = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 
       // Check if this time falls within break
       let isBreak = false;
@@ -115,7 +116,8 @@ export function Stage3SlotGeneration({
           <div className="flex-1">
             <h4 className="font-semibold text-sm">Your Working Hours</h4>
             <p className="text-2xl font-bold mt-1">
-              {formatTime12Hour(workingHours.startTime)} - {formatTime12Hour(workingHours.endTime)}
+              {formatTime12Hour(workingHours.startTime)} -{" "}
+              {formatTime12Hour(workingHours.endTime)}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               These hours apply to all days
@@ -132,7 +134,8 @@ export function Stage3SlotGeneration({
             <div className="flex-1">
               <h4 className="font-semibold text-sm">Break Time</h4>
               <p className="text-2xl font-bold mt-1">
-                {formatTime12Hour(breakTime.startTime)} - {formatTime12Hour(breakTime.endTime)}
+                {formatTime12Hour(breakTime.startTime)} -{" "}
+                {formatTime12Hour(breakTime.endTime)}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 No slots will be generated during this time
@@ -157,13 +160,15 @@ export function Stage3SlotGeneration({
                 "cursor-pointer border-2 transition-all p-5",
                 slotInterval === interval
                   ? "border-foreground bg-foreground/5"
-                  : "border-muted hover:border-muted-foreground/50"
+                  : "border-muted hover:border-muted-foreground/50",
               )}
               onClick={() => setSlotInterval(interval)}
             >
               <div className="text-center">
                 <div className="text-3xl font-bold">{interval}</div>
-                <div className="text-xs text-muted-foreground mt-1">minutes</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  minutes
+                </div>
                 <div className="mt-3 text-xs font-medium text-muted-foreground">
                   {interval === 15 && "Most flexible"}
                   {interval === 30 && "Balanced"}
@@ -180,25 +185,28 @@ export function Stage3SlotGeneration({
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
             <Calendar className="h-5 w-5" />
-            <Label className="text-base font-semibold">Example Slots Preview</Label>
+            <Label className="text-base font-semibold">
+              Example Slots Preview
+            </Label>
           </div>
           <p className="text-xs text-muted-foreground">
-            First {Math.min(8, generateTimeSlots().length)} slots for a typical day
+            First {Math.min(8, generateTimeSlots().length)} slots for a typical
+            day
           </p>
         </div>
 
         {/* Time Slots Grid */}
         <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
           {exampleSlots.map((slot, index) => {
-            const hours = parseInt(slot.split(':')[0]);
+            const hours = parseInt(slot.split(":")[0]);
             const isMorning = hours < 12;
 
             return (
               <div
                 key={slot}
                 className={cn(
-                  "p-3 rounded-lg border text-center transition-all",
-                  "bg-muted/30 hover:bg-muted/50 border-muted"
+                  "p-3 rounded-md border text-center transition-all",
+                  "bg-muted/30 hover:bg-muted/50 border-muted",
                 )}
               >
                 <div className="text-xs font-semibold mb-1">
@@ -228,17 +236,25 @@ export function Stage3SlotGeneration({
 
             <div className="mt-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Effective working time:</span>
-                <span className="font-semibold">{slotInfo.totalWorkingTime}</span>
+                <span className="text-sm text-muted-foreground">
+                  Effective working time:
+                </span>
+                <span className="font-semibold">
+                  {slotInfo.totalWorkingTime}
+                </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Slot interval:</span>
+                <span className="text-sm text-muted-foreground">
+                  Slot interval:
+                </span>
                 <span className="font-semibold">{slotInterval} minutes</span>
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t">
-                <span className="text-sm font-medium">Total slots per day:</span>
+                <span className="text-sm font-medium">
+                  Total slots per day:
+                </span>
                 <span className="text-3xl font-bold">
                   {slotInfo.totalSlots}
                 </span>
@@ -246,7 +262,8 @@ export function Stage3SlotGeneration({
             </div>
 
             <p className="text-xs text-muted-foreground mt-4">
-              These start times will repeat daily. Customers can book any service at these times.
+              These start times will repeat daily. Customers can book any
+              service at these times.
             </p>
           </div>
         </div>
@@ -259,7 +276,9 @@ export function Stage3SlotGeneration({
           <li>• We'll generate start times based on your settings</li>
           <li>• Start times repeat daily - no need to regenerate</li>
           <li>• Customers select a service + date + start time to book</li>
-          <li>• You can add/remove start times anytime from Availability page</li>
+          <li>
+            • You can add/remove start times anytime from Availability page
+          </li>
         </ul>
       </Card>
     </div>

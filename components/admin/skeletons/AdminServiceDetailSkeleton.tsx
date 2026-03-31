@@ -100,7 +100,7 @@ export function AdminServiceDetailSkeleton() {
             <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-3 sm:space-y-4">
               {/* Logo + name + badge */}
               <div className="flex items-start gap-2.5 sm:gap-3">
-                <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg flex-shrink-0" />
+                <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-md flex-shrink-0" />
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <Skeleton className="h-5 w-40" />
                   <Skeleton className="h-4 w-20 rounded-full" />

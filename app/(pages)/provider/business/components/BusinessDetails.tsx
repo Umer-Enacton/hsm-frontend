@@ -30,7 +30,7 @@ export function BusinessDetails({ business }: BusinessDetailsProps) {
           <h3 className="font-semibold mb-3">Contact Information</h3>
           <div className="space-y-3">
             {business.phone && (
-              <div className="flex items-center gap-3 p-3 rounded-lg border">
+              <div className="flex items-center gap-3 p-3 rounded-md border">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                   <Phone className="h-4 w-4 text-primary" />
                 </div>
@@ -47,7 +47,7 @@ export function BusinessDetails({ business }: BusinessDetailsProps) {
             )}
 
             {business.email && (
-              <div className="flex items-center gap-3 p-3 rounded-lg border">
+              <div className="flex items-center gap-3 p-3 rounded-md border">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                   <Mail className="h-4 w-4 text-primary" />
                 </div>
@@ -64,7 +64,7 @@ export function BusinessDetails({ business }: BusinessDetailsProps) {
             )}
 
             {business.address && (
-              <div className="flex items-center gap-3 p-3 rounded-lg border">
+              <div className="flex items-center gap-3 p-3 rounded-md border">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                   <MapPin className="h-4 w-4 text-primary" />
                 </div>
@@ -76,7 +76,7 @@ export function BusinessDetails({ business }: BusinessDetailsProps) {
             )}
 
             {business.website && (
-              <div className="flex items-center gap-3 p-3 rounded-lg border">
+              <div className="flex items-center gap-3 p-3 rounded-md border">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                   <Globe className="h-4 w-4 text-primary" />
                 </div>
@@ -97,23 +97,31 @@ export function BusinessDetails({ business }: BusinessDetailsProps) {
         </div>
 
         {/* Verification Info */}
-        <div className={`p-4 rounded-lg border ${
-          business.isVerified
-            ? "bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900"
-            : "bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-900"
-        }`}>
-          <h4 className={`font-semibold mb-1 ${
+        <div
+          className={`p-4 rounded-md border ${
             business.isVerified
-              ? "text-green-900 dark:text-green-100"
-              : "text-orange-900 dark:text-orange-100"
-          }`}>
-            {business.isVerified ? "✓ Verified Business" : "⏳ Pending Verification"}
+              ? "bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900"
+              : "bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-900"
+          }`}
+        >
+          <h4
+            className={`font-semibold mb-1 ${
+              business.isVerified
+                ? "text-green-900 dark:text-green-100"
+                : "text-orange-900 dark:text-orange-100"
+            }`}
+          >
+            {business.isVerified
+              ? "✓ Verified Business"
+              : "⏳ Pending Verification"}
           </h4>
-          <p className={`text-sm ${
-            business.isVerified
-              ? "text-green-800 dark:text-green-200"
-              : "text-orange-800 dark:text-orange-200"
-          }`}>
+          <p
+            className={`text-sm ${
+              business.isVerified
+                ? "text-green-800 dark:text-green-200"
+                : "text-orange-800 dark:text-orange-200"
+            }`}
+          >
             {business.isVerified
               ? "Your business is verified and active. Customers can discover and book your services."
               : "Your business is pending verification by admin. This usually takes 1-2 business days. You will be notified once verified."}

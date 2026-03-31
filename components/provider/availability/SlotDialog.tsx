@@ -79,10 +79,13 @@ export function SlotDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => {
-      onOpenChange(open);
-      if (!open) resetForm();
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        onOpenChange(open);
+        if (!open) resetForm();
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Time Slot</DialogTitle>
@@ -127,7 +130,10 @@ export function SlotDialog({
                 </Select>
 
                 {/* AM/PM */}
-                <Select value={period} onValueChange={(value: "AM" | "PM") => setPeriod(value)}>
+                <Select
+                  value={period}
+                  onValueChange={(value: "AM" | "PM") => setPeriod(value)}
+                >
                   <SelectTrigger className="w-[80px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -140,7 +146,7 @@ export function SlotDialog({
             </div>
 
             {/* Preview */}
-            <div className="rounded-lg bg-muted p-4">
+            <div className="rounded-md bg-muted p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Preview</span>
@@ -149,8 +155,9 @@ export function SlotDialog({
               <div className="flex items-start gap-2 mt-3 text-xs text-muted-foreground">
                 <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <p>
-                  Customers can book services starting at <strong>{formatPreviewTime()}</strong>.
-                  This time slot will be available every day.
+                  Customers can book services starting at{" "}
+                  <strong>{formatPreviewTime()}</strong>. This time slot will be
+                  available every day.
                 </p>
               </div>
             </div>

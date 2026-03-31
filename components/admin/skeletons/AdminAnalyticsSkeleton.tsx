@@ -21,7 +21,7 @@ export function AdminAnalyticsSkeleton() {
               <Skeleton className="h-5 w-36" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-48 w-full rounded-lg" />
+              <Skeleton className="h-48 w-full rounded-md" />
             </CardContent>
           </Card>
         ))}

@@ -2,7 +2,18 @@
 
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Star, Calendar, User, MessageSquare, Eye, EyeOff, Trash2, Reply, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Star,
+  Calendar,
+  User,
+  MessageSquare,
+  Eye,
+  EyeOff,
+  Trash2,
+  Reply,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -65,8 +76,9 @@ export function ReviewCard({ review, serviceName }: ReviewCardProps) {
     return Array.from({ length: 5 }).map((_, i) => (
       <Star
         key={i}
-        className={cn("h-4 w-4 transition-colors",
-          i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+        className={cn(
+          "h-4 w-4 transition-colors",
+          i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300",
         )}
       />
     ));
@@ -77,10 +89,14 @@ export function ReviewCard({ review, serviceName }: ReviewCardProps) {
       setIsToggling(true);
       await api.put<{ message: string; feedback: ReviewData }>(
         API_ENDPOINTS.TOGGLE_REVIEW_VISIBILITY(review.id),
-        {}
+        {},
       );
-      toast.success(review.isVisible ? "Review hidden from customers" : "Review is now visible");
-      queryClient.invalidateQueries({ queryKey: ['provider', 'reviews'] });
+      toast.success(
+        review.isVisible
+          ? "Review hidden from customers"
+          : "Review is now visible",
+      );
+      queryClient.invalidateQueries({ queryKey: ["provider", "reviews"] });
     } catch (error) {
       console.error("Error toggling visibility:", error);
       toast.error("Failed to update review visibility");
@@ -93,10 +109,10 @@ export function ReviewCard({ review, serviceName }: ReviewCardProps) {
     try {
       setIsDeleting(true);
       await api.delete<{ message: string }>(
-        API_ENDPOINTS.DELETE_REVIEW(review.id)
+        API_ENDPOINTS.DELETE_REVIEW(review.id),
       );
       toast.success("Review deleted successfully");
-      queryClient.invalidateQueries({ queryKey: ['provider', 'reviews'] });
+      queryClient.invalidateQueries({ queryKey: ["provider", "reviews"] });
     } catch (error) {
       console.error("Error deleting review:", error);
       toast.error("Failed to delete review");
@@ -107,23 +123,32 @@ export function ReviewCard({ review, serviceName }: ReviewCardProps) {
 
   const handleReplySubmit = () => {
     setShowReplyDialog(false);
-    queryClient.invalidateQueries({ queryKey: ['provider', 'reviews'] });
+    queryClient.invalidateQueries({ queryKey: ["provider", "reviews"] });
   };
 
   const comments = review.comments || "";
   const shouldTruncate = comments.length > 200;
-  const displayComments = showFullComment || !shouldTruncate ? comments : comments.slice(0, 200) + "...";
+  const displayComments =
+    showFullComment || !shouldTruncate
+      ? comments
+      : comments.slice(0, 200) + "...";
 
   return (
     <>
-      <Card className={cn(
-        "p-5 transition-all duration-300 hover:shadow-lg",
-        !review.isVisible && "border-amber-200 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20"
-      )}>
+      <Card
+        className={cn(
+          "p-5 transition-all duration-300 hover:shadow-lg",
+          !review.isVisible &&
+            "border-amber-200 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20",
+        )}
+      >
         {/* Hidden badge */}
         {!review.isVisible && (
           <div className="mb-3">
-            <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700">
+            <Badge
+              variant="outline"
+              className="bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700"
+            >
               <EyeOff className="h-3 w-3 mr-1" />
               Hidden from customers
             </Badge>
@@ -167,9 +192,11 @@ export function ReviewCard({ review, serviceName }: ReviewCardProps) {
                 "gap-1.5",
                 review.isVisible
                   ? "text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                  : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                  : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50",
               )}
-              title={review.isVisible ? "Hide from customers" : "Show to customers"}
+              title={
+                review.isVisible ? "Hide from customers" : "Show to customers"
+              }
             >
               {isToggling ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -202,7 +229,7 @@ export function ReviewCard({ review, serviceName }: ReviewCardProps) {
 
         {/* Customer Comments */}
         {comments && (
-          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+          <div className="mt-4 p-3 bg-muted/50 rounded-md">
             <div className="flex items-start gap-2">
               <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
@@ -232,7 +259,7 @@ export function ReviewCard({ review, serviceName }: ReviewCardProps) {
 
         {/* Provider Reply */}
         {review.providerReply && (
-          <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-md border border-blue-200 dark:border-blue-800">
             <div className="flex items-start gap-2">
               <Reply className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
@@ -270,7 +297,8 @@ export function ReviewCard({ review, serviceName }: ReviewCardProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this review?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The review will be permanently removed from your records.
+              This action cannot be undone. The review will be permanently
+              removed from your records.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

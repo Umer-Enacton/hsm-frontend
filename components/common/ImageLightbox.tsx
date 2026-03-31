@@ -136,7 +136,7 @@ export function ImageLightbox({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="!p-0 !bg-black/95 !border-0 overflow-hidden rounded-lg [&>button:last-child]:hidden"
+        className="!p-0 !bg-black/95 !border-0 overflow-hidden rounded-md [&>button:last-child]:hidden"
         style={{
           width: "55vw",
           height: "70vh",

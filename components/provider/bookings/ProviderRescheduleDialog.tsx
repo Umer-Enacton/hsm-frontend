@@ -229,15 +229,20 @@ export function ProviderRescheduleDialog({
       // Debug: log slot availability
       console.log(
         `📊 [ProviderRescheduleDialog] Slot availability:`,
-        slotsArray.map(s => ({ id: s.id, time: s.startTime, available: s.isAvailable, status: s.status }))
+        slotsArray.map((s) => ({
+          id: s.id,
+          time: s.startTime,
+          available: s.isAvailable,
+          status: s.status,
+        })),
       );
 
       // IMPORTANT: Ensure all slots have isAvailable and status fields
       // If backend doesn't provide them, default to available
-      slotsArray = slotsArray.map(slot => ({
+      slotsArray = slotsArray.map((slot) => ({
         ...slot,
         isAvailable: slot.isAvailable ?? true,
-        status: slot.status ?? "available"
+        status: slot.status ?? "available",
       }));
       setSlots(slotsArray);
     } catch (error: any) {
@@ -416,7 +421,7 @@ export function ProviderRescheduleDialog({
               {selectedDate && <SlotLegend />}
 
               {!selectedDate ? (
-                <div className="text-center py-8 bg-muted/50 rounded-lg">
+                <div className="text-center py-8 bg-muted/50 rounded-md">
                   <CalendarIcon className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
                   <p className="text-sm text-muted-foreground">
                     Select a date to see available times
@@ -425,7 +430,7 @@ export function ProviderRescheduleDialog({
               ) : isLoading ? (
                 <div className="grid grid-cols-3 gap-2 mt-3">
                   {Array.from({ length: 12 }).map((_, i) => (
-                    <Skeleton key={i} className="h-9 rounded-lg" />
+                    <Skeleton key={i} className="h-9 rounded-md" />
                   ))}
                 </div>
               ) : (
@@ -436,7 +441,7 @@ export function ProviderRescheduleDialog({
 
                   if (displaySlots.length === 0) {
                     return (
-                      <div className="text-center py-8 bg-muted/50 rounded-lg">
+                      <div className="text-center py-8 bg-muted/50 rounded-md">
                         <X className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
                         <p className="text-sm text-muted-foreground">
                           No time slots available for this date
@@ -452,9 +457,13 @@ export function ProviderRescheduleDialog({
                         const isSelected = selectedSlot?.id === slot.id;
                         // Normalize both dates to YYYY-MM-DD for comparison
                         const normalizedCurrentDate = currentBookingDate
-                          ? new Date(currentBookingDate).toISOString().split("T")[0]
+                          ? new Date(currentBookingDate)
+                              .toISOString()
+                              .split("T")[0]
                           : "";
-                        const isCurrent = slot.id === currentSlotId && selectedDate === normalizedCurrentDate;
+                        const isCurrent =
+                          slot.id === currentSlotId &&
+                          selectedDate === normalizedCurrentDate;
                         const isDisabled = booked || isCurrent;
 
                         return (
@@ -463,7 +472,7 @@ export function ProviderRescheduleDialog({
                             type="button"
                             onClick={() => !isDisabled && setSelectedSlot(slot)}
                             disabled={isDisabled}
-                            className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all relative ${
+                            className={`px-3 py-2 rounded-md border text-sm font-medium transition-all relative ${
                               isSelected
                                 ? "bg-black dark:bg-white text-white dark:text-black shadow-lg"
                                 : isCurrent
@@ -546,7 +555,7 @@ export function ProviderRescheduleDialog({
 
             {/* Selected Summary */}
             {selectedDate && selectedSlot && (
-              <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+              <div className="bg-purple-50 dark:bg-purple-950/20 rounded-md p-3 border border-purple-200 dark:border-purple-800">
                 <p className="text-sm font-medium mb-1 text-purple-900 dark:text-purple-100">
                   New Schedule:
                 </p>
@@ -566,7 +575,7 @@ export function ProviderRescheduleDialog({
             )}
 
             {/* Info message */}
-            <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+            <div className="bg-purple-50 dark:bg-purple-950/20 rounded-md p-3 border border-purple-200 dark:border-purple-800">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 text-purple-600 dark:text-purple-400 mt-0.5" />
                 <div className="text-xs text-purple-700 dark:text-purple-300">

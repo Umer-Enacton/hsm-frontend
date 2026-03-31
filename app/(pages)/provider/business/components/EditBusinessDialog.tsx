@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +18,10 @@ import { StateCityPicker } from "@/components/common/StateCityPicker";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { api, API_ENDPOINTS } from "@/lib/api";
-import { uploadBusinessLogo, uploadBusinessCoverImage } from "@/lib/provider/api";
+import {
+  uploadBusinessLogo,
+  uploadBusinessCoverImage,
+} from "@/lib/provider/api";
 import type { Business } from "@/types/provider";
 
 interface EditBusinessDialogProps {
@@ -62,7 +71,9 @@ export function EditBusinessDialog({
     const fetchCategories = async () => {
       setIsLoadingCategories(true);
       try {
-        const response = await api.get<{ categories: any[] }>(API_ENDPOINTS.CATEGORIES);
+        const response = await api.get<{ categories: any[] }>(
+          API_ENDPOINTS.CATEGORIES,
+        );
         setCategories(response.categories || []);
       } catch (error) {
         console.error("Failed to fetch categories:", error);
@@ -174,7 +185,9 @@ export function EditBusinessDialog({
       if (formData.coverImage instanceof File) {
         console.log("Uploading new cover image...");
         try {
-          const coverResult = await uploadBusinessCoverImage(formData.coverImage);
+          const coverResult = await uploadBusinessCoverImage(
+            formData.coverImage,
+          );
           coverImageUrl = coverResult.url;
           console.log("Cover image uploaded successfully:", coverImageUrl);
         } catch (error) {
@@ -210,7 +223,11 @@ export function EditBusinessDialog({
           <DialogTitle>Edit Business Profile</DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="basic" className="w-full" onValueChange={(value) => setActiveTab(value as "basic" | "images")}>
+        <Tabs
+          defaultValue="basic"
+          className="w-full"
+          onValueChange={(value) => setActiveTab(value as "basic" | "images")}
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
             <TabsTrigger value="images" disabled={!isValid}>
@@ -244,14 +261,20 @@ export function EditBusinessDialog({
               {isLoadingCategories ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm text-muted-foreground">Loading categories...</span>
+                  <span className="text-sm text-muted-foreground">
+                    Loading categories...
+                  </span>
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {categories.map((category) => (
                     <Badge
                       key={category.id}
-                      variant={formData.categoryId === category.id ? "default" : "outline"}
+                      variant={
+                        formData.categoryId === category.id
+                          ? "default"
+                          : "outline"
+                      }
                       className="cursor-pointer transition-colors hover:bg-primary/80"
                       onClick={() =>
                         handleCategorySelect(category.id, category.name)
@@ -275,7 +298,9 @@ export function EditBusinessDialog({
               <Textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 placeholder="Tell customers about your business, services offered, and what makes you unique..."
                 rows={4}
                 className={`resize-none ${errors.description ? "border-destructive" : ""}`}
@@ -363,19 +388,27 @@ export function EditBusinessDialog({
               </p>
             </div>
 
-            <div className="rounded-lg border bg-muted/30 p-4">
+            <div className="rounded-md border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">
-                💡 Images will be uploaded securely. Any unsaved changes will be lost when you close this dialog.
+                💡 Images will be uploaded securely. Any unsaved changes will be
+                lost when you close this dialog.
               </p>
             </div>
           </TabsContent>
         </Tabs>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUploading}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isUploading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!isValid || isSaving || isUploading}>
+          <Button
+            onClick={handleSave}
+            disabled={!isValid || isSaving || isUploading}
+          >
             {isSaving || isUploading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

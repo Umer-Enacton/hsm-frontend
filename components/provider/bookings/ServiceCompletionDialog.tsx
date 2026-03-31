@@ -1,9 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Clock, Upload, Image as ImageIcon, CheckCircle, AlertCircle, RefreshCw, Loader2 } from "lucide-react";
+import {
+  Clock,
+  Upload,
+  Image as ImageIcon,
+  CheckCircle,
+  AlertCircle,
+  RefreshCw,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { api, getApiBaseUrl } from "@/lib/api";
@@ -41,8 +55,12 @@ export function ServiceCompletionDialog({
   const [beforePhotoFile, setBeforePhotoFile] = useState<File | null>(null);
   const [afterPhotoFile, setAfterPhotoFile] = useState<File | null>(null);
   // Store preview URLs (local blob URLs)
-  const [beforePhotoPreview, setBeforePhotoPreview] = useState<string | null>(null);
-  const [afterPhotoPreview, setAfterPhotoPreview] = useState<string | null>(null);
+  const [beforePhotoPreview, setBeforePhotoPreview] = useState<string | null>(
+    null,
+  );
+  const [afterPhotoPreview, setAfterPhotoPreview] = useState<string | null>(
+    null,
+  );
   const [otpExpiry, setOtpExpiry] = useState<Date | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -80,7 +98,8 @@ export function ServiceCompletionDialog({
     formData.append("photo", file);
 
     const apiUrl = getApiBaseUrl();
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
 
     const response = await fetch(`${apiUrl}/completion-photo`, {
       method: "POST",
@@ -92,7 +111,9 @@ export function ServiceCompletionDialog({
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: "Upload failed" }));
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Upload failed" }));
       throw new Error(errorData.message || "Upload failed");
     }
 
@@ -158,7 +179,7 @@ export function ServiceCompletionDialog({
           setErrorMessage(error.message || "Failed to send OTP");
           setState("error");
         },
-      }
+      },
     );
   };
 
@@ -216,7 +237,7 @@ export function ServiceCompletionDialog({
           onError: (error: any) => {
             setErrorMessage(error.message || "Failed to verify OTP");
           },
-        }
+        },
       );
     } catch (error: any) {
       setErrorMessage(error.message || "Failed to upload photos");
@@ -283,21 +304,26 @@ export function ServiceCompletionDialog({
   const isVerifying = verifyOTP.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={(open) => {
-      if (!open) resetState();
-      onOpenChange(open);
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) resetState();
+        onOpenChange(open);
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {state === "completed" ? "Service Completed! 🎉" : "Complete Service"}
+            {state === "completed"
+              ? "Service Completed! 🎉"
+              : "Complete Service"}
           </DialogTitle>
           <DialogDescription>
             {state === "completed"
               ? "The service has been successfully completed and verified."
               : booking
-              ? `${booking.serviceName} • ${booking.customerName}`
-              : "Loading booking details..."}
+                ? `${booking.serviceName} • ${booking.customerName}`
+                : "Loading booking details..."}
           </DialogDescription>
         </DialogHeader>
 
@@ -306,7 +332,9 @@ export function ServiceCompletionDialog({
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 mb-4">
               <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
             </div>
-            <p className="text-lg font-semibold">Booking Completed Successfully</p>
+            <p className="text-lg font-semibold">
+              Booking Completed Successfully
+            </p>
             <p className="text-sm text-muted-foreground mt-2">
               The customer has been notified.
             </p>
@@ -325,7 +353,7 @@ export function ServiceCompletionDialog({
                   </p>
                   <div className="grid grid-cols-2 gap-4">
                     {/* Before Photo */}
-                    <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
+                    <div className="border-2 border-dashed rounded-md p-4 text-center hover:border-primary/50 transition-colors">
                       {beforePhotoPreview ? (
                         <div className="relative">
                           <img
@@ -356,7 +384,9 @@ export function ServiceCompletionDialog({
                           />
                           <div className="flex flex-col items-center">
                             <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
-                            <span className="text-xs text-muted-foreground">Before</span>
+                            <span className="text-xs text-muted-foreground">
+                              Before
+                            </span>
                             <span className="text-xs text-primary">Upload</span>
                           </div>
                         </label>
@@ -364,7 +394,7 @@ export function ServiceCompletionDialog({
                     </div>
 
                     {/* After Photo */}
-                    <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
+                    <div className="border-2 border-dashed rounded-md p-4 text-center hover:border-primary/50 transition-colors">
                       {afterPhotoPreview ? (
                         <div className="relative">
                           <img
@@ -395,7 +425,9 @@ export function ServiceCompletionDialog({
                           />
                           <div className="flex flex-col items-center">
                             <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
-                            <span className="text-xs text-muted-foreground">After</span>
+                            <span className="text-xs text-muted-foreground">
+                              After
+                            </span>
                             <span className="text-xs text-primary">Upload</span>
                           </div>
                         </label>
@@ -442,10 +474,10 @@ export function ServiceCompletionDialog({
             {state === "otp_sent" && (
               <div className="space-y-6">
                 {/* Instructions */}
-                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-center">
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-4 text-center">
                   <p className="text-sm text-blue-800 dark:text-blue-300">
-                    A 6-digit verification code has been sent to the customer's email.
-                    Please enter the code provided by the customer.
+                    A 6-digit verification code has been sent to the customer's
+                    email. Please enter the code provided by the customer.
                   </p>
                 </div>
 
@@ -466,7 +498,7 @@ export function ServiceCompletionDialog({
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
                         disabled={isVerifying}
-                        className="w-12 h-14 text-center text-2xl font-bold border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-12 h-14 text-center text-2xl font-bold border rounded-md focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     ))}
                   </div>
@@ -476,7 +508,11 @@ export function ServiceCompletionDialog({
                 {timeRemaining && (
                   <div className="flex items-center justify-center gap-2 text-sm">
                     <Clock className="h-4 w-4" />
-                    <span className={timeRemaining === "Expired" ? "text-red-500" : ""}>
+                    <span
+                      className={
+                        timeRemaining === "Expired" ? "text-red-500" : ""
+                      }
+                    >
                       Expires in: {timeRemaining}
                     </span>
                   </div>
@@ -484,7 +520,7 @@ export function ServiceCompletionDialog({
 
                 {/* Error Message */}
                 {errorMessage && (
-                  <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-start gap-2">
+                  <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md p-3 flex items-start gap-2">
                     <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                     <span className="text-sm text-red-800 dark:text-red-300">
                       {errorMessage}
@@ -500,7 +536,9 @@ export function ServiceCompletionDialog({
                     disabled={resendOTP.isPending}
                     className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {resendOTP.isPending ? "Sending..." : "Didn't receive code? Resend OTP"}
+                    {resendOTP.isPending
+                      ? "Sending..."
+                      : "Didn't receive code? Resend OTP"}
                   </button>
                 </div>
 
@@ -525,16 +563,22 @@ export function ServiceCompletionDialog({
             {/* Error State */}
             {state === "error" && (
               <div className="space-y-4">
-                <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3">
+                <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md p-4 flex items-start gap-3">
                   <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-medium text-red-800 dark:text-red-300">Error</p>
+                    <p className="font-medium text-red-800 dark:text-red-300">
+                      Error
+                    </p>
                     <p className="text-sm text-red-700 dark:text-red-400 mt-1">
                       {errorMessage}
                     </p>
                   </div>
                 </div>
-                <Button onClick={() => setState("idle")} variant="outline" className="w-full">
+                <Button
+                  onClick={() => setState("idle")}
+                  variant="outline"
+                  className="w-full"
+                >
                   Try Again
                 </Button>
               </div>

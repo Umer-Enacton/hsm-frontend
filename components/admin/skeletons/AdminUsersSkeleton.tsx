@@ -50,7 +50,7 @@ function UserCardSkeleton() {
 // User list table skeleton
 function UserTableSkeleton() {
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-md overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -100,7 +100,11 @@ function UserTableSkeleton() {
   );
 }
 
-export function AdminUsersSkeleton({ viewMode = "list" }: { viewMode?: "grid" | "list" }) {
+export function AdminUsersSkeleton({
+  viewMode = "list",
+}: {
+  viewMode?: "grid" | "list";
+}) {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -110,6 +114,23 @@ export function AdminUsersSkeleton({ viewMode = "list" }: { viewMode?: "grid" | 
           <Skeleton className="h-4 w-48 sm:w-64" />
         </div>
         <Skeleton className="h-9 w-9 rounded-md" />
+      </div>
+
+      {/* Stat Cards */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="p-2">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-7 w-12" />
+                </div>
+                <Skeleton className="h-8 w-8 rounded-md" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Filters */}
