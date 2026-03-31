@@ -20,34 +20,20 @@ import {
   Sparkles,
   Menu,
   CreditCard,
-  Target,
+  Users,
+  ChevronRight,
+  Quote,
+  Play,
+  Award,
+  TrendingUp,
+  ArrowUpRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Sheet,
   SheetContent,
@@ -59,13 +45,6 @@ import { api, API_ENDPOINTS } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 // Types
-interface Category {
-  id: number;
-  name: string;
-  description: string;
-  image: string | null;
-}
-
 interface Service {
   id: number;
   name: string;
@@ -84,59 +63,18 @@ interface Service {
   };
 }
 
-const CATEGORY_IMAGES: Record<string, string> = {
-  Electrical: "/landing/cat_electrical.png",
-  Plumbing: "/landing/cat_plumbing.png",
-  Cleaning: "/landing/cat_cleaning.png",
-  "AC Repair": "/landing/cat_ac_repair.png",
-  Painting: "/landing/cat_painting.png",
-};
-
-const CATEGORY_ICONS: Record<string, React.ElementType> = {
-  Electrical: Zap,
-  Plumbing: Wrench,
-  Cleaning: Sparkles,
-  "AC Repair": Clock,
-  Painting: Sparkles,
-  General: Star,
-};
-
 export default function LandingPage() {
   const router = useRouter();
-  const [categories, setCategories] = useState<Category[]>([]);
   const [featuredServices, setFeaturedServices] = useState<Service[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
-  const [isLoadingServices, setIsLoadingServices] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Scroll handler for glassmorphism effect
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Fetch categories
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await api.get<{ categories: Category[] }>(
-          API_ENDPOINTS.CATEGORIES,
-        );
-        setCategories(response.categories?.slice(0, 8) || []);
-      } catch (error) {
-        console.error("Error loading categories:", error);
-      } finally {
-        setIsLoadingCategories(false);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  // Fetch featured services
   useEffect(() => {
     const fetchServices = async () => {
       try {
@@ -146,8 +84,6 @@ export default function LandingPage() {
         setFeaturedServices(response.services?.slice(0, 6) || []);
       } catch (error) {
         console.error("Error loading services:", error);
-      } finally {
-        setIsLoadingServices(false);
       }
     };
     fetchServices();
@@ -161,145 +97,107 @@ export default function LandingPage() {
     }
   };
 
+  const categories = [
+    { name: "Cleaning", desc: "Home & office deep cleaning", icon: Sparkles, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200 dark:border-blue-800" },
+    { name: "Electrical", desc: "Wiring, fixtures & repairs", icon: Zap, color: "text-yellow-600 bg-yellow-50 dark:bg-yellow-950/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800" },
+    { name: "Plumbing", desc: "Pipes, leaks & installations", icon: Wrench, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800" },
+    { name: "Painting", desc: "Interior & exterior painting", icon: Sparkles, color: "text-purple-600 bg-purple-50 dark:bg-purple-950/30 dark:text-purple-400 border-purple-200 dark:border-purple-800" },
+    { name: "Carpentry", desc: "Furniture & woodwork", icon: Wrench, color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30 dark:text-orange-400 border-orange-200 dark:border-orange-800" },
+    { name: "Roofing", desc: "Roof repair & waterproofing", icon: Shield, color: "text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400 border-red-200 dark:border-red-800" },
+  ];
+
   return (
-    <div className="min-h-screen bg-background selection:bg-primary/10">
-      {/* Navigation - Shadcn Components */}
+    <div className="min-h-screen bg-background">
+      {/* ───── Navigation ───── */}
       <header
         className={cn(
-          "fixed top-0 z-100 w-full transition-all duration-300 px-4 md:px-6",
+          "fixed top-0 z-50 w-full transition-all duration-300",
           isScrolled
-            ? "py-3 bg-background/80 backdrop-blur-xl border-b border-border/50"
-            : "py-6 bg-transparent",
+            ? "bg-background/95 backdrop-blur-md border-b shadow-sm"
+            : "bg-transparent",
         )}
       >
-        <div className="container mx-auto flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2 group transition-transform active:scale-95"
-          >
-            <div className="relative h-10 w-10 flex items-center justify-center rounded-md bg-primary text-primary-foreground shadow-lg shadow-primary/20 transition-all group-hover:shadow-primary/40 group-hover:-translate-y-0.5">
+        <div className="container max-w-7xl mx-auto flex h-16 items-center justify-between px-4">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center overflow-hidden">
               <Image
                 src="/homefixcareicon-removebg-preview-removebg-preview.png"
                 alt="HomeFixCare"
-                width={32}
-                height={32}
-                className="h-8 w-8 brightness-0 invert"
+                width={36}
+                height={36}
+                className="h-9 w-9 object-cover"
               />
             </div>
-            <span className="text-xl font-black tracking-tight hidden sm:block">
+            <span className="text-lg font-bold tracking-tight hidden sm:block">
               HomeFixCare
             </span>
           </Link>
 
-          {/* Desktop Navigation Menu */}
-          <NavigationMenu className="hidden lg:flex">
-            <NavigationMenuList className="gap-2">
-              <NavigationMenuItem>
-                <NavigationMenuLink
-                  asChild
-                  className={navigationMenuTriggerStyle()}
-                >
-                  <Link href="#services">Services</Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuLink
-                  asChild
-                  className={navigationMenuTriggerStyle()}
-                >
-                  <Link href="#how-it-works">How it Works</Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuLink
-                  asChild
-                  className={navigationMenuTriggerStyle()}
-                >
-                  <Link href="#benefits">Benefits</Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuLink
-                  asChild
-                  className={navigationMenuTriggerStyle()}
-                >
-                  <Link href="/register?role=provider">Become a Pro</Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
+          <nav className="hidden md:flex items-center gap-1">
+            {[
+              { label: "Services", href: "#services" },
+              { label: "How it Works", href: "#how-it-works" },
+              { label: "Why Us", href: "#why-us" },
+              { label: "Become a Pro", href: "/register?role=provider" },
+            ].map((item) => (
+              <Link key={item.label} href={item.href} className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors">
+                {item.label}
+              </Link>
+            ))}
+          </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link href="/login" className="hidden sm:block">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="rounded-md px-5 font-bold hover:bg-muted"
-              >
+              <Button variant="ghost" size="sm">
                 Sign In
               </Button>
             </Link>
             <Link href="/register">
-              <Button
-                size="sm"
-                className="rounded-md px-6 font-bold shadow-lg shadow-primary/20 transition-all hover:shadow-primary/40 active:scale-95"
-              >
-                Join Now
-              </Button>
+              <Button size="sm">Get Started</Button>
             </Link>
 
-            {/* Mobile Menu Sheet */}
+            {/* Mobile Menu */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="lg:hidden rounded-md"
-                >
-                  <Menu className="h-6 w-6" />
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="flex flex-col">
-                <SheetHeader className="mb-8 border-b pb-4">
+              <SheetContent side="right" className="w-72">
+                <SheetHeader className="mb-6">
                   <SheetTitle className="flex items-center gap-2">
-                    <div className="h-8 w-8 flex items-center justify-center rounded-md bg-primary text-primary-foreground">
-                      <Image
-                        src="/homefixcareicon-removebg-preview-removebg-preview.png"
-                        alt="HomeFixCare"
-                        width={24}
-                        height={24}
-                        className="h-6 w-6 brightness-0 invert"
-                      />
-                    </div>
-                    <span className="text-xl font-black">HomeFixCare</span>
+                    <Image
+                      src="/homefixcareicon-removebg-preview-removebg-preview.png"
+                      alt="HomeFixCare"
+                      width={28}
+                      height={28}
+                      className="h-7 w-7"
+                    />
+                    HomeFixCare
                   </SheetTitle>
                 </SheetHeader>
-                <div className="flex flex-col gap-4">
-                  {["Services", "How it Works", "Benefits", "Become a Pro"].map(
+                <div className="flex flex-col gap-1">
+                  {["Services", "How it Works", "Why Us", "Become a Pro"].map(
                     (item) => (
                       <Link
                         key={item}
                         href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                        className="text-lg font-bold px-2 py-2 hover:bg-muted rounded-md transition-colors"
+                        className="px-3 py-2.5 text-sm font-medium rounded-md hover:bg-muted transition-colors"
                       >
                         {item}
                       </Link>
                     ),
                   )}
                 </div>
-                <div className="mt-auto pt-8 border-t space-y-4">
-                  <Link href="/login" className="block w-full">
-                    <Button
-                      variant="outline"
-                      className="w-full rounded-md font-bold"
-                    >
-                      Login
+                <Separator className="my-4" />
+                <div className="space-y-2">
+                  <Link href="/login" className="block">
+                    <Button variant="outline" className="w-full">
+                      Sign In
                     </Button>
                   </Link>
-                  <Link href="/register" className="block w-full">
-                    <Button className="w-full rounded-md font-bold">
-                      Register
-                    </Button>
+                  <Link href="/register" className="block">
+                    <Button className="w-full">Get Started</Button>
                   </Link>
                 </div>
               </SheetContent>
@@ -308,213 +206,155 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center justify-center pt-20 pb-16 overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/landing/hero_bg.png"
-            alt="Premium Home Interior"
-            fill
-            className="object-cover opacity-20 dark:opacity-10 scale-105"
-            priority
-          />
-          <div className="absolute inset-0 bg-linear-to-b from-background via-background/80 to-background" />
-        </div>
+      {/* ───── Hero Section ───── */}
+      <section className="relative pt-12 pb-8 md:pt-20 md:pb-12 overflow-hidden">
+        {/* Subtle gradient background */}
+        <div className="absolute inset-0 bg-linear-to-b from-primary/3 via-transparent to-transparent" />
+        <div className="absolute top-20 left-1/4 h-72 w-72 bg-primary/5 rounded-full blur-[100px]" />
+        <div className="absolute bottom-10 right-1/4 h-64 w-64 bg-blue-500/5 rounded-full blur-[100px]" />
 
-        <div className="absolute top-1/4 left-1/4 h-64 w-64 bg-primary/5 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 h-96 w-96 bg-primary/5 rounded-full blur-[120px] animate-pulse delay-700" />
+        <div className="container max-w-5xl mx-auto px-4 relative z-10">
+          <div className="text-center space-y-6">
+            <Badge
+              variant="secondary"
+              className="px-4 py-1.5 text-xs font-semibold"
+            >
+              <Sparkles className="h-3.5 w-3.5 mr-1.5 text-primary" />
+              Trusted by 25,000+ homeowners
+            </Badge>
 
-        <div className="container relative z-10 mx-auto px-4 text-center">
-          <Badge
-            variant="outline"
-            className="px-4 py-1.5 rounded-md bg-primary/5 border-primary/10 mb-8 font-black tracking-widest uppercase animate-in fade-in slide-in-from-bottom-4 duration-700"
-          >
-            <Sparkles className="h-4 w-4 text-primary mr-2" />
-            The Gold Standard of Home Services
-          </Badge>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]">
+              Expert Home Services,{" "}
+              <span className="text-primary">Simplified</span>
+            </h1>
 
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-8 max-w-5xl mx-auto leading-[0.95]">
-            Redefining <br />
-            <span className="text-primary italic">Expert</span> Home Care
-          </h1>
+            <p className="max-w-2xl mx-auto text-lg text-muted-foreground">
+              Connect with verified professionals for all your home maintenance
+              needs. Book in minutes, get it done right.
+            </p>
 
-          <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground mb-12 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-            Connect with elite, background-verified professionals tailored to
-            your home&apos;s unique requirements. Punctual, precise, and
-            premium.
-          </p>
-
-          {/* Search Bar - Integrated with Input and Button */}
-          <div className="max-w-3xl mx-auto w-full group animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            <div className="relative flex items-center p-2 rounded-md bg-card border border-border/50 shadow-2xl shadow-primary/5 focus-within:border-primary/50 transition-all duration-300">
-              <div className="grow relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input
-                  type="text"
-                  placeholder="What can we help you with today?"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="h-14 pl-14 pr-4 bg-transparent border-none text-lg font-medium ring-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 w-full"
-                />
+            {/* Search */}
+            <div className="max-w-2xl mx-auto pt-2">
+              <div className="flex items-center gap-2 p-1.5 rounded-md border bg-card shadow-lg">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="What service are you looking for?"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                    className="pl-10 h-12 border-none bg-transparent focus-visible:ring-0 text-base"
+                  />
+                </div>
+                <Button
+                  onClick={handleSearch}
+                  className="h-12 px-6 shrink-0"
+                >
+                  Search
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
-              <Button
-                onClick={handleSearch}
-                className="h-14 px-8 rounded-md font-black text-base transition-all active:scale-95 flex gap-2"
-              >
-                Search
-                <ArrowRight className="h-5 w-5" />
-              </Button>
-            </div>
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <span className="text-sm font-semibold text-muted-foreground pt-1 pr-2">
-                Trending:
-              </span>
-              {["Deep Cleaning", "AC Service", "Plumbing", "Home Painting"].map(
-                (term) => (
-                  <button
-                    key={term}
-                    onClick={() => {
-                      setSearchQuery(term);
-                      router.push(
-                        `/customer/services?search=${encodeURIComponent(term)}`,
-                      );
-                    }}
-                    className="px-4 py-1.5 rounded-md text-xs font-bold border border-border/50 bg-muted/50 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all active:scale-95"
-                  >
-                    {term}
-                  </button>
-                ),
-              )}
+              <div className="flex flex-wrap justify-center gap-2 mt-4">
+                <span className="text-xs text-muted-foreground pt-0.5">
+                  Popular:
+                </span>
+                {["Deep Cleaning", "AC Service", "Plumbing", "Painting"].map(
+                  (term) => (
+                    <button
+                      key={term}
+                      onClick={() => {
+                        setSearchQuery(term);
+                        router.push(
+                          `/customer/services?search=${encodeURIComponent(term)}`,
+                        );
+                      }}
+                      className="px-3 py-1 rounded-md text-xs font-medium border bg-muted/50 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
+                    >
+                      {term}
+                    </button>
+                  ),
+                )}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section with Cards */}
-      <section className="py-12 border-y bg-muted/20">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+      {/* ───── Stats Strip ───── */}
+      <section className="border-y bg-muted/30 py-6 md:py-8">
+        <div className="container max-w-5xl mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { label: "Verified Specialists", value: "1,200+" },
-              { label: "Elite Services Done", value: "25k+" },
-              { label: "Client Satisfaction", value: "99.8%" },
-              { label: "Response Time", value: "< 2 Hrs" },
+              { value: "1,200+", label: "Verified Pros", icon: Users, color: "text-blue-600" },
+              { value: "25k+", label: "Jobs Completed", icon: CheckCircle, color: "text-emerald-600" },
+              { value: "99.8%", label: "Satisfaction", icon: TrendingUp, color: "text-purple-600" },
+              { value: "< 2 Hrs", label: "Avg Response", icon: Clock, color: "text-orange-600" },
             ].map((stat) => (
-              <Card
-                key={stat.label}
-                className="border-none bg-transparent shadow-none text-center"
-              >
-                <CardContent className="p-0 group">
-                  <p className="text-4xl font-black tracking-tight mb-1 group-hover:scale-105 transition-transform">
-                    {stat.value}
-                  </p>
-                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-                    {stat.label}
-                  </p>
-                </CardContent>
-              </Card>
+              <div key={stat.label} className="flex items-center gap-3">
+                <div className={cn("h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0", stat.color)}>
+                  <stat.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold tracking-tight">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
+                </div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Categories Section - AspectRatio & Cards */}
-      <section id="services" className="py-24 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-            <div className="max-w-2xl">
-              <Badge variant="secondary" className="px-4 py-1 rounded-md mb-4">
-                <Wrench className="h-3 w-3 mr-2" />
-                Specialized Verticals
+      {/* ───── Service Categories ───── */}
+      <section id="services" className="py-8 md:py-12">
+        <div className="container max-w-6xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-3 md:mb-4 gap-2">
+            <div>
+              <Badge variant="outline" className="mb-3">
+                <Wrench className="h-3 w-3 mr-1.5" />
+                Categories
               </Badge>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tight">
-                Crafted for Every Need
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+                Services We Offer
               </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                From intricate electrical work to meticulous deep cleaning, our
-                specialists represent the pinnacle of their respective crafts.
+              <p className="mt-2 text-muted-foreground max-w-lg">
+                Browse our wide range of home services performed by vetted,
+                insured professionals.
               </p>
             </div>
             <Link href="/customer/services">
-              <Button
-                variant="outline"
-                className="rounded-md px-8 font-black border-2"
-              >
-                View Full Catalog
+              <Button variant="outline">
+                View All
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Cleaning",
-                desc: "Home & office cleaning",
-                image: "/landing/cat_cleaning.png",
-                icon: Sparkles,
-              },
-              {
-                name: "Electrical",
-                desc: "Electrical services",
-                image: "/landing/cat_electrical.png",
-                icon: Zap,
-              },
-              {
-                name: "Painting",
-                desc: "Painting Services",
-                image: "/landing/cat_painting.png",
-                icon: Sparkles,
-              },
-              {
-                name: "Carpentary",
-                desc: "Carpentary services",
-                image: "/landing/cat_carpentary.png",
-                icon: Wrench,
-              },
-              {
-                name: "Roofing",
-                desc: "Roofing Services",
-                image: "/landing/cat_roofing.png",
-                icon: Shield,
-              },
-              {
-                name: "Plumbing",
-                desc: "Plumbing & water services",
-                image: "/landing/cat_plumbing.png",
-                icon: Wrench,
-              },
-            ].map((category, idx) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {categories.map((cat) => (
               <Link
-                key={idx}
-                href={`/customer/services?search=${category.name}`}
-                className="group p-0"
+                key={cat.name}
+                href={`/customer/services?search=${cat.name}`}
               >
-                <Card className="relative h-[360px] rounded-md overflow-hidden border border-border/50 transition-all hover:border-primary/50 bg-card p-0">
-                  <AspectRatio ratio={1} className="h-full">
-                    <Image
-                      src={category.image}
-                      alt={category.name}
-                      fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/30 to-transparent transition-opacity group-hover:opacity-100" />
-                    <div className="absolute inset-0 flex flex-col justify-end p-8 text-white">
-                      <div className="h-12 w-12 rounded-md bg-white/10 backdrop-blur-md flex items-center justify-center mb-4 transition-transform group-hover:-translate-y-1">
-                        <category.icon className="h-6 w-6" />
-                      </div>
-                      <p className="text-xs font-black uppercase tracking-widest text-white/60 mb-1">
-                        {category.name}
-                      </p>
-                      <h3 className="text-3xl font-black mb-2 leading-none">
-                        {category.name}
+                <Card className="group hover:border-primary/50 hover:shadow-md transition-all cursor-pointer h-full">
+                  <CardContent className="p-5 flex items-start gap-4">
+                    <div
+                      className={cn(
+                        "h-12 w-12 rounded-md border flex items-center justify-center shrink-0 transition-transform group-hover:scale-110",
+                        cat.color,
+                      )}
+                    >
+                      <cat.icon className="h-6 w-6" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-base group-hover:text-primary transition-colors">
+                        {cat.name}
                       </h3>
-                      <p className="text-sm text-white/70 font-medium opacity-0 group-hover:opacity-100 transition-all translate-y-4 group-hover:translate-y-0 duration-500">
-                        {category.desc}
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {cat.desc}
                       </p>
                     </div>
-                  </AspectRatio>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0 mt-0.5" />
+                  </CardContent>
                 </Card>
               </Link>
             ))}
@@ -522,164 +362,154 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Featured Services - Carousel */}
-      <section className="py-24 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
-              Top Customer Choices
-            </h2>
-            <p className="text-lg text-muted-foreground font-medium">
-              These verified professionals have consistently exceeded our
-              stringent quality benchmarks.
-            </p>
-          </div>
+      {/* ───── Featured Services ───── */}
+      {featuredServices.length > 0 && (
+        <section className="py-8 md:py-12 bg-muted/20">
+          <div className="container max-w-6xl mx-auto px-4">
+            <div className="text-center mb-3 md:mb-4">
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
+                Top-Rated Services
+              </h2>
+              <p className="text-muted-foreground">
+                Handpicked services with excellent customer reviews
+              </p>
+            </div>
 
-          <div className="max-w-6xl mx-auto px-12">
-            <Carousel
-              opts={{
-                align: "start",
-                loop: true,
-              }}
-              className="w-full"
-            >
-              <CarouselContent>
-                {isLoadingServices
-                  ? [...Array(4)].map((_, i) => (
-                      <CarouselItem
-                        key={i}
-                        className="md:basis-1/2 lg:basis-1/2"
-                      >
-                        <Skeleton className="h-[240px] rounded-md" />
-                      </CarouselItem>
-                    ))
-                  : featuredServices.map((service) => (
-                      <CarouselItem
-                        key={service.id}
-                        className="md:basis-1/2 lg:basis-1/2"
-                      >
-                        <Card className="group border border-border/50 hover:border-primary/30 transition-all hover:shadow-xl hover:shadow-primary/5 rounded-md overflow-hidden h-full">
-                          <CardContent className="p-0">
-                            <div className="flex flex-col sm:flex-row gap-6 items-start p-8">
-                              <div className="grow space-y-4">
-                                <div className="flex items-center gap-3">
-                                  {service.provider.isVerified && (
-                                    <Badge className="bg-primary/10 text-primary border-none text-[10px] uppercase font-black tracking-widest px-3 py-1">
-                                      Certified Elite
-                                    </Badge>
-                                  )}
-                                  <div className="flex items-center gap-1.5 text-sm font-bold">
-                                    <Star className="h-4 w-4 fill-primary text-primary" />
-                                    <span>
-                                      {Number(service.rating || 4.8).toFixed(1)}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div>
-                                  <h3 className="text-xl font-black mb-1 leading-tight group-hover:text-primary transition-colors">
-                                    {service.name}
-                                  </h3>
-                                  <div className="flex items-center gap-2 text-muted-foreground font-semibold text-xs">
-                                    <MapPin className="h-3.5 w-3.5" />
-                                    <span>{service.provider.city}</span>
-                                    <span className="opacity-30">•</span>
-                                    <span>{service.provider.businessName}</span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="shrink-0 flex flex-col items-end justify-between min-h-[120px]">
-                                <div className="text-right">
-                                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-1">
-                                    Price
-                                  </p>
-                                  <p className="text-3xl font-black flex items-center justify-end tracking-tighter">
-                                    <IndianRupee className="h-5 w-5 stroke-3" />
-                                    {service.price}
-                                  </p>
-                                </div>
-                                <Button
-                                  variant="secondary"
-                                  onClick={() =>
-                                    router.push(
-                                      `/customer/services/${service.id}`,
-                                    )
-                                  }
-                                  className="rounded-md px-6 h-10 font-black text-sm active:scale-95"
-                                >
-                                  Book Now
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </CarouselItem>
-                    ))}
-              </CarouselContent>
-              <CarouselPrevious />
-              <CarouselNext />
-            </Carousel>
-          </div>
-        </div>
-      </section>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {featuredServices.slice(0, 6).map((service) => (
+                <Card
+                  key={service.id}
+                  className="group hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
+                  onClick={() =>
+                    router.push(`/customer/services/${service.id}`)
+                  }
+                >
+                  <CardContent className="p-5 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
+                          {service.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {service.provider.businessName}
+                        </p>
+                      </div>
+                      {service.provider.isVerified && (
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 shrink-0"
+                        >
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Verified
+                        </Badge>
+                      )}
+                    </div>
 
-      {/* How it Works - Cards */}
-      <section
-        id="how-it-works"
-        className="py-24 bg-background overflow-hidden"
-      >
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-20">
-            <Badge variant="secondary" className="mb-4 rounded-md">
-              Digital Seamlessness
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {service.description}
+                    </p>
+
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                        <span className="font-semibold text-foreground">
+                          {Number(service.rating || 0).toFixed(1)}
+                        </span>
+                        <span>({service.totalReviews || 0})</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>{service.provider.city || "N/A"}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>{service.estimateDuration || 30}m</span>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold flex items-center">
+                        <IndianRupee className="h-4 w-4" />
+                        {service.price}
+                      </span>
+                      <Button size="sm" variant="secondary" className="h-8">
+                        Book Now
+                        <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <div className="text-center mt-8">
+              <Link href="/customer/services">
+                <Button variant="outline" size="lg">
+                  Browse All Services
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ───── How It Works ───── */}
+      <section id="how-it-works" className="py-8 md:py-12">
+        <div className="container max-w-5xl mx-auto px-4">
+          <div className="text-center mb-4 md:mb-6">
+            <Badge variant="outline" className="mb-3">
+              <Play className="h-3 w-3 mr-1.5" />
+              How It Works
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight">
-              A Frictionless Journey
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Book a Service in 3 Steps
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                step: "01",
-                title: "Discovery",
-                desc: "Intelligent matching with specialists based on your requirements.",
+                step: "1",
+                title: "Search & Select",
+                desc: "Browse services or search for what you need. Compare providers, reviews, and prices.",
                 icon: Search,
+                color: "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800",
               },
               {
-                step: "02",
-                title: "Curated Slots",
-                desc: "Choose a time that integrates perfectly with your busy schedule.",
+                step: "2",
+                title: "Pick a Time Slot",
+                desc: "Choose a convenient date and time that fits your schedule. Real-time availability.",
                 icon: Calendar,
+                color: "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-800",
               },
               {
-                step: "03",
-                title: "Excellence",
-                desc: "Background-checked professional completes the task to perfection.",
+                step: "3",
+                title: "Get It Done",
+                desc: "A verified professional arrives on time and completes the work to your satisfaction.",
                 icon: CheckCircle,
+                color: "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800",
               },
-            ].map((step, i) => (
-              <Card
-                key={i}
-                className="border-none shadow-none text-center bg-transparent group p-0"
-              >
-                <CardHeader className="p-0 pb-6 flex items-center justify-center">
-                  <div className="relative h-[100px] w-[100px] transition-transform duration-500 group-hover:scale-110">
-                    <div className="absolute inset-0 rounded-md bg-muted rotate-6 group-hover:rotate-12 transition-transform" />
-                    <div className="absolute inset-0 rounded-md bg-primary flex items-center justify-center text-primary-foreground">
-                      <step.icon className="h-10 w-10" />
-                    </div>
-                    <div className="absolute -top-2 -right-2 h-8 w-8 rounded-md bg-background border-2 border-primary flex items-center justify-center font-black text-[10px]">
-                      {step.step}
-                    </div>
+            ].map((step) => (
+              <Card key={step.step} className="text-center border-dashed">
+                <CardContent className="pt-8 pb-6 px-6 flex flex-col items-center">
+                  <div
+                    className={cn(
+                      "h-16 w-16 rounded-md border flex items-center justify-center mb-5",
+                      step.color,
+                    )}
+                  >
+                    <step.icon className="h-7 w-7" />
                   </div>
-                </CardHeader>
-                <CardContent className="p-0 space-y-2">
-                  <CardTitle className="text-2xl font-black">
-                    {step.title}
-                  </CardTitle>
-                  <CardDescription className="text-muted-foreground font-medium text-base">
+                  <div className="text-xs font-bold text-muted-foreground mb-2">
+                    STEP {step.step}
+                  </div>
+                  <CardTitle className="text-lg mb-2">{step.title}</CardTitle>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     {step.desc}
-                  </CardDescription>
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -687,182 +517,264 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Benefits - Why Us Cards */}
-      <section
-        id="benefits"
-        className="py-24 bg-primary text-primary-foreground"
-      >
-        <div className="container mx-auto px-4">
-          <h2 className="text-5xl font-black tracking-tight text-center mb-16">
-            The HomeFixCare Distinction
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* ───── Why Choose Us ───── */}
+      <section id="why-us" className="py-8 md:py-12 bg-primary text-primary-foreground">
+        <div className="container max-w-6xl mx-auto px-4">
+          <div className="text-center mb-4 md:mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">
+              Why HomeFixCare?
+            </h2>
+            <p className="text-primary-foreground/70 max-w-lg mx-auto">
+              We&apos;re not just another marketplace. Here&apos;s what sets us
+              apart.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               {
-                title: "Rigorous Vetting",
-                desc: "Only the top 15% of applicants pass our technical verification.",
+                title: "Verified Pros",
+                desc: "Every provider undergoes background verification and skill assessment before joining.",
                 icon: Shield,
               },
               {
-                title: "Escrow Protected",
-                desc: "Your payment is held securely until you are fully satisfied.",
+                title: "Secure Payments",
+                desc: "Your payment is protected. Pay only when you're satisfied with the service.",
                 icon: CreditCard,
               },
               {
-                title: "Punctual Guarantee",
-                desc: "We value your time. Late arrival warrants a task credit.",
+                title: "On-Time Guarantee",
+                desc: "Professionals arrive within the booked time slot, every time.",
                 icon: Clock,
               },
               {
-                title: "24/7 Concierge",
-                desc: "Dedicated support team available for any coordination.",
+                title: "24/7 Support",
+                desc: "Our support team is available round the clock for any assistance.",
                 icon: HeadphonesIcon,
               },
-            ].map((item, i) => (
+            ].map((item) => (
               <Card
-                key={i}
-                className="bg-white/10 border-white/10 text-white group hover:bg-white/15 transition-colors rounded-md"
+                key={item.title}
+                className="bg-white/10 border-white/10 text-white hover:bg-white/15 transition-colors"
               >
-                <div className="flex flex-col items-center text-center p-8 space-y-4">
-                  <CardHeader className="p-0 flex flex-col items-center">
-                    <div className="h-14 w-14 rounded-md bg-white/20 flex items-center justify-center mb-2 text-white">
-                      <item.icon className="h-7 w-7" />
-                    </div>
-                    <CardTitle className="text-xl font-black">
-                      {item.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <p className="text-sm text-white/70 font-medium leading-relaxed">
-                      {item.desc}
-                    </p>
-                  </CardContent>
-                </div>
+                <CardContent className="p-6 space-y-3">
+                  <div className="h-11 w-11 rounded-md bg-white/15 flex items-center justify-center">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-semibold">{item.title}</h3>
+                  <p className="text-sm text-white/60 leading-relaxed">
+                    {item.desc}
+                  </p>
+                </CardContent>
               </Card>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Become a Provider CTA */}
-      <section id="become-a-pro" className="py-32 bg-background">
-        <div className="container mx-auto px-4 text-center">
-          <Card className="rounded-md bg-muted/30 border-none p-12 md:p-20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
-              <Wrench className="h-64 w-64" />
-            </div>
-            <CardHeader className="p-0 mb-8 flex flex-col items-center">
-              <CardTitle className="text-4xl md:text-6xl font-black tracking-tight mb-4">
-                Propel Your Business
-              </CardTitle>
-              <CardDescription className="text-xl md:text-2xl text-muted-foreground font-medium max-w-2xl">
-                Join our elite network of specialists and reach high-value
-                clients effortlessly.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register?role=provider">
-                <Button
-                  size="lg"
-                  className="rounded-md px-10 h-16 font-black text-lg active:scale-95"
-                >
-                  Apply Now
-                  <ArrowRight className="ml-2 h-6 w-6" />
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="rounded-md px-10 h-16 font-black text-lg border-2"
-                >
-                  Log In
-                </Button>
-              </Link>
+      {/* ───── Testimonials ───── */}
+      <section className="py-8 md:py-12">
+        <div className="container max-w-6xl mx-auto px-4">
+          <div className="text-center mb-4 md:mb-6">
+            <Badge variant="outline" className="mb-3">
+              <Star className="h-3 w-3 mr-1.5 fill-yellow-400 text-yellow-400" />
+              Testimonials
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              What Our Customers Say
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              {
+                name: "Priya Sharma",
+                role: "Homeowner, Mumbai",
+                text: "The electrician arrived on time and fixed all the issues in one visit. Very professional service. Will definitely use again!",
+                rating: 5,
+              },
+              {
+                name: "Rajesh Kumar",
+                role: "Apartment Owner, Delhi",
+                text: "Booked a deep cleaning service and was amazed by the quality. The team was thorough, polite, and left the place spotless.",
+                rating: 5,
+              },
+              {
+                name: "Anita Desai",
+                role: "Villa Owner, Bangalore",
+                text: "Finally, a platform where I can trust the service providers. The verification process gives me peace of mind every time.",
+                rating: 5,
+              },
+            ].map((testimonial) => (
+              <Card key={testimonial.name} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-4 space-y-3">
+                  <Quote className="h-8 w-8 text-primary/20" />
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    &ldquo;{testimonial.text}&rdquo;
+                  </p>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: testimonial.rating }).map((_, index) => (
+                      <Star
+                        key={index}
+                        className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400"
+                      />
+                    ))}
+                  </div>
+                  <Separator />
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9">
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">
+                        {testimonial.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-semibold">
+                        {testimonial.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {testimonial.role}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───── Trust Badges ───── */}
+      <section className="py-12 border-y bg-muted/20">
+        <div className="container max-w-4xl mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { icon: Shield, label: "Background Verified" },
+              { icon: Award, label: "Quality Assured" },
+              { icon: CreditCard, label: "Secure Payments" },
+              { icon: HeadphonesIcon, label: "24/7 Support" },
+            ].map((badge) => (
+              <div
+                key={badge.label}
+                className="flex flex-col items-center gap-2 text-center"
+              >
+                <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+                  <badge.icon className="h-5 w-5" />
+                </div>
+                <span className="text-xs font-semibold text-muted-foreground">
+                  {badge.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───── Provider CTA ───── */}
+      <section className="py-8 md:py-12">
+        <div className="container max-w-4xl mx-auto px-4">
+          <Card className="bg-muted/30 border-dashed overflow-hidden">
+            <CardContent className="p-8 md:p-12 text-center space-y-6 relative">
+              <div className="absolute top-4 right-4 opacity-5 pointer-events-none">
+                <Wrench className="h-40 w-40" />
+              </div>
+              <Badge variant="secondary">
+                <Users className="h-3 w-3 mr-1.5" />
+                For Service Providers
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+                Grow Your Business With Us
+              </h2>
+              <p className="text-muted-foreground max-w-xl mx-auto">
+                Join 1,200+ verified professionals earning more with
+                HomeFixCare. Get access to a steady stream of customers in your
+                area.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                <Link href="/register?role=provider">
+                  <Button size="lg" className="px-8">
+                    Apply as Provider
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button size="lg" variant="outline" className="px-8">
+                    Sign In
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-muted/10 pt-24 pb-12 border-t">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-            <div className="space-y-6">
-              <Link href="/" className="flex items-center gap-3">
-                <div className="h-8 w-8 flex items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <Image
-                    src="/homefixcareicon-removebg-preview-removebg-preview.png"
-                    alt="HomeFixCare"
-                    width={24}
-                    height={24}
-                    className="h-6 w-6 brightness-0 invert"
-                  />
-                </div>
-                <span className="text-xl font-black">HomeFixCare</span>
+      {/* ───── Footer ───── */}
+      <footer className="border-t bg-muted/10 pt-8 pb-6">
+        <div className="container max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div className="space-y-4">
+              <Link href="/" className="flex items-center gap-2">
+                <Image
+                  src="/homefixcareicon-removebg-preview-removebg-preview.png"
+                  alt="HomeFixCare"
+                  width={28}
+                  height={28}
+                  className="h-7 w-7"
+                />
+                <span className="text-lg font-bold">HomeFixCare</span>
               </Link>
-              <p className="text-muted-foreground font-medium">
-                Punctual. Precise. Premium. <br /> Elevating home care
-                standards.
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Connecting homeowners with verified professionals for quality
+                home services.
               </p>
             </div>
-            {["Services", "Legal", "Corporate"].map((group) => (
-              <div key={group}>
-                <h4 className="font-black uppercase tracking-widest text-xs mb-6">
-                  {group}
-                </h4>
-                <ul className="space-y-3">
-                  {group === "Services" &&
-                    [
-                      "Deep Cleaning",
-                      "Electrical",
-                      "Plumbing",
-                      "AC Repair",
-                    ].map((item) => (
-                      <li key={item}>
-                        <button className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
-                          {item}
-                        </button>
-                      </li>
-                    ))}
-                  {group === "Legal" &&
-                    [
-                      "Privacy Policy",
-                      "Terms of Use",
-                      "Vendor Policy",
-                      "Cookie Policy",
-                    ].map((item) => (
-                      <li key={item}>
-                        <button className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
-                          {item}
-                        </button>
-                      </li>
-                    ))}
-                  {group === "Corporate" &&
-                    ["About Us", "Our Mission", "Partnerships", "Careers"].map(
-                      (item) => (
-                        <li key={item}>
-                          <button className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
-                            {item}
-                          </button>
-                        </li>
-                      ),
-                    )}
+            {[
+              {
+                title: "Services",
+                links: ["Cleaning", "Electrical", "Plumbing", "Painting"],
+              },
+              {
+                title: "Company",
+                links: ["About Us", "Careers", "Partners", "Contact"],
+              },
+              {
+                title: "Legal",
+                links: [
+                  "Privacy Policy",
+                  "Terms of Use",
+                  "Cookie Policy",
+                  "Vendor Policy",
+                ],
+              },
+            ].map((group) => (
+              <div key={group.title}>
+                <h4 className="font-semibold text-sm mb-4">{group.title}</h4>
+                <ul className="space-y-2.5">
+                  {group.links.map((link) => (
+                    <li key={link}>
+                      <button className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                        {link}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               </div>
             ))}
           </div>
 
-          <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-border/50 gap-6">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-              © {new Date().getFullYear()} HomeFixCare Inc.
+          <Separator className="mb-6" />
+
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} HomeFixCare. All rights reserved.
             </p>
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
             >
               Back to Top
-              <ArrowRight className="h-4 w-4 -rotate-90" />
+              <ArrowRight className="h-3 w-3 -rotate-90" />
             </button>
           </div>
         </div>
