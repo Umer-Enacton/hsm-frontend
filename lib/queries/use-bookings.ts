@@ -10,6 +10,10 @@ import { QUERY_KEYS } from "./query-keys";
 import type { CustomerBooking, BookingStatus } from "@/types/customer";
 
 // QUERIES
+/**
+ * Bookings list with filters
+ * Bookings can change status frequently, but list doesn't need to be real-time
+ */
 export function useBookings(filters?: { status?: BookingStatus; limit?: number }) {
   return useQuery({
     queryKey: [QUERY_KEYS.BOOKINGS, "list", filters || {}],
@@ -20,16 +24,22 @@ export function useBookings(filters?: { status?: BookingStatus; limit?: number }
         total: data?.total || 0,
       };
     },
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 2 * 60 * 1000, // 2 minutes - bookings can change status
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
   });
 }
 
+/**
+ * Single booking details
+ * Individual booking details change less frequently
+ */
 export function useBooking(bookingId: number) {
   return useQuery({
     queryKey: [QUERY_KEYS.BOOKINGS, "detail", bookingId],
     queryFn: () => getBookingById(bookingId),
     enabled: !!bookingId,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes - booking details change less often
+    gcTime: 30 * 60 * 1000, // 30 minutes cache
   });
 }
 

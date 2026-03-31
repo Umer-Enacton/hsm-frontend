@@ -19,6 +19,7 @@ interface ProviderRevenueStats {
 
 /**
  * Hook to fetch provider's revenue/earnings statistics
+ * Revenue data changes moderately (when bookings are completed/paid)
  */
 export function useProviderRevenueStats() {
   return useQuery<ProviderRevenueStats>({
@@ -27,6 +28,7 @@ export function useProviderRevenueStats() {
       const response = await api.get<ProviderRevenueStats>(API_ENDPOINTS.PROVIDER_REVENUE);
       return response;
     },
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: 10 * 60 * 1000, // 10 minutes - was 1 min, too short!
+    gcTime: 30 * 60 * 1000, // 30 minutes cache
   });
 }

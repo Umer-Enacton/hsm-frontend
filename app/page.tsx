@@ -31,7 +31,7 @@ import {
   Moon,
   LogIn,
   PlusCircle,
-  Hash,
+  RefreshCw,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -41,30 +41,18 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { api, API_ENDPOINTS } from "@/lib/api";
+import { useFeaturedServices } from "@/lib/queries";
+import type { CustomerService as Service } from "@/types/customer";
 import { cn } from "@/lib/utils";
 
-// Types
-interface Service {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  rating: number;
-  totalReviews: number;
-  estimateDuration: number;
-  provider: {
-    id: number;
-    businessName: string;
-    city: string;
-    isVerified: boolean;
-    rating: number;
-    totalReviews: number;
-  };
-}
+// Type is now imported from @/types/customer as 'Service'
 
 export default function LandingPage() {
   const router = useRouter();
-  const [featuredServices, setFeaturedServices] = useState<Service[]>([]);
+  const servicesQuery = useFeaturedServices();
+  const featuredServices = servicesQuery.data || [];
+  const isLoadingServices = servicesQuery.isLoading;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -73,20 +61,6 @@ export default function LandingPage() {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        const response = await api.get<{ services: Service[] }>(
-          `${API_ENDPOINTS.SERVICES}?limit=6`,
-        );
-        setFeaturedServices(response.services?.slice(0, 6) || []);
-      } catch (error) {
-        console.error("Error loading services:", error);
-      }
-    };
-    fetchServices();
   }, []);
 
   const handleSearch = () => {
@@ -516,7 +490,18 @@ export default function LandingPage() {
       </section>
 
       {/* ───── Featured Services ───── */}
-      {featuredServices.length > 0 && (
+      {isLoadingServices ? (
+        <section className="py-8 md:py-12 bg-muted/20">
+          <div className="container max-w-6xl mx-auto px-4 text-center">
+            <div className="flex flex-col items-center justify-center py-12">
+              <RefreshCw className="h-8 w-8 text-primary animate-spin mb-4" />
+              <p className="text-muted-foreground italic">
+                Finding the best services for you...
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : featuredServices.length > 0 ? (
         <section className="py-8 md:py-12 bg-muted/20">
           <div className="container max-w-6xl mx-auto px-4">
             <div className="text-center mb-3 md:mb-4">
@@ -544,10 +529,10 @@ export default function LandingPage() {
                           {service.name}
                         </h3>
                         <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                          {service.provider.businessName}
+                          {service.provider?.businessName}
                         </p>
                       </div>
-                      {service.provider.isVerified && (
+                      {service.provider?.isVerified && (
                         <Badge
                           variant="secondary"
                           className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 shrink-0"
@@ -572,7 +557,7 @@ export default function LandingPage() {
                       </div>
                       <div className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        <span>{service.provider.city || "N/A"}</span>
+                        <span>{service.provider?.city || "N/A"}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -607,7 +592,7 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-      )}
+      ) : null}
 
       {/* ───── How It Works ───── */}
       <section id="how-it-works" className="py-8 md:py-12">

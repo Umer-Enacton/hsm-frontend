@@ -532,8 +532,12 @@ export default function CustomerBookingsPage() {
                 <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.total}</p>
-                <p className="text-xs text-blue-700/70 dark:text-blue-400/70">Total Bookings</p>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                  {stats.total}
+                </p>
+                <p className="text-xs text-blue-700/70 dark:text-blue-400/70">
+                  Total Bookings
+                </p>
               </div>
             </div>
           </CardContent>
@@ -546,8 +550,12 @@ export default function CustomerBookingsPage() {
                 <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{stats.pending}</p>
-                <p className="text-xs text-yellow-700/70 dark:text-yellow-400/70">Pending</p>
+                <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
+                  {stats.pending}
+                </p>
+                <p className="text-xs text-yellow-700/70 dark:text-yellow-400/70">
+                  Pending
+                </p>
               </div>
             </div>
           </CardContent>
@@ -560,8 +568,12 @@ export default function CustomerBookingsPage() {
                 <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{stats.confirmed}</p>
-                <p className="text-xs text-purple-700/70 dark:text-purple-400/70">Confirmed</p>
+                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                  {stats.confirmed}
+                </p>
+                <p className="text-xs text-purple-700/70 dark:text-purple-400/70">
+                  Confirmed
+                </p>
               </div>
             </div>
           </CardContent>
@@ -574,8 +586,12 @@ export default function CustomerBookingsPage() {
                 <Calendar className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{stats.completed}</p>
-                <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70">Completed</p>
+                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                  {stats.completed}
+                </p>
+                <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70">
+                  Completed
+                </p>
               </div>
             </div>
           </CardContent>

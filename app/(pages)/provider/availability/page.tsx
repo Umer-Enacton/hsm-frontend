@@ -1,121 +1,78 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, RefreshCw, Plus, Clock, Trash2 } from "lucide-react";
+import { RefreshCw, Plus, Clock, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { getBusinessSlots, createSlot, deleteSlot } from "@/lib/provider/slots";
-import { getProviderBusiness } from "@/lib/provider/api";
-import type { Slot } from "@/lib/provider/slots";
 import { SlotDialog } from "@/components/provider/availability/SlotDialog";
 import { AvailabilitySkeleton } from "@/components/provider/skeletons/AvailabilitySkeleton";
+import { useProviderSlots, useCreateSlot, useDeleteSlot } from "@/lib/queries";
+import { useProviderBusinessProfile } from "@/lib/queries/use-provider-business-profile";
+import { getUserData } from "@/lib/auth-utils";
+import type { Slot } from "@/lib/queries/use-provider-slots";
 
 export default function ProviderAvailabilityPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [businessId, setBusinessId] = useState<number | null>(null);
+  const userData = getUserData();
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Load business and slots on mount
-  useEffect(() => {
-    loadBusinessAndSlots();
-  }, []);
+  // Fetch business profile
+  const { business, isLoading: isLoadingBusiness } = useProviderBusinessProfile(userData?.id);
 
-  const loadBusinessAndSlots = async () => {
-    setIsLoading(true);
-    try {
-      // Get business ID from user data
-      const { getUserData } = await import("@/lib/auth-utils");
-      const userData = getUserData();
+  // Fetch slots using cached hook
+  const slotsQuery = useProviderSlots(business?.id);
+  const slots = slotsQuery.data || [];
+  const isLoadingSlots = slotsQuery.isLoading;
+  const refetchSlots = slotsQuery.refetch;
 
-      if (!userData || !userData.id) {
-        toast.error("Please login to continue");
-        router.push("/login");
-        return;
-      }
+  // Mutations
+  const createSlotMutation = useCreateSlot();
+  const deleteSlotMutation = useDeleteSlot();
 
-      const business = await getProviderBusiness(userData.id);
-      if (!business) {
-        toast.error("Business profile not found");
-        router.push("/onboarding");
-        return;
-      }
+  const isLoading = isLoadingBusiness || (business?.id && isLoadingSlots);
 
-      setBusinessId(business.id);
-      await loadSlots(business.id);
-    } catch (error: any) {
-      console.error("Error loading business:", error);
-      toast.error("Failed to load business information");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadSlots = async (bizId: number) => {
-    try {
-      const slotsList = await getBusinessSlots(bizId);
-      // Sort slots by start time
-      const sortedSlots = slotsList.sort((a, b) =>
-        a.startTime.localeCompare(b.startTime),
-      );
-      setSlots(sortedSlots);
-    } catch (error: any) {
-      console.error("Error loading slots:", error);
-      toast.error("Failed to load slots");
-    }
-  };
+  // Redirect if no business
+  if (!isLoadingBusiness && !business) {
+    router.push("/onboarding");
+    return null;
+  }
 
   const handleRefresh = async () => {
-    if (!businessId) return;
-    setIsRefreshing(true);
-    await loadSlots(businessId);
-    setIsRefreshing(false);
+    await refetchSlots();
     toast.success("Slots refreshed");
   };
 
   const handleCreateSlot = async (slotData: { startTime: string }) => {
-    if (!businessId) return;
+    if (!business?.id) return;
 
-    try {
-      await createSlot(businessId, slotData);
-      toast.success("Time slot added successfully");
-
-      // Reload slots
-      await loadSlots(businessId);
-      setIsDialogOpen(false);
-    } catch (error: any) {
-      console.error("Error creating slot:", error);
-      toast.error("Failed to add time slot", {
-        description: error.message || "Please try again",
-      });
-    }
+    createSlotMutation.mutate(
+      { businessId: business.id, slotData },
+      {
+        onSuccess: () => {
+          setIsDialogOpen(false);
+        },
+      }
+    );
   };
 
   const handleDeleteSlot = async (slotId: number) => {
-    if (!businessId) return;
-
+    if (!business?.id) return;
     if (!confirm("Are you sure you want to delete this time slot?")) {
       return;
     }
 
-    try {
-      await deleteSlot(businessId, slotId);
-      toast.success("Time slot deleted successfully");
-
-      // Reload slots
-      await loadSlots(businessId);
-    } catch (error: any) {
-      console.error("Error deleting slot:", error);
-      toast.error("Failed to delete time slot", {
-        description: error.message || "Please try again",
-      });
-    }
+    deleteSlotMutation.mutate(
+      { businessId: business.id, slotId },
+      {
+        onSuccess: () => {
+          // Slot deleted, cache will be invalidated automatically
+        },
+      }
+    );
   };
 
   const handleOpenCreateDialog = () => {
@@ -129,6 +86,16 @@ export default function ProviderAvailabilityPage() {
   if (isLoading) {
     return <AvailabilitySkeleton />;
   }
+
+  // Sort slots by start time (ensure slots and sortedSlots are always arrays)
+  const safeSlots = Array.isArray(slots) ? slots : [];
+  const sortedSlots = safeSlots.slice().sort((a, b) => {
+    try {
+      return (a.startTime || "").localeCompare(b.startTime || "");
+    } catch (e) {
+      return 0;
+    }
+  });
 
   return (
     <div className="space-y-6">
@@ -147,11 +114,9 @@ export default function ProviderAvailabilityPage() {
             onClick={handleRefresh}
             variant="outline"
             size="icon"
-            disabled={isRefreshing}
+            disabled={createSlotMutation.isPending || deleteSlotMutation.isPending}
           >
-            <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-            />
+            <RefreshCw className="h-4 w-4" />
           </Button>
           <Button
             onClick={handleOpenCreateDialog}
@@ -165,7 +130,7 @@ export default function ProviderAvailabilityPage() {
       </div>
 
       {/* Time Slots Grid */}
-      {slots.length === 0 ? (
+      {sortedSlots.length === 0 ? (
         <Card className="p-12">
           <div className="flex flex-col items-center justify-center text-center">
             <div className="rounded-full bg-muted p-6 mb-4">
@@ -186,7 +151,7 @@ export default function ProviderAvailabilityPage() {
         </Card>
       ) : (
         <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-          {slots.map((slot) => (
+          {sortedSlots.map((slot) => (
             <SlotCard key={slot.id} slot={slot} onDelete={handleDeleteSlot} />
           ))}
         </div>
@@ -197,7 +162,7 @@ export default function ProviderAvailabilityPage() {
         open={isDialogOpen}
         onOpenChange={handleCloseDialog}
         onSubmit={handleCreateSlot}
-        businessId={businessId}
+        businessId={business?.id}
       />
     </div>
   );

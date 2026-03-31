@@ -3,6 +3,10 @@ import { getCustomerBookings, getServices } from "@/lib/customer/api";
 import { QUERY_KEYS } from "./query-keys";
 import type { CustomerBooking, CustomerService } from "@/types/customer";
 
+/**
+ * Recent bookings on dashboard
+ * Changes when bookings are made/completed
+ */
 export function useRecentBookings() {
   return useQuery({
     queryKey: [QUERY_KEYS.BOOKINGS, "recent"],
@@ -10,10 +14,15 @@ export function useRecentBookings() {
       const data = await getCustomerBookings({ limit: 3 });
       return Array.isArray(data?.bookings) ? data.bookings.slice(0, 3) : [];
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 3 * 60 * 1000, // 3 minutes - bookings change moderately
+    gcTime: 15 * 60 * 1000, // 15 minutes cache
   });
 }
 
+/**
+ * Booking stats (total, pending, completed)
+ * Changes when booking status changes
+ */
 export function useBookingStats() {
   return useQuery({
     queryKey: [QUERY_KEYS.BOOKINGS, "stats"],
@@ -27,10 +36,15 @@ export function useBookingStats() {
         completedBookings: bookings.filter((b) => b.status === "completed").length,
       };
     },
-    staleTime: 60 * 1000, // 1 minute - stats change frequently
+    staleTime: 2 * 60 * 1000, // 2 minutes - stats can change quickly
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
   });
 }
 
+/**
+ * Featured services list
+ * Changes rarely (only when providers add new services)
+ */
 export function useFeaturedServices() {
   return useQuery({
     queryKey: [QUERY_KEYS.SERVICES, "featured"],
@@ -43,6 +57,7 @@ export function useFeaturedServices() {
         .sort((a, b) => (b.provider?.rating || 0) - (a.provider?.rating || 0))
         .slice(0, 6);
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 60 * 1000, // 30 minutes - services list rarely changes
+    gcTime: 60 * 60 * 1000, // 1 hour cache
   });
 }

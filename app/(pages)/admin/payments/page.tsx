@@ -33,12 +33,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import {
+  useAdminPaymentDetails,
+  useUpdatePaymentDetail,
+  useSetActivePaymentDetail,
+  useDeletePaymentDetail,
+} from "@/lib/queries";
 import { api, API_ENDPOINTS } from "@/lib/api";
 
 export default function AdminPaymentsPage() {
-  const [loading, setLoading] = useState(true);
+  // Use hooks for data fetching
+  const {
+    data: paymentDetails = [],
+    isLoading,
+    refetch,
+  } = useAdminPaymentDetails();
+
+  const updateMutation = useUpdatePaymentDetail();
+  const setActiveMutation = useSetActivePaymentDetail();
+  const deleteMutation = useDeletePaymentDetail();
+
   const [saving, setSaving] = useState(false);
-  const [paymentDetails, setPaymentDetails] = useState<any[]>([]);
 
   // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -50,23 +65,6 @@ export default function AdminPaymentsPage() {
   const [bankAccount, setBankAccount] = useState("");
   const [ifscCode, setIfscCode] = useState("");
   const [accountHolderName, setAccountHolderName] = useState("");
-
-  useEffect(() => {
-    fetchPaymentDetails();
-  }, []);
-
-  const fetchPaymentDetails = async () => {
-    try {
-      setLoading(true);
-      const response: any = await api.get(API_ENDPOINTS.PAYMENT_DETAILS);
-      setPaymentDetails(response.details || []);
-    } catch (error: any) {
-      console.error("Error fetching payment details:", error);
-      toast.error("Failed to load payment details");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const openAddDialog = (type: "upi" | "bank") => {
     setPaymentType(type);
@@ -118,55 +116,41 @@ export default function AdminPaymentsPage() {
       }
     }
 
-    try {
-      setSaving(true);
-      const payload =
-        paymentType === "upi"
-          ? { paymentType: "upi", upiId }
-          : { paymentType: "bank", bankAccount, ifscCode, accountHolderName };
-
-      if (editingId) {
-        await api.put(`${API_ENDPOINTS.PAYMENT_DETAILS}/${editingId}`, payload);
-        toast.success("Payment details updated successfully");
-      } else {
+    if (editingId) {
+      updateMutation.mutate({
+        detailId: editingId,
+        data:
+          paymentType === "upi"
+            ? { paymentType: "upi", upiId }
+            : { paymentType: "bank", bankAccount, ifscCode, accountHolderName },
+      });
+    } else {
+      // For new payment details, use direct API call (mutation not available for create)
+      try {
+        const payload =
+          paymentType === "upi"
+            ? { paymentType: "upi", upiId }
+            : { paymentType: "bank", bankAccount, ifscCode, accountHolderName };
         await api.post(API_ENDPOINTS.PAYMENT_DETAILS, payload);
         toast.success("Payment details added successfully");
+        closeDialog();
+        refetch();
+      } catch (error: any) {
+        console.error("Error saving payment details:", error);
+        toast.error(error.message || "Failed to save payment details");
       }
-
-      closeDialog();
-      fetchPaymentDetails();
-    } catch (error: any) {
-      console.error("Error saving payment details:", error);
-      toast.error(error.message || "Failed to save payment details");
-    } finally {
-      setSaving(false);
     }
   };
 
-  const handleSetActive = async (id: number) => {
-    try {
-      await api.put(API_ENDPOINTS.PAYMENT_DETAILS_SET_ACTIVE(id), {});
-      toast.success("Payment method activated");
-      fetchPaymentDetails();
-    } catch (error: any) {
-      console.error("Error activating payment method:", error);
-      toast.error("Failed to activate payment method");
-    }
+  const handleSetActive = (id: number) => {
+    setActiveMutation.mutate({ detailId: id });
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     if (!confirm("Are you sure you want to delete this payment method?")) {
       return;
     }
-
-    try {
-      await api.delete(API_ENDPOINTS.PAYMENT_DETAILS_DELETE(id));
-      toast.success("Payment method deleted");
-      fetchPaymentDetails();
-    } catch (error: any) {
-      console.error("Error deleting payment method:", error);
-      toast.error("Failed to delete payment method");
-    }
+    deleteMutation.mutate({ detailId: id });
   };
 
   return (
@@ -184,7 +168,7 @@ export default function AdminPaymentsPage() {
       </div>
 
       {/* Status Alert */}
-      {paymentDetails.length === 0 && !loading && (
+      {paymentDetails.length === 0 && !isLoading && (
         <Card className="border-destructive/50 bg-destructive/5">
           <CardContent className="pt-6">
             <div className="flex gap-3 sm:gap-4">
@@ -212,7 +196,7 @@ export default function AdminPaymentsPage() {
         </Card>
       )}
 
-      {paymentDetails.length > 0 && !loading && (
+      {paymentDetails.length > 0 && !isLoading && (
         <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
           <CardContent className="">
             <div className="flex gap-3 sm:gap-4">
@@ -255,7 +239,7 @@ export default function AdminPaymentsPage() {
         </div>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <AdminPaymentsSkeleton />
       ) : paymentDetails.length === 0 ? (
         <Card>

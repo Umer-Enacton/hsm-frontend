@@ -52,6 +52,7 @@ export interface HeaderUser {
   email: string;
   avatarUrl?: string;
   role?: string;
+  hasAddresses?: boolean;
 }
 
 export interface HeaderProps {

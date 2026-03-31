@@ -573,10 +573,10 @@ export default function CustomerDashboardPage() {
                     <div className="flex-1">
                       <CardTitle className="text-lg">{service.name}</CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        {service.provider.businessName}
+                        {service.provider?.businessName}
                       </p>
                     </div>
-                    {service.provider.isVerified && (
+                    {service.provider?.isVerified && (
                       <Badge
                         variant="secondary"
                         className="bg-green-100 text-green-800 dark:bg-green-900/20"
@@ -595,10 +595,10 @@ export default function CustomerDashboardPage() {
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                       <span className="text-sm font-medium">
-                        {(service.provider.rating || 0).toFixed(1)}
+                        {(service.provider?.rating || 0).toFixed(1)}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        ({service.provider.totalReviews || 0} reviews)
+                        ({service.provider?.totalReviews || 0} reviews)
                       </span>
                     </div>
                     <div className="text-right">

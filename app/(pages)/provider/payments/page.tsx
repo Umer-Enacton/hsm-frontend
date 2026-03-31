@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   CreditCard,
   Plus,
@@ -32,13 +32,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { api, API_ENDPOINTS } from "@/lib/api";
 import { ProviderPaymentsSkeleton } from "@/components/provider/skeletons";
+import {
+  usePaymentDetails,
+  useAddPaymentDetail,
+  useUpdatePaymentDetail,
+  useSetActivePaymentDetail,
+  useDeletePaymentDetail,
+} from "@/lib/queries/use-payment-details";
+import type { PaymentDetail } from "@/lib/queries/use-payment-details";
 
 export default function ProviderPaymentsPage() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [paymentDetails, setPaymentDetails] = useState<any[]>([]);
+  // Fetch payment details using cached hook
+  const {
+    data: paymentDetails = [],
+    isLoading,
+    refetch,
+  } = usePaymentDetails();
+
+  // Mutations
+  const addPaymentMutation = useAddPaymentDetail();
+  const updatePaymentMutation = useUpdatePaymentDetail();
+  const setActiveMutation = useSetActivePaymentDetail();
+  const deleteMutation = useDeletePaymentDetail();
 
   // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -51,23 +67,6 @@ export default function ProviderPaymentsPage() {
   const [ifscCode, setIfscCode] = useState("");
   const [accountHolderName, setAccountHolderName] = useState("");
 
-  useEffect(() => {
-    fetchPaymentDetails();
-  }, []);
-
-  const fetchPaymentDetails = async () => {
-    try {
-      setLoading(true);
-      const response: any = await api.get(API_ENDPOINTS.PAYMENT_DETAILS);
-      setPaymentDetails(response.details || []);
-    } catch (error: any) {
-      console.error("Error fetching payment details:", error);
-      toast.error("Failed to load payment details");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const openAddDialog = (type: "upi" | "bank") => {
     setPaymentType(type);
     setEditingId(null);
@@ -78,19 +77,19 @@ export default function ProviderPaymentsPage() {
     setIsAddDialogOpen(true);
   };
 
-  const openEditDialog = (detail: any) => {
+  const openEditDialog = (detail: PaymentDetail) => {
     setPaymentType(detail.paymentType);
     setEditingId(detail.id);
     if (detail.paymentType === "upi") {
-      setUpiId(detail.upiId);
+      setUpiId(detail.upiId || "");
       setBankAccount("");
       setIfscCode("");
       setAccountHolderName("");
     } else {
       setUpiId("");
-      setBankAccount(detail.bankAccount);
-      setIfscCode(detail.ifscCode);
-      setAccountHolderName(detail.accountHolderName);
+      setBankAccount(detail.bankAccount || "");
+      setIfscCode(detail.ifscCode || "");
+      setAccountHolderName(detail.accountHolderName || "");
     }
     setIsAddDialogOpen(true);
   };
@@ -118,56 +117,68 @@ export default function ProviderPaymentsPage() {
       }
     }
 
-    try {
-      setSaving(true);
-      const payload =
-        paymentType === "upi"
-          ? { paymentType: "upi", upiId }
-          : { paymentType: "bank", bankAccount, ifscCode, accountHolderName };
-
-      if (editingId) {
-        await api.put(`${API_ENDPOINTS.PAYMENT_DETAILS}/${editingId}`, payload);
-        toast.success("Payment details updated successfully");
-      } else {
-        await api.post(API_ENDPOINTS.PAYMENT_DETAILS, payload);
-        toast.success("Payment details added successfully");
-      }
-
-      closeDialog();
-      fetchPaymentDetails();
-    } catch (error: any) {
-      console.error("Error saving payment details:", error);
-      toast.error(error.message || "Failed to save payment details");
-    } finally {
-      setSaving(false);
+    if (editingId) {
+      // Use mutation for editing
+      updatePaymentMutation.mutate(
+        {
+          detailId: editingId,
+          data: {
+            paymentType,
+            upiId: paymentType === "upi" ? upiId : undefined,
+            bankAccount: paymentType === "bank" ? bankAccount : undefined,
+            ifscCode: paymentType === "bank" ? ifscCode : undefined,
+            accountHolderName: paymentType === "bank" ? accountHolderName : undefined,
+          },
+        },
+        {
+          onSuccess: () => {
+            closeDialog();
+          },
+        }
+      );
+    } else {
+      // Use mutation for adding
+      addPaymentMutation.mutate(
+        {
+          paymentType,
+          upiId: paymentType === "upi" ? upiId : undefined,
+          bankAccount: paymentType === "bank" ? bankAccount : undefined,
+          ifscCode: paymentType === "bank" ? ifscCode : undefined,
+          accountHolderName: paymentType === "bank" ? accountHolderName : undefined,
+        },
+        {
+          onSuccess: () => {
+            closeDialog();
+          },
+        }
+      );
     }
   };
 
-  const handleSetActive = async (id: number) => {
-    try {
-      await api.put(API_ENDPOINTS.PAYMENT_DETAILS_SET_ACTIVE(id), {});
-      toast.success("Payment method activated");
-      fetchPaymentDetails();
-    } catch (error: any) {
-      console.error("Error activating payment method:", error);
-      toast.error("Failed to activate payment method");
-    }
+  const handleSetActive = (id: number) => {
+    setActiveMutation.mutate({ detailId: id });
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     if (!confirm("Are you sure you want to delete this payment method?")) {
       return;
     }
 
-    try {
-      await api.delete(API_ENDPOINTS.PAYMENT_DETAILS_DELETE(id));
-      toast.success("Payment method deleted");
-      fetchPaymentDetails();
-    } catch (error: any) {
-      console.error("Error deleting payment method:", error);
-      toast.error("Failed to delete payment method");
-    }
+    deleteMutation.mutate(
+      { detailId: id },
+      {
+        onSuccess: () => {
+          // Payment detail deleted, cache invalidated automatically
+        },
+      }
+    );
   };
+
+  const isSaving =
+    addPaymentMutation.isPending ||
+    updatePaymentMutation.isPending ||
+    setActiveMutation.isPending ||
+    deleteMutation.isPending;
 
   return (
     <div className="space-y-6">
@@ -184,7 +195,7 @@ export default function ProviderPaymentsPage() {
       </div>
 
       {/* Status Alert */}
-      {paymentDetails.length === 0 && !loading && (
+      {paymentDetails.length === 0 && !isLoading && (
         <Card className="border-destructive/50 bg-destructive/5">
           <CardContent className="pt-6">
             <div className="flex gap-4">
@@ -208,7 +219,7 @@ export default function ProviderPaymentsPage() {
         </Card>
       )}
 
-      {paymentDetails.length > 0 && !loading && (
+      {paymentDetails.length > 0 && !isLoading && (
         <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
           <CardContent className="pt-6">
             <div className="flex gap-4">
@@ -243,7 +254,7 @@ export default function ProviderPaymentsPage() {
         </div>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <ProviderPaymentsSkeleton />
       ) : paymentDetails.length === 0 ? (
         <Card>
@@ -350,24 +361,6 @@ export default function ProviderPaymentsPage() {
         </div>
       )}
 
-      {/* Info Card */}
-      {/* <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-          <CardContent className="pt-6">
-            <div className="flex gap-4">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-md shrink-0">
-                <IndianRupee className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="text-sm text-blue-800 dark:text-blue-300">
-                <p className="font-semibold mb-2">How payments work?</p>
-                <p className="text-blue-700 dark:text-blue-400 leading-relaxed">
-                  When a customer books your service, the payment is automatically split. You receive
-                  your 95% share directly to your UPI ID or bank account, while the platform keeps 5% as the service fee.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card> */}
-
       {/* Add/Edit Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
@@ -439,11 +432,11 @@ export default function ProviderPaymentsPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog} disabled={saving}>
+            <Button variant="outline" onClick={closeDialog} disabled={isSaving}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : editingId ? "Update" : "Add"}{" "}
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? "Saving..." : editingId ? "Update" : "Add"}{" "}
               {paymentType === "upi" ? "UPI ID" : "Bank Details"}
             </Button>
           </DialogFooter>

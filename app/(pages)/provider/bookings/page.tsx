@@ -35,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Table,
   TableBody,
@@ -671,8 +672,12 @@ export default function ProviderBookingsPage() {
                 <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.total}</p>
-                <p className="text-xs text-blue-700/70 dark:text-blue-400/70">Total Bookings</p>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                  {stats.total}
+                </p>
+                <p className="text-xs text-blue-700/70 dark:text-blue-400/70">
+                  Total Bookings
+                </p>
               </div>
             </div>
           </CardContent>
@@ -685,8 +690,12 @@ export default function ProviderBookingsPage() {
                 <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{stats.pending}</p>
-                <p className="text-xs text-yellow-700/70 dark:text-yellow-400/70">Pending</p>
+                <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
+                  {stats.pending}
+                </p>
+                <p className="text-xs text-yellow-700/70 dark:text-yellow-400/70">
+                  Pending
+                </p>
               </div>
             </div>
           </CardContent>
@@ -699,8 +708,12 @@ export default function ProviderBookingsPage() {
                 <CheckCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{stats.confirmed}</p>
-                <p className="text-xs text-purple-700/70 dark:text-purple-400/70">Confirmed</p>
+                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                  {stats.confirmed}
+                </p>
+                <p className="text-xs text-purple-700/70 dark:text-purple-400/70">
+                  Confirmed
+                </p>
               </div>
             </div>
           </CardContent>
@@ -713,8 +726,12 @@ export default function ProviderBookingsPage() {
                 <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{stats.completed}</p>
-                <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70">Completed</p>
+                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                  {stats.completed}
+                </p>
+                <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70">
+                  Completed
+                </p>
               </div>
             </div>
           </CardContent>
@@ -1123,9 +1140,11 @@ export default function ProviderBookingsPage() {
                                         <p className="text-xs text-muted-foreground mb-2">
                                           Before
                                         </p>
-                                        <img
+                                        <Image
                                           src={booking.beforePhotoUrl}
                                           alt="Before service"
+                                          width={300}
+                                          height={128}
                                           className="w-full h-32 object-cover rounded-md border cursor-pointer hover:opacity-90 transition-opacity"
                                           onClick={() => {
                                             setLightboxImage(
@@ -1133,6 +1152,15 @@ export default function ProviderBookingsPage() {
                                             );
                                             setLightboxOpen(true);
                                           }}
+                                          onError={(e) => {
+                                            e.currentTarget.style.display =
+                                              "none";
+                                          }}
+                                          unoptimized={
+                                            !booking.beforePhotoUrl.includes(
+                                              "cloudinary",
+                                            )
+                                          }
                                         />
                                       </div>
                                     )}
@@ -1141,9 +1169,11 @@ export default function ProviderBookingsPage() {
                                         <p className="text-xs text-muted-foreground mb-2">
                                           After
                                         </p>
-                                        <img
+                                        <Image
                                           src={booking.afterPhotoUrl}
                                           alt="After service"
+                                          width={300}
+                                          height={128}
                                           className="w-full h-32 object-cover rounded-md border cursor-pointer hover:opacity-90 transition-opacity"
                                           onClick={() => {
                                             setLightboxImage(
@@ -1151,6 +1181,15 @@ export default function ProviderBookingsPage() {
                                             );
                                             setLightboxOpen(true);
                                           }}
+                                          onError={(e) => {
+                                            e.currentTarget.style.display =
+                                              "none";
+                                          }}
+                                          unoptimized={
+                                            !booking.afterPhotoUrl.includes(
+                                              "cloudinary",
+                                            )
+                                          }
                                         />
                                       </div>
                                     )}

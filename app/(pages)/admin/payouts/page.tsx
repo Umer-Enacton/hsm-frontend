@@ -1,21 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Wallet,
-  RefreshCw,
   CheckCircle,
   Clock,
   AlertCircle,
   IndianRupee,
-  User,
   Building2,
   Calendar,
   Users,
   CreditCard,
   Copy,
 } from "lucide-react";
-import { api, API_ENDPOINTS } from "@/lib/api";
 import {
   AdminPageHeader,
   LoadingState,
@@ -41,142 +38,80 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { API_ENDPOINTS } from "@/lib/api";
+import {
+  useAdminPayouts,
+  useProviderGroupedPayouts,
+  usePayoutSummary,
+  usePayProvider,
+} from "@/lib/queries";
+import type { Payout, ProviderPayout, PayoutSummary } from "@/lib/queries/use-admin-payouts";
 
 type PayoutStatus = "pending" | "paid" | "all";
 type ProviderFilter = "all" | "ready" | "waiting";
 
-interface Payout {
-  paymentId: number;
-  bookingId: number;
-  amount: number;
-  providerShare: number;
-  platformFee: number;
-  providerPayoutStatus: PayoutStatus;
-  paymentCreatedAt: string;
-  paymentCompletedAt: string;
-  bookingStatus: string;
-  bookingDate: string;
-  totalPrice: number;
-  providerId: number;
-  providerName: string;
-  providerEmail: string;
-  providerBusiness: string;
-  canProcessPayout: boolean;
-  providerTotalEarnings: number;
-  minimumPayoutAmount: number;
-}
-
-interface PayoutSummary {
-  totalPendingAmount: number;
-  totalPaidAmount: number;
-  pendingCount: number;
-  paidCount: number;
-  providersReadyToPay: Array<{
-    providerId: number;
-    providerName: string;
-    providerBusiness: string;
-    totalPending: number;
-    canProcess: boolean;
-  }>;
-  providersWaiting: Array<{
-    providerId: number;
-    providerName: string;
-    providerBusiness: string;
-    totalPending: number;
-    canProcess: boolean;
-  }>;
-  minimumPayoutAmount: number;
-}
-
-// New interface for provider-grouped payouts
-interface ProviderPayout {
-  providerId: number;
-  providerName: string;
-  providerEmail: string;
-  providerPhone: string | null;
-  businessName: string;
-  businessId: number;
-  totalPending: number;
-  bookingCount: number;
-  paymentIds: number[];
-  canProcessPayout: boolean;
-  minimumPayoutAmount: number;
-  // Provider payment details for manual transfer
-  paymentDetails?: {
-    upiId?: string | null;
-    bankAccount?: string | null;
-    bankAccountMasked?: string | null;
-    ifscCode?: string | null;
-    accountHolderName?: string | null;
-  };
-}
-
-interface ProviderPayoutsResponse {
-  providers: ProviderPayout[];
-  minimumPayoutAmount: number;
-}
-
 export default function AdminPayoutsPage() {
-  const [payouts, setPayouts] = useState<Payout[]>([]);
-  const [summary, setSummary] = useState<PayoutSummary | null>(null);
-  const [providerPayouts, setProviderPayouts] = useState<ProviderPayout[]>([]);
-  const [allProviderPayouts, setAllProviderPayouts] = useState<
-    ProviderPayout[]
-  >([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Fetch data using cached hooks
+  const {
+    data: payouts = [],
+    isLoading: payoutsLoading,
+    error: payoutsError,
+    refetch: refetchPayouts,
+  } = useAdminPayouts();
+
+  const {
+    data: summary,
+    isLoading: summaryLoading,
+  } = usePayoutSummary();
+
+  const {
+    data: providerPayouts = [],
+    isLoading: providersLoading,
+    refetch: refetchProviders,
+  } = useProviderGroupedPayouts();
+
+  // Fetch all providers for counts (needed when filter is not "all")
+  const { data: allProviderPayouts = [] } = useProviderGroupedPayouts("all");
+
+  const isLoading = payoutsLoading || summaryLoading || providersLoading;
+  const error = payoutsError;
+
+  // Local state
   const [statusFilter, setStatusFilter] = useState<PayoutStatus>("all");
   const [providerFilter, setProviderFilter] = useState<ProviderFilter>("all");
   const [providerDialogOpen, setProviderDialogOpen] = useState(false);
   const [bulkPayDialogOpen, setBulkPayDialogOpen] = useState(false);
-  const [selectedProvider, setSelectedProvider] =
-    useState<ProviderPayout | null>(null);
-  const [processing, setProcessing] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<ProviderPayout | null>(null);
 
-  const fetchData = async (showRefreshLoading = false) => {
-    try {
-      if (showRefreshLoading) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
-      setError(null);
+  // Mutation
+  const payMutation = usePayProvider();
 
-      const [payoutsData, summaryData, providersData] = await Promise.all([
-        api.get<any>(`${API_ENDPOINTS.ADMIN_PAYOUTS}?status=${statusFilter}`),
-        api.get<PayoutSummary>(`${API_ENDPOINTS.ADMIN_PAYOUTS}/summary`),
-        api.get<ProviderPayoutsResponse>(
-          `${API_ENDPOINTS.ADMIN_PAYOUTS_BY_PROVIDER}?filter=${providerFilter}`,
-        ),
-      ]);
-
-      setPayouts(payoutsData.payouts || []);
-      setSummary(summaryData);
-      setProviderPayouts(providersData.providers || []);
-
-      // Also fetch all providers for counts (filter=all)
-      if (providerFilter !== "all") {
-        const allProvidersData = await api.get<ProviderPayoutsResponse>(
-          `${API_ENDPOINTS.ADMIN_PAYOUTS_BY_PROVIDER}?filter=all`,
-        );
-        setAllProviderPayouts(allProvidersData.providers || []);
-      } else {
-        setAllProviderPayouts(providersData.providers || []);
-      }
-    } catch (err: any) {
-      console.error("Failed to fetch payouts:", err);
-      setError(err.message || "Failed to load payouts");
-      toast.error(err.message || "Failed to load payouts");
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+  // Filter provider payouts by current filter selection
+  const filteredProviderPayouts = useMemo(() => {
+    if (providerFilter === "all") return providerPayouts;
+    if (providerFilter === "ready") {
+      return providerPayouts.filter((p) => p.canProcessPayout);
     }
-  };
+    if (providerFilter === "waiting") {
+      return providerPayouts.filter((p) => !p.canProcessPayout);
+    }
+    return providerPayouts;
+  }, [providerPayouts, providerFilter]);
 
-  useEffect(() => {
-    fetchData();
-  }, [statusFilter, providerFilter]);
+  // Providers ready and waiting
+  const providersReadyToPay = useMemo(() => {
+    return allProviderPayouts.filter((p) => p.canProcessPayout);
+  }, [allProviderPayouts]);
+
+  const providersWaiting = useMemo(() => {
+    return allProviderPayouts.filter((p) => !p.canProcessPayout);
+  }, [allProviderPayouts]);
+
+  // Filter payouts by status
+  const filteredPayouts = useMemo(() => {
+    if (statusFilter === "all") return payouts;
+    return payouts.filter((p: Payout) => p.status === statusFilter);
+  }, [payouts, statusFilter]);
 
   // Pay all pending payouts for a provider
   const handlePayProvider = async (provider: ProviderPayout) => {
@@ -187,25 +122,20 @@ export default function AdminPayoutsPage() {
   const confirmPayProvider = async () => {
     if (!selectedProvider) return;
 
-    try {
-      setProcessing(true);
-      await api.put(
-        `${API_ENDPOINTS.ADMIN_PAYOUTS}/provider/${selectedProvider.providerId}/pay-all`,
-        {},
-      );
-
-      toast.success(
-        `Paid ₹${(selectedProvider.totalPending / 100).toFixed(2)} to ${selectedProvider.providerName}`,
-      );
-      setProviderDialogOpen(false);
-      setSelectedProvider(null);
-      fetchData();
-    } catch (err: any) {
-      console.error("Failed to pay provider:", err);
-      toast.error(err.message || "Failed to process provider payment");
-    } finally {
-      setProcessing(false);
-    }
+    payMutation.mutate(
+      { providerId: selectedProvider.providerId },
+      {
+        onSuccess: () => {
+          toast.success(
+            `Paid ₹${(selectedProvider.totalPending / 100).toFixed(2)} to ${selectedProvider.providerName}`,
+          );
+          setProviderDialogOpen(false);
+          setSelectedProvider(null);
+          refetchPayouts();
+          refetchProviders();
+        },
+      }
+    );
   };
 
   // Pay all ready providers at once
@@ -214,37 +144,34 @@ export default function AdminPayoutsPage() {
   };
 
   const confirmPayAllReady = async () => {
-    const readyProviders = providersReadyToPay;
-    if (readyProviders.length === 0) return;
+    if (providersReadyToPay.length === 0) return;
 
     try {
-      setProcessing(true);
-
       // Process all ready providers in parallel
-      const promises = readyProviders.map((provider) =>
-        api.put(
-          `${API_ENDPOINTS.ADMIN_PAYOUTS}/provider/${provider.providerId}/pay-all`,
-          {},
-        ),
+      const promises = providersReadyToPay.map((provider) =>
+        fetch(`${API_ENDPOINTS.ADMIN_PAYOUTS}/provider/${provider.providerId}/pay-all`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        }).then(res => res.json())
       );
 
       await Promise.all(promises);
 
-      const totalAmount = readyProviders.reduce(
+      const totalAmount = providersReadyToPay.reduce(
         (sum, p) => sum + p.totalPending,
         0,
       );
 
       toast.success(
-        `Successfully paid ₹${(totalAmount / 100).toFixed(2)} to ${readyProviders.length} provider${readyProviders.length > 1 ? "s" : ""}`,
+        `Successfully paid ₹${(totalAmount / 100).toFixed(2)} to ${providersReadyToPay.length} provider${providersReadyToPay.length > 1 ? "s" : ""}`,
       );
       setBulkPayDialogOpen(false);
-      fetchData();
+      refetchPayouts();
+      refetchProviders();
     } catch (err: any) {
       console.error("Failed to pay all providers:", err);
       toast.error(err.message || "Failed to process some payments");
-    } finally {
-      setProcessing(false);
     }
   };
 
@@ -270,15 +197,8 @@ export default function AdminPayoutsPage() {
   }
 
   if (error && !payouts.length) {
-    return <ErrorState message={error} onRetry={() => fetchData()} />;
+    return <ErrorState message={error.message || "Failed to load payouts"} onRetry={() => refetchPayouts()} />;
   }
-
-  const providersReadyToPay = allProviderPayouts.filter(
-    (p) => p.canProcessPayout,
-  );
-  const providersWaiting = allProviderPayouts.filter(
-    (p) => !p.canProcessPayout,
-  );
 
   return (
     <div className="space-y-6">
@@ -286,8 +206,10 @@ export default function AdminPayoutsPage() {
       <AdminPageHeader
         title="Provider Payouts"
         description="Manage and process provider payouts. Process provider-level payments to ensure full accumulated amounts are paid."
-        onRefresh={() => fetchData(true)}
-        isRefreshing={isRefreshing}
+        onRefresh={() => {
+          refetchPayouts();
+          refetchProviders();
+        }}
       />
 
       {/* Summary Cards */}
@@ -377,6 +299,16 @@ export default function AdminPayoutsPage() {
                   </div>
                 </div>
               </div>
+              <Select value={providerFilter} onValueChange={(v: any) => setProviderFilter(v)}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Filter providers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Providers</SelectItem>
+                  <SelectItem value="ready">Ready to Pay</SelectItem>
+                  <SelectItem value="waiting">Waiting</SelectItem>
+                </SelectContent>
+              </Select>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -388,7 +320,7 @@ export default function AdminPayoutsPage() {
               {providersReadyToPay.length > 1 && (
                 <Button
                   onClick={handlePayAllReady}
-                  disabled={processing}
+                  disabled={payMutation.isPending}
                   className="w-full sm:w-auto"
                 >
                   <Wallet className="h-4 w-4 mr-2" />
@@ -398,7 +330,7 @@ export default function AdminPayoutsPage() {
             </div>
 
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {providerPayouts.length === 0 ? (
+              {filteredProviderPayouts.length === 0 ? (
                 <div className="col-span-full text-center py-8 text-muted-foreground">
                   {providerFilter === "ready" && (
                     <>
@@ -421,7 +353,7 @@ export default function AdminPayoutsPage() {
                     )}
                 </div>
               ) : (
-                providerPayouts.map((provider) => (
+                filteredProviderPayouts.map((provider) => (
                   <div
                     key={provider.providerId}
                     className={`group relative bg-card border rounded-md p-4 transition-all ${
@@ -561,14 +493,14 @@ export default function AdminPayoutsPage() {
                       {/* Pay Button */}
                       <Button
                         onClick={() => handlePayProvider(provider)}
-                        disabled={!provider.canProcessPayout || processing}
+                        disabled={!provider.canProcessPayout || payMutation.isPending}
                         className={`w-full ${
                           provider.canProcessPayout
                             ? ""
                             : "bg-muted text-muted-foreground cursor-not-allowed"
                         }`}
                       >
-                        {processing &&
+                        {payMutation.isPending &&
                         selectedProvider?.providerId === provider.providerId
                           ? "Processing..."
                           : `Mark as Paid`}
@@ -622,7 +554,7 @@ export default function AdminPayoutsPage() {
               <div>
                 Payout History
                 <div className="text-sm font-normal text-muted-foreground">
-                  Read-only records ({payouts.length})
+                  Read-only records ({filteredPayouts.length})
                 </div>
               </div>
             </CardTitle>
@@ -649,58 +581,54 @@ export default function AdminPayoutsPage() {
           )}
         </CardHeader>
         <CardContent>
-          {payouts.length === 0 ? (
+          {filteredPayouts.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Wallet className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>No payout records found for this filter</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {payouts.map((payout) => (
+              {filteredPayouts.map((payout) => (
                 <div
-                  key={payout.paymentId}
+                  key={payout.id}
                   className="bg-card border rounded-md p-4 hover:border-primary/50 hover:shadow-sm transition-all"
                 >
                   <div className="flex items-start gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium">
-                          {payout.providerName}
-                        </span>
-                        <span className="text-muted-foreground">•</span>
-                        <span className="text-sm text-muted-foreground">
-                          {payout.providerBusiness}
+                          {payout.provider?.name || "Unknown Provider"}
                         </span>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Building2 className="h-3 w-3" />
-                          Booking #{payout.bookingId}
+                          Booking #{payout.id}
                         </span>
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {formatDate(payout.bookingDate)}
+                          {formatDate(payout.createdAt)}
                         </span>
                       </div>
                     </div>
 
                     <div className="text-right">
                       <div className="text-lg font-bold text-green-600">
-                        {formatCurrency(payout.providerShare)}
+                        {formatCurrency(payout.amount)}
                       </div>
                       <Badge
                         variant={
-                          payout.providerPayoutStatus === "paid"
+                          payout.status === "completed"
                             ? "outline"
                             : "default"
                         }
                         className={
-                          payout.providerPayoutStatus === "paid"
+                          payout.status === "completed"
                             ? ""
                             : "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-400"
                         }
                       >
-                        {payout.providerPayoutStatus === "paid" ? (
+                        {payout.status === "completed" ? (
                           <>
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Paid
@@ -849,16 +777,16 @@ export default function AdminPayoutsPage() {
             <Button
               variant="outline"
               onClick={() => setProviderDialogOpen(false)}
-              disabled={processing}
+              disabled={payMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               onClick={confirmPayProvider}
-              disabled={processing}
+              disabled={payMutation.isPending}
               className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
             >
-              {processing ? "Processing..." : `Confirm Mark as Paid`}
+              {payMutation.isPending ? "Processing..." : `Confirm Mark as Paid`}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -934,12 +862,12 @@ export default function AdminPayoutsPage() {
             <Button
               variant="outline"
               onClick={() => setBulkPayDialogOpen(false)}
-              disabled={processing}
+              disabled={payMutation.isPending}
             >
               Cancel
             </Button>
-            <Button onClick={confirmPayAllReady} disabled={processing}>
-              {processing
+            <Button onClick={confirmPayAllReady} disabled={payMutation.isPending}>
+              {payMutation.isPending
                 ? "Processing..."
                 : `Confirm Pay ${formatCurrency(
                     providersReadyToPay.reduce(

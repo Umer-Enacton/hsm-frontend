@@ -157,7 +157,7 @@ export async function getServiceById(serviceId: number): Promise<ServiceDetails>
   console.log("✅ Transformed service details:", {
     id: transformedService.id,
     name: transformedService.name,
-    provider: transformedService.provider.businessName
+    provider: transformedService.provider?.businessName
   });
 
   return transformedService;

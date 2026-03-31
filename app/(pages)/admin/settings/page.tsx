@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { IndianRupee, Percent, TrendingUp, Wallet, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,69 +8,68 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { api, API_ENDPOINTS } from "@/lib/api";
 import { AdminSettingsSkeleton } from "@/components/admin/skeletons";
+import { useAdminSettings, useUpdateAdminSettings } from "@/lib/queries";
+import type { AdminSettings } from "@/lib/queries/use-admin-settings";
 
 export default function AdminSettingsPage() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [platformFee, setPlatformFee] = useState(5);
-  const [minimumPayout, setMinimumPayout] = useState(300);
+  // Fetch settings using cached hook
+  const {
+    data: settings = {},
+    isLoading,
+    error,
+  } = useAdminSettings();
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
+  // Mutation for updating settings
+  const updateMutation = useUpdateAdminSettings();
 
-  const fetchSettings = async () => {
-    try {
-      setLoading(true);
-      const response: any = await api.get(API_ENDPOINTS.ADMIN_SETTINGS);
-      setPlatformFee(response.platformFeePercentage || 5);
-      setMinimumPayout((response.minimumPayoutAmount || 30000) / 100); // Convert to rupees
-    } catch (error: any) {
-      console.error("Error fetching settings:", error);
-      toast.error("Failed to load settings");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Local state - initialized from fetched settings
+  const platformFee = settings.commissionRate ?? 5;
+  const minimumPayout = (settings.minBookingAmount ?? 30000) / 100; // Convert to rupees
+
+  const [localFee, setLocalFee] = useState(platformFee);
+  const [localMinPayout, setLocalMinPayout] = useState(minimumPayout);
+
+  // Update local state when settings change
+  if (settings.commissionRate !== undefined && settings.commissionRate !== localFee) {
+    setLocalFee(settings.commissionRate);
+  }
+  if (settings.minBookingAmount !== undefined && settings.minBookingAmount / 100 !== localMinPayout) {
+    setLocalMinPayout(settings.minBookingAmount / 100);
+  }
 
   const handleSaveSettings = async () => {
     // Validate before sending
-    if (platformFee < 1 || platformFee > 10) {
+    if (localFee < 1 || localFee > 10) {
       toast.error("Platform fee must be between 1% and 10%");
       return;
     }
-    if (minimumPayout < 300 || minimumPayout > 1000) {
+    if (localMinPayout < 300 || localMinPayout > 1000) {
       toast.error("Minimum payout must be between ₹300 and ₹1,000");
       return;
     }
 
-    try {
-      setSaving(true);
-      await api.put(API_ENDPOINTS.ADMIN_SETTINGS, {
-        platformFeePercentage: platformFee,
-        minimumPayoutAmount: minimumPayout * 100, // Convert to paise
-      });
-      toast.success("Settings saved successfully");
-    } catch (error: any) {
-      console.error("Error saving settings:", error);
-      toast.error(error.message || "Failed to save settings");
-    } finally {
-      setSaving(false);
-    }
+    updateMutation.mutate({
+      commissionRate: localFee,
+      minBookingAmount: localMinPayout * 100, // Convert to paise
+    });
+  };
+
+  const handleReset = () => {
+    setLocalFee(settings.commissionRate ?? 5);
+    setLocalMinPayout((settings.minBookingAmount ?? 30000) / 100);
   };
 
   // Calculate example split
   const calculateExample = (amount: number) => {
-    const platformFeeAmount = Math.round(amount * (platformFee / 100));
+    const platformFeeAmount = Math.round(amount * (localFee / 100));
     const providerShare = amount - platformFeeAmount;
     return { providerShare, platformFee: platformFeeAmount };
   };
 
   const example = calculateExample(500);
 
-  if (loading) {
+  if (isLoading) {
     return <AdminSettingsSkeleton />;
   }
 
@@ -102,15 +101,15 @@ export default function AdminSettingsPage() {
               </div>
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-purple-600 self-start sm:self-auto">
-              {platformFee}%
+              {localFee}%
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
             <Slider
-              value={[platformFee]}
-              onValueChange={(value) => setPlatformFee(value[0])}
+              value={[localFee]}
+              onValueChange={(value) => setLocalFee(value[0])}
               min={1}
               max={10}
               step={0.5}
@@ -167,8 +166,8 @@ export default function AdminSettingsPage() {
               min={300}
               max={1000}
               step={50}
-              value={minimumPayout}
-              onChange={(e) => setMinimumPayout(Number(e.target.value))}
+              value={localMinPayout}
+              onChange={(e) => setLocalMinPayout(Number(e.target.value))}
               className="w-full sm:max-w-[200px]"
             />
             <div className="text-sm text-muted-foreground">
@@ -187,7 +186,7 @@ export default function AdminSettingsPage() {
                     "pending"
                   </li>
                   <li>
-                    Once provider reaches minimum payout (₹{minimumPayout}), you
+                    Once provider reaches minimum payout (₹{localMinPayout}), you
                     can process their payout
                   </li>
                   <li>
@@ -226,18 +225,18 @@ export default function AdminSettingsPage() {
       <div className="flex flex-col sm:flex-row sm:justify-end gap-2 sm:gap-3 pt-4 border-t">
         <Button
           variant="outline"
-          onClick={fetchSettings}
-          disabled={loading || saving}
+          onClick={handleReset}
+          disabled={updateMutation.isPending}
           className="w-full sm:w-auto"
         >
           Reset
         </Button>
         <Button
           onClick={handleSaveSettings}
-          disabled={saving}
+          disabled={updateMutation.isPending}
           className="w-full sm:w-auto"
         >
-          {saving ? "Saving..." : "Save Settings"}
+          {updateMutation.isPending ? "Saving..." : "Save Settings"}
         </Button>
       </div>
     </div>

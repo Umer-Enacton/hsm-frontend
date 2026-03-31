@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -12,16 +12,12 @@ import {
   Star,
   CheckCircle,
   Clock,
-  X,
-  Calendar,
   Wrench,
-  DollarSign,
   User,
   IndianRupee,
   Ban,
   ShieldCheck,
 } from "lucide-react";
-import { api, API_ENDPOINTS } from "@/lib/api";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +35,12 @@ import {
 } from "@/components/admin/shared";
 import { AdminBusinessDetailSkeleton } from "@/components/admin/skeletons";
 import { BlockBusinessDialog } from "@/components/admin/BlockBusinessDialog";
+import {
+  useBusinessById,
+  useUserById,
+  useServicesByBusiness,
+  type AdminBusiness,
+} from "@/lib/queries/use-admin-services-data";
 import type { Business } from "@/types/provider";
 
 interface Service {
@@ -57,7 +59,8 @@ interface ProviderInfo {
   providerAvatar?: string | null;
 }
 
-interface BusinessDetails extends Business {
+interface BusinessDetails extends Omit<Business, 'name'> {
+  name?: string;  // Make name optional
   providerEmail?: string;
   providerPhone?: string;
   providerAvatar?: string | null;
@@ -74,104 +77,49 @@ export default function BusinessDetailsPage() {
   const params = useParams();
   const businessId = params.id as string;
 
-  const [business, setBusiness] = useState<BusinessDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [isBlockDialogOpen, setIsBlockDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (businessId) {
-      fetchBusinessDetails();
-    }
-  }, [businessId]);
+  // Fetch data using cached hooks
+  const {
+    data: businessData,
+    isLoading: businessLoading,
+    error: businessError,
+    refetch: refetchBusiness,
+  } = useBusinessById(businessId);
 
-  const fetchBusinessDetails = async () => {
-    setIsLoading(true);
-    setError(null);
+  const userId = businessData?.userId || businessData?.providerId;
+  const {
+    data: userData,
+  } = useUserById(userId);
 
-    try {
-      // Fetch business details
-      const businessResponse: any = await api.get(
-        API_ENDPOINTS.BUSINESS_BY_ID(businessId),
-      );
-      const businessData = businessResponse.business || businessResponse;
+  const {
+    data: services = [],
+  } = useServicesByBusiness(businessId);
 
-      console.log("Business data:", businessData);
-      console.log(
-        "Has userId:",
-        businessData.userId || businessData.providerId,
-      );
-      console.log("Has providerName:", businessData.providerName);
-      console.log("Has email:", businessData.email);
+  const isLoading = businessLoading;
+  const error = businessError;
 
-      // Fetch provider info
-      let providerInfo: ProviderInfo = {};
-      try {
-        if (businessData.userId || businessData.providerId) {
-          const userId = businessData.userId || businessData.providerId;
-          console.log("Fetching user data for userId:", userId);
-          const userResponse: any = await api.get(
-            `${API_ENDPOINTS.USERS}/${userId}`,
-          );
-          console.log("User response:", userResponse);
+  // Enrich business data with provider info and services
+  const business: BusinessDetails | null = useMemo(() => {
+    if (!businessData) return null;
 
-          providerInfo = {
-            providerEmail: userResponse.email,
-            providerPhone: userResponse.phone,
-            providerAvatar:
-              userResponse.user.avatar ||
-              userResponse.profile_image ||
-              userResponse.profileImage,
-          };
-          console.log("Provider info extracted:", providerInfo);
-        }
-      } catch (e) {
-        console.log("Could not fetch provider info:", e);
-      }
+    const providerInfo: ProviderInfo = {
+      providerEmail: userData?.email || (businessData as any).email,
+      providerPhone: userData?.phone,
+      providerAvatar: userData?.user?.avatar || userData?.profile_image,
+    };
 
-      // If provider info fetch failed, use data from business
-      if (!providerInfo.providerEmail && businessData.email) {
-        providerInfo.providerEmail = businessData.email;
-        console.log("Using business email:", businessData.email);
-      }
+    const activeServicesCount = services.filter((s) => s.isActive).length;
 
-      // if (!providerInfo.providerAvatar && businessData.logo) {
-      //   console.log(providerInfo);
-      //   providerInfo.providerAvatar = businessData.logo;
-      // }
-
-      console.log("Final provider info:", providerInfo);
-
-      // Fetch services
-      let servicesData: Service[] = [];
-      try {
-        const servicesResponse: any = await api.get(
-          API_ENDPOINTS.SERVICES_BY_BUSINESS(businessId),
-        );
-        servicesData = Array.isArray(servicesResponse)
-          ? servicesResponse
-          : servicesResponse?.services || servicesResponse?.data || [];
-      } catch (e) {
-        console.log("Could not fetch services");
-      }
-
-      const activeServicesCount = servicesData.filter((s) => s.isActive).length;
-
-      setBusiness({
-        ...businessData,
-        ...providerInfo,
-        services: servicesData,
-        totalServices: servicesData.length,
-        activeServices: activeServicesCount,
-      });
-    } catch (err: any) {
-      console.error("Failed to fetch business details:", err);
-      setError(err.message || "Failed to load business details");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    return {
+      ...(businessData as any),
+      ...providerInfo,
+      services: services as Service[],
+      totalServices: services.length,
+      activeServices: activeServicesCount,
+    };
+  }, [businessData, userData, services]);
 
   const handleVerify = async () => {
     if (!business) return;
@@ -180,7 +128,7 @@ export default function BusinessDetailsPage() {
     try {
       const result = await verifyBusiness(Number(businessId));
       toast.success("Business verified successfully");
-      setBusiness({ ...business, isVerified: true });
+      refetchBusiness();
       window.dispatchEvent(new CustomEvent("business-updated"));
     } catch (error: any) {
       toast.error("Failed to verify business", {
@@ -204,12 +152,7 @@ export default function BusinessDetailsPage() {
       toast.success("Business unblocked successfully", {
         description: `${business.name} can now receive new bookings`,
       });
-      setBusiness({
-        ...business,
-        isBlocked: false,
-        blockedReason: null,
-        blockedAt: null,
-      });
+      refetchBusiness();
       window.dispatchEvent(new CustomEvent("business-updated"));
     } catch (error: any) {
       toast.error("Failed to unblock business", {
@@ -221,8 +164,7 @@ export default function BusinessDetailsPage() {
   };
 
   const handleBlocked = () => {
-    // Refresh business details after blocking
-    fetchBusinessDetails();
+    refetchBusiness();
   };
 
   if (isLoading) {
@@ -232,12 +174,11 @@ export default function BusinessDetailsPage() {
   if (error || !business) {
     return (
       <ErrorState
-        message={error || "Business not found"}
+        message={error?.message || "Business not found"}
         onRetry={() => router.push("/admin/business")}
       />
     );
   }
-  console.log("final business", business);
 
   return (
     <div className="space-y-3 sm:space-y-6">
@@ -389,8 +330,6 @@ export default function BusinessDetailsPage() {
           </div>
         </div>
       </Card>
-
-      {/* Action Bar */}
 
       {/* Two Column Layout */}
       <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
@@ -554,7 +493,7 @@ export default function BusinessDetailsPage() {
                     Joined
                   </h4>
                   <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-                    <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                    <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                     <span>
                       {new Date(business.createdAt).toLocaleDateString()}
                     </span>
@@ -580,7 +519,7 @@ export default function BusinessDetailsPage() {
                   {business.services.map((service) => (
                     <Card
                       key={service.id}
-                      className="group p-2.5  hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
+                      className="group p-2.5 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
                       onClick={() =>
                         router.push(`/admin/services/${service.id}`)
                       }
@@ -685,7 +624,7 @@ export default function BusinessDetailsPage() {
           open={isBlockDialogOpen}
           onOpenChange={setIsBlockDialogOpen}
           businessId={Number(businessId)}
-          businessName={business.name}
+          businessName={business.name || business.businessName || "Business"}
           onBlocked={handleBlocked}
         />
       )}

@@ -27,11 +27,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { getAvailableSlots } from "@/lib/customer/api";
 import {
-  getServiceById,
-  getAvailableSlots,
-  getAddresses,
-} from "@/lib/customer/api";
+  useCustomerService,
+  useAddresses,
+  useBusinessSlots,
+  useServiceFeedback,
+} from "@/lib/queries";
 import type { ServiceDetails, Slot, Address } from "@/types/customer";
 import type {
   PaymentOrderRequest,
@@ -69,18 +71,20 @@ export default function ServiceDetailsPage({
   const router = useRouter();
   const { id } = use(params);
 
-  // Loading states
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-  const [isLoadingService, setIsLoadingService] = useState(false);
-  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
-  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
-  const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
+  // Use cached hooks for data fetching
+  const {
+    data: service,
+    isLoading: isLoadingService,
+    error: serviceError,
+  } = useCustomerService(parseInt(id));
 
-  // Data
-  const [service, setService] = useState<ServiceDetails | null>(null);
+  const { data: addresses = [], isLoading: isLoadingAddresses } = useAddresses();
+
+  const { data: feedbacks = [], isLoading: isLoadingFeedback } = useServiceFeedback(parseInt(id), 10);
+
+  // Local state for slots (needs dynamic refetching based on date selection)
   const [allSlots, setAllSlots] = useState<Slot[]>([]);
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
@@ -91,12 +95,30 @@ export default function ServiceDetailsPage({
 
   // Payment order data (created when slot is available)
   const [paymentOrderData, setPaymentOrderData] = useState<any>(null);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   // Carousel state
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
   const autoScrollPausedRef = useRef(false);
   const carouselRef = useRef<HTMLDivElement>(null);
   const [reviewsPerView, setReviewsPerView] = useState(3);
+
+  // Initialize selected address when addresses load
+  useEffect(() => {
+    if (addresses.length > 0 && !selectedAddress) {
+      setSelectedAddress(addresses[0]);
+    }
+  }, [addresses]);
+
+  // Initialize today's date and load initial slots when service is loaded
+  useEffect(() => {
+    if (service?.provider?.id) {
+      const today = new Date().toISOString().split("T")[0];
+      setSelectedDate(today);
+      loadSlots(service.provider?.id, today, service.id);
+      setHasLoadedOnce(true);
+    }
+  }, [service]);
 
   // Update reviews per view based on screen size
   useEffect(() => {
@@ -149,79 +171,6 @@ export default function ServiceDetailsPage({
 
   const handleMouseLeave = () => {
     autoScrollPausedRef.current = false;
-  };
-
-  // Fetch initial data on mount
-  useEffect(() => {
-    // Only load if we haven't loaded yet (prevent unnecessary reloads)
-    if (!hasLoadedOnce) {
-      loadServiceDetails();
-      loadAddresses();
-    }
-  }, [id]);
-
-  const loadServiceDetails = async () => {
-    try {
-      setIsLoadingService(true);
-      const serviceData = await getServiceById(parseInt(id));
-      setService(serviceData);
-      setHasLoadedOnce(true);
-
-      // Load slots for this business for TODAY's date
-      // IMPORTANT: Always pass date so backend checks availability per service
-      const today = new Date().toISOString().split("T")[0];
-      if (serviceData?.provider?.id) {
-        console.log(
-          `🔄 Loading initial slots for business ${serviceData.provider.id}, service ${serviceData.id}, date ${today}`,
-        );
-        await loadSlots(serviceData.provider.id, today, serviceData.id); // Always pass today's date for availability check
-      }
-
-      // Load feedback for this service
-      await loadFeedback(parseInt(id));
-    } catch (error: any) {
-      console.error("Error loading service:", error);
-      toast.error("Failed to load service details");
-      router.push("/customer/services");
-    } finally {
-      setIsLoadingService(false);
-    }
-  };
-
-  const loadFeedback = async (serviceId: number) => {
-    try {
-      setIsLoadingFeedback(true);
-      const feedbackResponse: any = await api.get(
-        API_ENDPOINTS.FEEDBACK_BY_SERVICE(serviceId),
-      );
-      const feedbackData = Array.isArray(feedbackResponse)
-        ? feedbackResponse
-        : feedbackResponse?.feedback || feedbackResponse?.data || [];
-
-      setFeedbacks(feedbackData.slice(0, 10)); // Show last 10 reviews
-    } catch (error) {
-      console.error("Error loading feedback:", error);
-      setFeedbacks([]);
-    } finally {
-      setIsLoadingFeedback(false);
-    }
-  };
-
-  const loadAddresses = async () => {
-    try {
-      setIsLoadingAddresses(true);
-      const addressData = await getAddresses();
-      const addressesArray = Array.isArray(addressData) ? addressData : [];
-      setAddresses(addressesArray);
-      if (addressesArray.length > 0 && !selectedAddress) {
-        setSelectedAddress(addressesArray[0]);
-      }
-    } catch (error) {
-      console.error("Error loading addresses:", error);
-      setAddresses([]);
-    } finally {
-      setIsLoadingAddresses(false);
-    }
   };
 
   const loadSlots = async (
@@ -300,9 +249,9 @@ export default function ServiceDetailsPage({
     // Reload slots for the new date (with availability)
     if (service?.provider?.id) {
       console.log(
-        `🔄 Loading slots for business ${service.provider.id}, service ${service.id} on ${date}`,
+        `🔄 Loading slots for business ${service.provider?.id}, service ${service.id} on ${date}`,
       );
-      await loadSlots(service.provider.id, date, service.id); // Pass serviceId for per-service filtering
+      await loadSlots(service.provider?.id, date, service.id); // Pass serviceId for per-service filtering
     }
   };
 
@@ -407,6 +356,22 @@ export default function ServiceDetailsPage({
 
   const showSkeleton = !hasLoadedOnce || isLoadingService;
 
+  // Handle error
+  if (serviceError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-4">
+            Failed to load service details
+          </p>
+          <Button onClick={() => router.push("/customer/services")}>
+            Back to Services
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Set default date
   useEffect(() => {
     const days = getNext3Days();
@@ -419,7 +384,7 @@ export default function ServiceDetailsPage({
   const canBook = service && selectedDate && selectedSlot && selectedAddress;
 
   // Error state
-  if (hasLoadedOnce && !service) {
+  if (!isLoadingService && !service) {
     return (
       <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center">
         <div className="text-center">
@@ -489,7 +454,7 @@ export default function ServiceDetailsPage({
                               <h1 className="text-3xl sm:text-4xl font-bold text-white">
                                 {service.name}
                               </h1>
-                              {service.provider.isVerified && (
+                              {service.provider?.isVerified && (
                                 <Badge className="bg-green-500 text-white border-green-400 gap-1.5">
                                   <CheckCircle className="h-3.5 w-3.5" />
                                   Verified
@@ -497,7 +462,7 @@ export default function ServiceDetailsPage({
                               )}
                             </div>
                             <p className="text-lg text-white/90">
-                              by {service.provider.businessName}
+                              by {service.provider?.businessName}
                             </p>
                           </div>
 
@@ -530,7 +495,7 @@ export default function ServiceDetailsPage({
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
                             <span>
-                              {service.provider.city}, {service.provider.state}
+                              {service.provider?.city}, {service.provider?.state}
                             </span>
                           </div>
                         </div>
@@ -598,7 +563,7 @@ export default function ServiceDetailsPage({
                           <div>
                             <p className="font-medium text-sm">Service Area</p>
                             <p className="text-sm text-muted-foreground">
-                              {service.provider.city}, {service.provider.state}
+                              {service.provider?.city}, {service.provider?.state}
                             </p>
                           </div>
                         </div>
@@ -716,16 +681,38 @@ export default function ServiceDetailsPage({
                                         <div className="flex items-center gap-3">
                                           {/* Avatar */}
                                           {customerAvatar ? (
-                                            <img
+                                            <Image
                                               src={customerAvatar}
                                               alt={customerName}
+                                              width={40}
+                                              height={40}
                                               className="h-10 w-10 rounded-full object-cover border-2 border-primary/20"
+                                              onError={(e) => {
+                                                e.currentTarget.style.display =
+                                                  "none";
+                                                const fallback = e.currentTarget
+                                                  .nextElementSibling as HTMLElement;
+                                                if (fallback)
+                                                  fallback.style.display =
+                                                    "flex";
+                                              }}
+                                              unoptimized={
+                                                !customerAvatar.includes(
+                                                  "cloudinary",
+                                                )
+                                              }
                                             />
-                                          ) : (
-                                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center border-2 border-primary/20">
-                                              <UserIcon className="h-5 w-5 text-primary" />
-                                            </div>
-                                          )}
+                                          ) : null}
+                                          <div
+                                            className={cn(
+                                              "h-10 w-10 rounded-full bg-linear-to-br from-primary/20 to-primary/10 flex items-center justify-center border-2 border-primary/20",
+                                              !customerAvatar
+                                                ? "flex"
+                                                : "hidden",
+                                            )}
+                                          >
+                                            <UserIcon className="h-5 w-5 text-primary" />
+                                          </div>
 
                                           {/* Name & Date */}
                                           <div className="flex-1 min-w-0">
@@ -1063,13 +1050,13 @@ export default function ServiceDetailsPage({
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">
-                              {service.provider.businessName}
+                              {service.provider?.businessName}
                             </p>
                             <p className="text-xs text-muted-foreground truncate">
-                              {service.provider.city}, {service.provider.state}
+                              {service.provider?.city}, {service.provider?.state}
                             </p>
                           </div>
-                          {service.provider.isVerified && (
+                          {service.provider?.isVerified && (
                             <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
                           )}
                         </div>

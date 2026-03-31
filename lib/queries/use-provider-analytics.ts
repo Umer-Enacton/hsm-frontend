@@ -53,6 +53,11 @@ interface StatusResponse {
   totalRevenue: number;
 }
 
+/**
+ * Provider analytics queries
+ * Analytics data changes moderately - historical data doesn't change
+ * but recent bookings may update status
+ */
 export function useProviderAnalytics(period: PeriodType = '7d') {
   const revenueQuery = useQuery<RevenueResponse>({
     queryKey: [QUERY_KEYS.PROVIDER_ANALYTICS, 'revenue', period],
@@ -60,7 +65,8 @@ export function useProviderAnalytics(period: PeriodType = '7d') {
       api.get<RevenueResponse>(
         `${API_ENDPOINTS.PROVIDER_ANALYTICS_REVENUE}?period=${period}`,
       ),
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 10 * 60 * 1000, // 10 minutes - historical data rarely changes
+    gcTime: 30 * 60 * 1000, // 30 minutes cache
   });
 
   const servicesQuery = useQuery<ServicesResponse>({
@@ -69,7 +75,8 @@ export function useProviderAnalytics(period: PeriodType = '7d') {
       api.get<ServicesResponse>(
         `${API_ENDPOINTS.PROVIDER_ANALYTICS_SERVICES}?period=${period}`,
       ),
-    staleTime: 1000 * 60,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000,
   });
 
   const statusQuery = useQuery<StatusResponse>({
@@ -78,7 +85,8 @@ export function useProviderAnalytics(period: PeriodType = '7d') {
       api.get<StatusResponse>(
         `${API_ENDPOINTS.PROVIDER_ANALYTICS_STATUS}?period=${period}`,
       ),
-    staleTime: 1000 * 60,
+    staleTime: 5 * 60 * 1000, // 5 minutes - status can change more frequently
+    gcTime: 20 * 60 * 1000,
   });
 
   const isLoading =

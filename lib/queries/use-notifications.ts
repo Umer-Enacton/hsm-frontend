@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, API_ENDPOINTS } from '@/lib/api';
-import { toast } from 'sonner';
-import { onMessageListener } from '@/lib/firebase';
-import { QUERY_KEYS } from './query-keys';
+import { useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, API_ENDPOINTS } from "@/lib/api";
+import { toast } from "sonner";
+import { onMessageListener } from "@/lib/firebase";
+import { QUERY_KEYS } from "./query-keys";
 
 export interface Notification {
   id: number;
@@ -29,7 +29,10 @@ interface NotificationsResponse {
 /**
  * Fetch notifications with TanStack Query
  */
-export function useNotifications(options?: { limit?: number; offset?: number }) {
+export function useNotifications(options?: {
+  limit?: number;
+  offset?: number;
+}) {
   const queryClient = useQueryClient();
   const { limit = 20, offset = 0 } = options || {};
 
@@ -37,23 +40,25 @@ export function useNotifications(options?: { limit?: number; offset?: number }) 
     queryKey: [QUERY_KEYS.NOTIFICATIONS, "list", { limit, offset }],
     queryFn: async () => {
       const response = await api.get<NotificationsResponse>(
-        `${API_ENDPOINTS.NOTIFICATIONS}?limit=${limit}&offset=${offset}`
+        `${API_ENDPOINTS.NOTIFICATIONS}?limit=${limit}&offset=${offset}`,
       );
       return response;
     },
     staleTime: 1000 * 30, // Consider data fresh for 30 seconds
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 
   const unreadCountQuery = useQuery<{ count: number }>({
     queryKey: [QUERY_KEYS.NOTIFICATIONS, "unreadCount"],
     queryFn: async () => {
-      const response = await api.get<{ count: number }>(API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT);
+      const response = await api.get<{ count: number }>(
+        API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT,
+      );
       return response;
     },
     staleTime: 1000 * 15, // Unread count refreshes every 15 seconds
     refetchInterval: 15000, // Poll every 15 seconds
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 
   // Mark notification(s) as read mutation
@@ -126,7 +131,9 @@ function useFCMMessageListener(queryClient: ReturnType<typeof useQueryClient>) {
         unsubscribeFn = setupHandler((payload: any) => {
           if (unsubscribed || !payload) return;
 
-          console.log('📱 FCM: Foreground message received, refreshing notifications');
+          console.log(
+            "📱 FCM: Foreground message received, refreshing notifications",
+          );
 
           // Show toast notification
           if (payload.notification) {
@@ -158,32 +165,36 @@ function useFCMMessageListener(queryClient: ReturnType<typeof useQueryClient>) {
               finalUrl = url.toString();
             }
 
-            toast(payload.notification.title || 'New Notification', {
+            toast(payload.notification.title || "New Notification", {
               description: payload.notification.body,
               duration: 5000,
-              action: finalUrl ? {
-                label: 'View',
-                onClick: () => {
-                  window.location.href = finalUrl;
-                },
-              } : undefined,
+              action: finalUrl
+                ? {
+                    label: "View",
+                    onClick: () => {
+                      window.location.href = finalUrl;
+                    },
+                  }
+                : undefined,
             });
           }
 
           // IMMEDIATELY refresh notifications from server
-          queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTIFICATIONS] });
+          queryClient.invalidateQueries({
+            queryKey: [QUERY_KEYS.NOTIFICATIONS],
+          });
         });
 
-        console.log('✅ FCM message listener set up successfully');
+        console.log("✅ FCM message listener set up successfully");
       } catch (error) {
-        console.error('❌ Failed to setup FCM listener:', error);
+        console.error("❌ Failed to setup FCM listener:", error);
       }
     };
 
     setupListener();
 
     return () => {
-      console.log('🧹 Cleaning up FCM message listener');
+      console.log("🧹 Cleaning up FCM message listener");
       unsubscribed = true;
       if (unsubscribeFn) {
         unsubscribeFn();

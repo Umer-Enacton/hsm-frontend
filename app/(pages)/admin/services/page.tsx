@@ -1,9 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Wrench } from "lucide-react";
-import { api, API_ENDPOINTS } from "@/lib/api";
+import {
+  Wrench,
+  Eye,
+  Ban,
+  CheckCircle,
+  Building2,
+  Clock,
+  IndianRupee,
+  Star,
+} from "lucide-react";
 import { toast } from "sonner";
 import { ServiceActionDialog } from "@/components/admin/ServiceActionDialog";
 import {
@@ -39,44 +47,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  MoreHorizontal,
-  Eye,
-  Ban,
-  CheckCircle,
-  Building2,
-  MapPin,
-  Clock,
-  IndianRupee,
-  Star,
-  Power,
-} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-interface Service {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  EstimateDuration?: number;
-  duration?: number;
-  business_id?: number;
-  businessProfileId?: number;
-  business_name?: string;
-  business_category?: string;
-  business_city?: string;
-  business_state?: string;
-  business_logo?: string | null;
-  business_isVerified?: boolean;
-  business_phone?: string;
-  image?: string | null;
-  rating?: string | number;
-  totalReviews?: number;
-  isActive?: boolean;
-  is_active?: boolean;
-  created_at?: string;
-  createdAt?: string;
-}
+import { useAdminServices, useAdminBusinesses } from "@/lib/queries";
+import type { AdminService, AdminBusiness } from "@/lib/queries/use-admin-services-data";
 
 interface BusinessMapInfo {
   name: string;
@@ -88,116 +61,78 @@ interface BusinessMapInfo {
   isVerified?: boolean;
 }
 
-interface ServiceStats {
-  total: number;
-  active: number;
-  inactive: number;
+interface EnrichedService extends AdminService {
+  business_name: string;
+  business_category?: string;
+  business_city?: string;
+  business_state?: string;
+  business_phone?: string;
+  business_logo?: string | null;
+  business_isVerified: boolean;
 }
 
 export default function AdminServicesPage() {
   const router = useRouter();
-  const [services, setServices] = useState<Service[]>([]);
-  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
-  const [stats, setStats] = useState<ServiceStats>({
-    total: 0,
-    active: 0,
-    inactive: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // Fetch data using cached hooks
+  const {
+    data: services = [],
+    isLoading: servicesLoading,
+    error: servicesError,
+    refetch: refetchServices,
+  } = useAdminServices();
+
+  const {
+    data: businesses = [],
+    isLoading: businessesLoading,
+  } = useAdminBusinesses();
+
+  const isLoading = servicesLoading || businessesLoading;
+  const error = servicesError;
+
+  // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [actionDialogService, setActionDialogService] =
-    useState<Service | null>(null);
+  const [actionDialogService, setActionDialogService] = useState<EnrichedService | null>(null);
 
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
-  useEffect(() => {
-    filterServices();
-  }, [services, statusFilter, searchQuery]);
-
-  const fetchServices = async (showRefreshLoading = false) => {
-    try {
-      if (showRefreshLoading) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
-      setError(null);
-
-      // Fetch services using admin endpoint (includes inactive services)
-      const servicesResponse: any = await api.get(API_ENDPOINTS.ADMIN_SERVICES);
-      const servicesData = Array.isArray(servicesResponse)
-        ? servicesResponse
-        : servicesResponse?.services || servicesResponse?.data || [];
-
-      // Fetch businesses to get detailed info
-      const businessesResponse: any = await api.get(API_ENDPOINTS.BUSINESSES);
-      const businesses = Array.isArray(businessesResponse)
-        ? businessesResponse
-        : businessesResponse?.businesses || businessesResponse?.data || [];
-
-      // Create a map of business details
-      const businessMap = new Map<number, BusinessMapInfo>(
-        businesses.map((b: any) => [
-          b.id,
-          {
-            name: b.businessName || b.name,
-            category: b.category,
-            city: b.city,
-            state: b.state,
-            phone: b.phone,
-            logo: b.logo,
-            isVerified: b.isVerified,
-          },
-        ]),
-      );
-
-      // Enrich services with business data
-      const enrichedServices = servicesData.map((service: any) => {
-        const businessId = service.business_id || service.businessProfileId;
-        const business = businessMap.get(businessId);
-        return {
-          ...service,
-          business_name: business?.name || "Unknown Business",
-          business_category: business?.category,
-          business_city: business?.city,
-          business_state: business?.state,
-          business_phone: business?.phone,
-          business_logo: business?.logo,
-          business_isVerified: business?.isVerified || false,
-          // Normalize fields
-          duration: service.EstimateDuration || service.duration,
-          isActive: service.isActive ?? service.is_active ?? true,
-        };
+  // Create business map for lookup
+  const businessMap = useMemo(() => {
+    const map = new Map<number, BusinessMapInfo>();
+    businesses.forEach((b: AdminBusiness) => {
+      map.set(b.id, {
+        name: b.businessName || b.name || "",
+        category: b.category,
+        city: b.city,
+        state: b.state,
+        phone: b.phone,
+        logo: b.logo,
+        isVerified: b.isVerified,
       });
+    });
+    return map;
+  }, [businesses]);
 
-      setServices(enrichedServices);
+  // Enrich services with business data
+  const enrichedServices = useMemo(() => {
+    return services.map((service: AdminService) => {
+      const businessId = service.businessId || service.businessProfileId || 0;
+      const business = businessMap.get(businessId);
+      return {
+        ...service,
+        business_name: business?.name || "Unknown Business",
+        business_category: business?.category,
+        business_city: business?.city,
+        business_state: business?.state,
+        business_phone: business?.phone,
+        business_logo: business?.logo,
+        business_isVerified: business?.isVerified || false,
+      } as EnrichedService;
+    });
+  }, [services, businessMap]);
 
-      // Calculate stats
-      const activeCount = enrichedServices.filter(
-        (s: Service) => s.isActive,
-      ).length;
-      setStats({
-        total: enrichedServices.length,
-        active: activeCount,
-        inactive: enrichedServices.length - activeCount,
-      });
-    } catch (err: any) {
-      console.error("Failed to fetch services:", err);
-      setError(err.message || "Failed to load services");
-      toast.error("Failed to load services");
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
-
-  const filterServices = () => {
-    let filtered = [...services];
+  // Filter services
+  const filteredServices = useMemo(() => {
+    let filtered = [...enrichedServices];
 
     // Status filter
     if (statusFilter === "active") {
@@ -218,17 +153,26 @@ export default function AdminServicesPage() {
       );
     }
 
-    setFilteredServices(filtered);
-  };
+    return filtered;
+  }, [enrichedServices, statusFilter, searchQuery]);
 
-  const handleToggleStatus = (service: Service) => {
-    // Open dialog for both activate and deactivate
+  // Calculate stats
+  const stats = useMemo(() => {
+    const activeCount = enrichedServices.filter((s) => s.isActive).length;
+    return {
+      total: enrichedServices.length,
+      active: activeCount,
+      inactive: enrichedServices.length - activeCount,
+    };
+  }, [enrichedServices]);
+
+  const handleToggleStatus = (service: EnrichedService) => {
     setActionDialogService(service);
   };
 
   const handleActionCompleted = () => {
     setActionDialogService(null);
-    fetchServices();
+    refetchServices();
   };
 
   const handleViewDetails = (serviceId: number) => {
@@ -246,7 +190,7 @@ export default function AdminServicesPage() {
   }
 
   if (error && !services.length) {
-    return <ErrorState message={error} onRetry={() => fetchServices()} />;
+    return <ErrorState message={error.message || "Failed to load services"} onRetry={() => refetchServices()} />;
   }
 
   return (
@@ -255,8 +199,7 @@ export default function AdminServicesPage() {
       <AdminPageHeader
         title="Services"
         description="Manage all services across the platform"
-        onRefresh={() => fetchServices(true)}
-        isRefreshing={isRefreshing}
+        onRefresh={() => refetchServices()}
       />
 
       {/* Statistics */}
@@ -339,7 +282,7 @@ export default function AdminServicesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredServices.map((service, idx) => (
+              {filteredServices.map((service) => (
                 <TableRow
                   key={service.id}
                   className="hover:bg-muted/50 cursor-pointer transition-colors border-b last:border-b-0"
@@ -411,7 +354,7 @@ export default function AdminServicesPage() {
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
                       <span>
-                        {service.duration || service.EstimateDuration || 0}m
+                        {service.duration || 0}m
                       </span>
                     </div>
                   </TableCell>
@@ -453,7 +396,7 @@ export default function AdminServicesPage() {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
+                          <CheckCircle className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-44">

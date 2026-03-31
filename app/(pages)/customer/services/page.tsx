@@ -29,11 +29,11 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { getServices } from "@/lib/customer/api";
-import { api } from "@/lib/api";
+import { useCategories, useCustomerServices } from "@/lib/queries";
 import type { CustomerService, ServiceFilters } from "@/types/customer";
 import { getAllStates, getCitiesByState } from "@/lib/data/india-locations";
 import { cn } from "@/lib/utils";
+import { ServiceImage } from "@/components/common";
 
 // Types
 type ViewMode = "grid" | "list";
@@ -61,14 +61,6 @@ export default function CustomerServicesPage() {
 
   // Loading states - SIMPLIFIED (no full-page loader)
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-  const [isLoadingServices, setIsLoadingServices] = useState(false);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
-
-  // Data
-  const [services, setServices] = useState<CustomerService[]>([]);
-  const [categories, setCategories] = useState<CategoryData[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   // Filters
@@ -81,6 +73,7 @@ export default function CustomerServicesPage() {
   });
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
   // Derived values - memoized for performance
   const availableCities = useMemo(() => {
@@ -110,51 +103,28 @@ export default function CustomerServicesPage() {
     [filterState, debouncedSearch, debouncedPriceRange],
   );
 
-  // Fetch categories on mount
+  // Use cached query hooks instead of direct API calls
+  const { data: categoriesData, isLoading: isLoadingCategories } =
+    useCategories();
+  const categories = categoriesData?.categories || [];
+
+  const {
+    data: servicesData,
+    isLoading: isLoadingServices,
+    isFetching: isRefetching,
+  } = useCustomerServices(filters, page);
+  const services = servicesData?.data || [];
+  const total = servicesData?.total || 0;
+
+  // Mark first load as complete
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setIsLoadingCategories(true);
-        const response = await api.get<{ categories: CategoryData[] }>(
-          "/categories",
-        );
-        setCategories(response.categories || []);
-      } catch (error) {
-        console.error("Error loading categories:", error);
-        setCategories([]);
-      } finally {
-        setIsLoadingCategories(false);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  // Load services - STABLE dependencies, no services.length check
-  const loadServices = useCallback(async () => {
-    try {
-      setIsLoadingServices(true);
-
-      const result = await getServices(filters);
-      setServices(result.data || []);
-      setTotal(result.total || 0);
-
-      // Mark first load as complete
+    if (!isLoadingServices) {
       setHasLoadedOnce(true);
-    } catch (error: any) {
-      console.error("Error loading services:", error);
-      toast.error(error.message || "Failed to load services");
-      setServices([]);
-      setTotal(0);
-      setHasLoadedOnce(true);
-    } finally {
-      setIsLoadingServices(false);
     }
-  }, [filters, page]); // Stable dependencies - NO services.length
+  }, [isLoadingServices]);
 
-  // Load services when filters change
-  useEffect(() => {
-    loadServices();
-  }, [loadServices]);
+  const isLoading = isLoadingServices;
+  const showSkeleton = !hasLoadedOnce || isLoading;
 
   // Filter handlers - OPTIMIZED to single setState
   const updateFilter = useCallback(
@@ -219,9 +189,6 @@ export default function CustomerServicesPage() {
       filters.search
     );
   }, [filters]);
-
-  const isLoading = isLoadingServices;
-  const showSkeleton = !hasLoadedOnce || isLoading;
 
   // ==============================================================================
   // RENDER - NO EARLY RETURN, ALWAYS FULL LAYOUT
@@ -541,11 +508,20 @@ export default function CustomerServicesPage() {
                     {services.map((service) => (
                       <Card
                         key={service.id}
-                        className="group hover:border-primary/50 hover:shadow-md transition-all cursor-pointer p-2.5"
+                        className="group hover:border-primary/50 hover:shadow-md transition-all cursor-pointer overflow-hidden"
                         onClick={() =>
                           router.push(`/customer/services/${service.id}`)
                         }
                       >
+                        {/* Service Image */}
+
+                        {/* Verified Badge overlay */}
+                        {service.provider?.isVerified && (
+                          <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow-sm">
+                            ✓ Verified
+                          </div>
+                        )}
+
                         <CardContent className="p-4 space-y-3">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
@@ -556,14 +532,6 @@ export default function CustomerServicesPage() {
                                 {service.provider?.businessName || "Provider"}
                               </p>
                             </div>
-                            {service.provider?.isVerified && (
-                              <Badge
-                                variant="secondary"
-                                className="bg-green-100 text-green-700 text-xs shrink-0"
-                              >
-                                ✓
-                              </Badge>
-                            )}
                           </div>
 
                           <p className="text-xs text-muted-foreground line-clamp-2">
@@ -615,15 +583,24 @@ export default function CustomerServicesPage() {
                     {services.map((service) => (
                       <Card
                         key={service.id}
-                        className="group hover:border-primary/50 transition-colors cursor-pointer border-border/50 p-2"
+                        className="group hover:border-primary/50 transition-colors cursor-pointer border-border/50 overflow-hidden"
                         onClick={() =>
                           router.push(`/customer/services/${service.id}`)
                         }
                       >
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between gap-6">
-                            {/* Left - All Info */}
-                            <div className="flex-1 min-w-0 space-y-2">
+                        <CardContent className="p-0">
+                          <div className="flex items-start">
+                            {/* Thumbnail Image */}
+                            <div className="relative h-24 w-24 sm:h-32 sm:w-32 shrink-0 bg-muted">
+                              <ServiceImage
+                                src={service.image || service.imageUrl}
+                                alt={service.name}
+                                className="w-full h-full"
+                              />
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0 p-4 space-y-2">
                               {/* Title & Provider */}
                               <div className="space-y-0.5">
                                 <div className="flex items-center gap-2">
@@ -678,7 +655,7 @@ export default function CustomerServicesPage() {
                             </div>
 
                             {/* Right - Price & CTA */}
-                            <div className="shrink-0 text-right space-y-2">
+                            <div className="shrink-0 p-4 text-right space-y-2">
                               <div>
                                 <span className="text-xl font-semibold flex items-center justify-end">
                                   <IndianRupee className="h-4 w-4" />

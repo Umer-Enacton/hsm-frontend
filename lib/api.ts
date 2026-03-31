@@ -219,7 +219,11 @@ export const getAuthHeaders = () => {
   // Check both localStorage and sessionStorage for token
   let token = null;
   if (typeof window !== 'undefined') {
-    token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const rawToken = localStorage.getItem("token") || sessionStorage.getItem("token");
+    // Explicitly check for 'null' or 'undefined' strings which can break the backend
+    if (rawToken && rawToken !== 'null' && rawToken !== 'undefined') {
+      token = rawToken;
+    }
   }
 
   // Debug logging in production
@@ -227,7 +231,6 @@ export const getAuthHeaders = () => {
     console.log('[getAuthHeaders]', {
       hasToken: !!token,
       tokenLength: token?.length,
-      hasAuthHeader: !!token,
       localStorageHasToken: !!localStorage.getItem("token"),
       sessionStorageHasToken: !!sessionStorage.getItem("token"),
     });

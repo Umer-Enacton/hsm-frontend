@@ -27,6 +27,10 @@ export interface ReviewData {
   repliedAt?: string;
 }
 
+/**
+ * Provider reviews hook
+ * Reviews change rarely (only when new reviews are added or replies are made)
+ */
 export function useProviderReviews(businessId?: number, filters?: {
   rating?: string;
   serviceId?: string;
@@ -51,7 +55,8 @@ export function useProviderReviews(businessId?: number, filters?: {
       return api.get(url);
     },
     enabled: !!businessId,
-    staleTime: 1000 * 30, // 30 seconds
+    staleTime: 15 * 60 * 1000, // 15 minutes - reviews change rarely
+    gcTime: 60 * 60 * 1000, // 1 hour cache
   });
 
   const servicesQuery = useQuery<{
@@ -60,7 +65,8 @@ export function useProviderReviews(businessId?: number, filters?: {
     queryKey: [QUERY_KEYS.PROVIDER_SERVICES, businessId],
     queryFn: () => api.get(API_ENDPOINTS.SERVICES_BY_BUSINESS(businessId!)),
     enabled: !!businessId,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 10 * 60 * 1000, // 10 minutes - services list changes moderately
+    gcTime: 30 * 60 * 1000, // 30 minutes cache
   });
 
   const isLoading = !businessId || reviewsQuery.isLoading || servicesQuery.isLoading;

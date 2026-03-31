@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -9,9 +9,7 @@ import {
   MapPin,
   Clock,
   IndianRupee,
-  Image as ImageIcon,
   CheckCircle,
-  X,
   Ban,
   Phone,
   Calendar,
@@ -19,48 +17,40 @@ import {
   User,
   Mail,
 } from "lucide-react";
-import { api, API_ENDPOINTS } from "@/lib/api";
-import { toast } from "sonner";
-import { ServiceActionDialog } from "@/components/admin/ServiceActionDialog";
+import {
+  useAdminServiceDetail,
+} from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  LoadingState,
   ErrorState,
   StatusBadge,
 } from "@/components/admin/shared";
 import { AdminServiceDetailSkeleton } from "@/components/admin/skeletons";
-import { cn } from "@/lib/utils";
+import { ServiceActionDialog } from "@/components/admin/ServiceActionDialog";
 
-interface ServiceDetails {
+interface ServiceDisplayData {
   id: number;
   name: string;
   description: string;
   price: number;
-  duration?: number;
-  EstimateDuration?: number;
-  business_id?: number;
-  businessProfileId?: number;
+  duration: number;
   image: string | null;
   isActive: boolean;
-  created_at?: string;
   createdAt?: string;
-  rating?: string | number;
+  rating?: number | null;
   totalReviews?: number;
   business?: {
     id: number;
     name: string;
-    businessName?: string;
     category?: string;
     city?: string;
     state?: string;
     phone?: string;
     logo?: string | null;
     isVerified: boolean;
-    userId?: number;
-    providerId?: number;
   };
   provider?: {
     id: number;
@@ -76,124 +66,70 @@ export default function ServiceDetailsPage() {
   const params = useParams();
   const serviceId = params.id as string;
 
-  const [service, setService] = useState<ServiceDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isActionLoading, setIsActionLoading] = useState(false);
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (serviceId) {
-      fetchServiceDetails();
-    }
-  }, [serviceId]);
+  // Use hook for all data fetching
+  const {
+    data: detailData,
+    isLoading,
+    error,
+    refetch,
+  } = useAdminServiceDetail(Number(serviceId));
 
-  const fetchServiceDetails = async () => {
-    setIsLoading(true);
-    setError(null);
+  // Map hook data to the structure the UI expects
+  const service = useMemo<ServiceDisplayData | null>(() => {
+    if (!detailData) return null;
 
-    try {
-      // Fetch service details
-      const serviceResponse: any = await api.get(
-        API_ENDPOINTS.SERVICE_BY_ID(serviceId),
-      );
-      const serviceData = serviceResponse.service || serviceResponse;
-      console.log("Service data:", serviceData);
+    const { service: s, business: b, user: u } = detailData;
+    
+    // Casting to any for flexible property access while maintaining types
+    const sDetailed = s as any;
+    const bDetailed = b as any;
 
-      // Fetch business details
-      let businessData = {};
-      let providerData = {};
+    return {
+      id: s.id,
+      name: s.name,
+      description: s.description || "",
+      price: s.price,
+      duration: sDetailed.duration || sDetailed.EstimateDuration || 0,
+      image: sDetailed.image || sDetailed.imageUrl || null,
+      isActive: s.isActive ?? true,
+      createdAt: sDetailed.createdAt || sDetailed.created_at,
+      rating: formatRating(sDetailed.rating),
+      totalReviews: sDetailed.totalReviews,
+      business: b ? {
+        id: b.id,
+        name: bDetailed.businessName || bDetailed.name || "N/A",
+        category: bDetailed.category,
+        city: bDetailed.city,
+        state: bDetailed.state,
+        phone: bDetailed.phone,
+        logo: bDetailed.logo,
+        isVerified: bDetailed.isVerified || false,
+      } : undefined,
+      provider: u ? {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        avatar: u.avatar,
+      } : undefined,
+    };
+  }, [detailData]);
 
-      try {
-        const businessId =
-          serviceData.business_id || serviceData.businessProfileId;
-        console.log("Business ID:", businessId);
-
-        if (businessId) {
-          const businessResponse: any = await api.get(
-            API_ENDPOINTS.BUSINESS_BY_ID(businessId),
-          );
-          const business = businessResponse.business || businessResponse;
-          console.log("Business data:", business);
-
-          const providerId = business.userId || business.providerId;
-          console.log("Provider ID:", providerId);
-
-          businessData = {
-            business: {
-              id: business.id,
-              name: business.businessName || business.name,
-              category: business.category,
-              city: business.city,
-              state: business.state,
-              phone: business.phone,
-              logo: business.logo,
-              isVerified: business.isVerified,
-              userId: providerId,
-            },
-          };
-
-          // Fetch provider info
-          if (providerId) {
-            try {
-              const userResponse: any = await api.get(
-                `${API_ENDPOINTS.USERS}/${providerId}`,
-              );
-              console.log("User response:", userResponse);
-
-              const userData = userResponse.user || userResponse;
-              providerData = {
-                provider: {
-                  id: userData.id || providerId,
-                  name: userData.name,
-                  email: userData.email,
-                  phone: userData.phone,
-                  avatar: userData.avatar || userData.profile_image,
-                },
-              };
-              console.log("Provider data extracted:", providerData);
-            } catch (e) {
-              console.log("Could not fetch provider info:", e);
-            }
-          } else {
-            console.log("No provider ID found on business");
-          }
-        } else {
-          console.log("No business ID found on service");
-        }
-      } catch (e) {
-        console.log("Could not fetch business details:", e);
-      }
-
-      setService({
-        ...serviceData,
-        ...businessData,
-        ...providerData,
-        duration: serviceData.duration || serviceData.EstimateDuration,
-        isActive: serviceData.isActive ?? serviceData.is_active ?? true,
-      });
-    } catch (err: any) {
-      console.error("Failed to fetch service details:", err);
-      setError(err.message || "Failed to load service details");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleToggleStatus = () => {
-    // Open dialog for both activate and deactivate
-    setIsActionDialogOpen(true);
-  };
-
-  const handleActionCompleted = () => {
-    setIsActionDialogOpen(false);
-    fetchServiceDetails();
-  };
-
-  const formatRating = (rating: string | number | undefined): number | null => {
+  function formatRating(rating: string | number | undefined): number | null {
     if (rating === undefined || rating === null || rating === "") return null;
     const num = typeof rating === "string" ? parseFloat(rating) : rating;
     return isNaN(num) ? null : num;
+  }
+
+  const handleToggleStatus = () => {
+    setIsActionDialogOpen(true);
+  };
+
+  const handleActionCompleted = async () => {
+    setIsActionDialogOpen(false);
+    await refetch();
   };
 
   if (isLoading) {
@@ -201,16 +137,14 @@ export default function ServiceDetailsPage() {
   }
 
   if (error || !service) {
+    const errorMessage = typeof error === 'string' ? error : (error as any)?.message || "Service not found";
     return (
       <ErrorState
-        message={error || "Service not found"}
+        message={errorMessage}
         onRetry={() => router.push("/admin/services")}
       />
     );
   }
-
-  const ratingValue = formatRating(service.rating);
-  const duration = service.duration || service.EstimateDuration || 0;
 
   return (
     <div className="space-y-3 sm:space-y-6">
@@ -229,7 +163,6 @@ export default function ServiceDetailsPage() {
             <Button
               variant="outline"
               onClick={handleToggleStatus}
-              disabled={isActionLoading}
               className="text-xs sm:text-sm"
             >
               <Ban className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
@@ -238,7 +171,6 @@ export default function ServiceDetailsPage() {
           ) : (
             <Button
               onClick={handleToggleStatus}
-              disabled={isActionLoading}
               className="text-xs sm:text-sm"
             >
               <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
@@ -258,7 +190,7 @@ export default function ServiceDetailsPage() {
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="h-full w-full bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center">
+            <div className="h-full w-full bg-linear-to-br from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center">
               <Wrench className="h-16 w-16 sm:h-24 sm:w-24 text-primary/20" />
             </div>
           )}
@@ -285,12 +217,12 @@ export default function ServiceDetailsPage() {
           </div>
 
           {/* Rating Badge - Bottom Left */}
-          {ratingValue !== null && ratingValue > 0 && (
+          {service.rating !== null && service.rating! > 0 && (
             <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 bg-white/90 backdrop-blur-sm rounded-full px-2 sm:px-4 py-1 sm:py-2 shadow-sm">
               <div className="flex items-center gap-0.5 sm:gap-1">
                 <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
                 <span className="font-semibold text-xs sm:text-sm">
-                  {ratingValue.toFixed(1)}
+                  {service.rating!.toFixed(1)}
                 </span>
               </div>
             </div>
@@ -309,16 +241,16 @@ export default function ServiceDetailsPage() {
           {/* Quick Stats */}
           <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-2 sm:mt-3">
             <div className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base lg:text-lg font-bold">
-              <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:h-5 sm:w-5" />
+              <IndianRupee className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
               <span>{service.price}</span>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground text-xs sm:text-sm">
-              <Clock className="h-3 w-3 sm:h-3.5 sm:h-4 sm:w-4" />
-              <span>{duration} min</span>
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>{service.duration} min</span>
             </div>
             {service.business?.city && service.business?.state && (
               <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground text-xs sm:text-sm truncate">
-                <MapPin className="h-3 w-3 sm:h-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                <MapPin className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                 <span className="truncate">
                   {service.business.city}, {service.business.state}
                 </span>
@@ -332,8 +264,6 @@ export default function ServiceDetailsPage() {
       <div className="grid gap-3 sm:gap-6 grid-cols-1 lg:grid-cols-2">
         {/* Left Column - Business & Provider Info */}
         <div className="space-y-3 sm:space-y-6">
-          {/* Business Information Card */}
-
           {/* Provider Information Card */}
           {service.provider && (
             <Card className="p-0 gap-0">
@@ -385,6 +315,8 @@ export default function ServiceDetailsPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Business Information Card */}
           {service.business && (
             <Card className="p-0 gap-0">
               <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
@@ -479,12 +411,12 @@ export default function ServiceDetailsPage() {
                   </p>
                   <div className="flex items-center gap-1 text-xs sm:text-sm">
                     <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                    <span>{duration} min</span>
+                    <span>{service.duration} min</span>
                   </div>
                 </div>
               </div>
 
-              {ratingValue !== null && ratingValue > 0 && (
+              {service.rating !== null && service.rating! > 0 && (
                 <div className="pt-2 sm:pt-3 border-t">
                   <p className="text-xs sm:text-sm text-muted-foreground mb-1">
                     Rating
@@ -492,7 +424,7 @@ export default function ServiceDetailsPage() {
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
                     <span className="font-medium text-sm sm:text-base">
-                      {ratingValue.toFixed(1)}
+                      {service.rating!.toFixed(1)}
                     </span>
                     {service.totalReviews && (
                       <span className="text-xs sm:text-sm text-muted-foreground">
@@ -519,41 +451,18 @@ export default function ServiceDetailsPage() {
               )}
             </CardContent>
           </Card>
-
-          {/* Service Image Card */}
-          {/* {service.image && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5" />
-                  Service Image
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md overflow-hidden border">
-                  <img
-                    src={service.image}
-                    alt={service.name}
-                    className="w-full h-auto object-cover"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          )} */}
         </div>
       </div>
 
       {/* Service Action Dialog */}
-      {service && (
-        <ServiceActionDialog
-          open={isActionDialogOpen}
-          onOpenChange={setIsActionDialogOpen}
-          serviceId={Number(serviceId)}
-          serviceName={service.name}
-          isActive={service.isActive ?? true}
-          onActionCompleted={handleActionCompleted}
-        />
-      )}
+      <ServiceActionDialog
+        open={isActionDialogOpen}
+        onOpenChange={setIsActionDialogOpen}
+        serviceId={Number(serviceId)}
+        serviceName={service.name}
+        isActive={service.isActive}
+        onActionCompleted={handleActionCompleted}
+      />
     </div>
   );
 }

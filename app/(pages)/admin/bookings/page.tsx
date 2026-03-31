@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Calendar,
   Search,
@@ -35,60 +35,28 @@ import {
 import { ImageLightbox } from "@/components/common";
 import { BookingTimelineModal } from "@/components/admin/bookings/BookingTimelineModal";
 import { History as HistoryIcon } from "lucide-react";
-
-type BookingStatus =
-  | "pending"
-  | "confirmed"
-  | "completed"
-  | "cancelled"
-  | "reschedule_pending";
-
-interface Booking {
-  id: number;
-  status: BookingStatus;
-  totalPrice: number;
-  createdAt: string;
-  bookingDate?: string;
-  slot?: {
-    date: string;
-    startTime: string;
-    endTime: string;
-  };
-  service?: {
-    id: number;
-    name: string;
-    price: number;
-  };
-  businessProfile?: {
-    id: number;
-    name: string;
-    user?: {
-      name: string;
-      email: string;
-      phone: string;
-    };
-  };
-  user?: {
-    name: string;
-    email: string;
-    phone: string;
-  };
-  address?: {
-    addressLine1: string;
-    city: string;
-    state: string;
-    pincode: string;
-  };
-  beforePhotoUrl?: string | null;
-  afterPhotoUrl?: string | null;
-  completionNotes?: string | null;
-}
+import {
+  AdminBooking,
+  useAdminBookings,
+  useAcceptBooking,
+  useRejectBooking,
+  useCancelBooking,
+} from "@/lib/queries";
 
 export default function AdminBookingsPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Use hooks for data fetching
+  const {
+    data: bookings = [],
+    isLoading,
+    error,
+    refetch,
+  } = useAdminBookings();
+
+  // Mutations
+  const acceptMutation = useAcceptBooking();
+  const rejectMutation = useRejectBooking();
+  const cancelMutation = useCancelBooking();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -102,27 +70,8 @@ export default function AdminBookingsPage() {
   );
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
 
-  const fetchBookings = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Fetch all bookings using admin endpoint
-      const response: any = await api.get(API_ENDPOINTS.ADMIN_BOOKINGS_ALL);
-      setBookings(response.bookings || response || []);
-    } catch (err: any) {
-      console.error("Failed to fetch bookings:", err);
-      setError(err.message || "Failed to load bookings");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  useEffect(() => {
+  // Filter bookings
+  const filteredBookings = useMemo(() => {
     let filtered = bookings;
 
     // Filter by status
@@ -135,18 +84,18 @@ export default function AdminBookingsPage() {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
         (b) =>
-          b.businessProfile?.name?.toLowerCase().includes(term) ||
-          b.user?.name?.toLowerCase().includes(term) ||
-          b.user?.email?.toLowerCase().includes(term) ||
-          b.service?.name?.toLowerCase().includes(term) ||
+          b.businessName?.toLowerCase().includes(term) ||
+          b.customerName?.toLowerCase().includes(term) ||
+          b.customerEmail?.toLowerCase().includes(term) ||
+          b.serviceName?.toLowerCase().includes(term) ||
           b.id.toString().includes(term),
       );
     }
 
-    setFilteredBookings(filtered);
+    return filtered;
   }, [bookings, searchTerm, statusFilter]);
 
-  const getStatusInfo = (status: BookingStatus) => {
+  const getStatusInfo = (status: string) => {
     switch (status) {
       case "pending":
         return { label: "Pending", color: "bg-yellow-100 text-yellow-700" };
@@ -156,6 +105,8 @@ export default function AdminBookingsPage() {
         return { label: "Completed", color: "bg-green-100 text-green-700" };
       case "cancelled":
         return { label: "Cancelled", color: "bg-red-100 text-red-700" };
+      case "rejected":
+        return { label: "Rejected", color: "bg-orange-100 text-orange-700 font-bold" };
       case "reschedule_pending":
         return {
           label: "Reschedule Pending",
@@ -187,7 +138,7 @@ export default function AdminBookingsPage() {
   }
 
   if (error && bookings.length === 0) {
-    return <ErrorState message={error} onRetry={() => fetchBookings()} />;
+    return <ErrorState message={error instanceof Error ? error.message : String(error)} onRetry={() => refetch()} />;
   }
 
   return (
@@ -196,7 +147,7 @@ export default function AdminBookingsPage() {
       <AdminPageHeader
         title="Bookings Management"
         description="View and manage all bookings across the platform."
-        onRefresh={() => fetchBookings()}
+        onRefresh={() => refetch()}
       />
 
       {/* Stats Cards */}
@@ -360,10 +311,10 @@ export default function AdminBookingsPage() {
                               Customer
                             </p>
                             <p className="font-medium">
-                              {booking.user?.name || "N/A"}
+                              {booking.customerName || "N/A"}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {booking.user?.email}
+                              {booking.customerEmail}
                             </p>
                           </div>
                           <div>
@@ -372,10 +323,10 @@ export default function AdminBookingsPage() {
                               Provider
                             </p>
                             <p className="font-medium">
-                              {booking.businessProfile?.name || "N/A"}
+                              {booking.businessName || "N/A"}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {booking.service?.name}
+                              {booking.serviceName}
                             </p>
                           </div>
                           <div>
@@ -384,17 +335,17 @@ export default function AdminBookingsPage() {
                               Amount
                             </p>
                             <p className="font-medium text-green-600">
-                              {formatCurrency(booking.totalPrice)}
+                              {formatCurrency(booking.price)}
                             </p>
                           </div>
                         </div>
 
                         <div className="text-xs text-muted-foreground">
                           Booked on {formatDate(booking.createdAt)}
-                          {booking.slot?.date && (
+                          {booking.bookingDate && (
                             <span>
                               {" "}
-                              • Scheduled for {formatDate(booking.slot.date)}
+                              • Scheduled for {formatDate(booking.bookingDate)}
                             </span>
                           )}
                         </div>

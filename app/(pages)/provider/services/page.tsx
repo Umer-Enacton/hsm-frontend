@@ -1,24 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw, Plus, List, Grid3x3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ProviderServicesSkeleton } from "@/components/provider/skeletons";
 import {
-  getBusinessServices,
-  getServiceStats,
-  createService,
-  updateService,
-  deleteService,
-  toggleServiceStatus,
-  uploadServiceImage,
-  calculateServiceStats,
-  type ServiceStats,
-} from "@/lib/provider/services";
-import { getProviderBusiness } from "@/lib/provider/api";
+  useProviderServices,
+  useCreateService,
+  useUpdateService,
+  useDeleteService,
+  useToggleServiceStatus,
+  useUploadServiceImage,
+} from "@/lib/queries/use-provider-services";
+import { useProviderBusinessProfile } from "@/lib/queries/use-provider-business-profile";
+import { getUserData } from "@/lib/auth-utils";
 import type { Service } from "@/types/provider";
+import type { ServiceStats } from "@/lib/provider/services";
 import {
   ServiceFilters,
   ServiceList,
@@ -31,12 +30,7 @@ type ViewMode = "grid" | "list";
 
 export default function ProviderServicesPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [services, setServices] = useState<Service[]>([]);
-  const [stats, setStats] = useState<ServiceStats | null>(null);
-  const [businessId, setBusinessId] = useState<number | null>(null);
-  const [isVerified, setIsVerified] = useState(false);
+  const userData = getUserData();
 
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -47,174 +41,102 @@ export default function ProviderServicesPage() {
   const [reviewsService, setReviewsService] = useState<Service | null>(null);
   const [isReviewsDialogOpen, setIsReviewsDialogOpen] = useState(false);
 
-  const handleViewReviews = (service: Service) => {
-    setReviewsService(service);
-    setIsReviewsDialogOpen(true);
-  };
-
-  const handleCloseReviewsDialog = () => {
-    setIsReviewsDialogOpen(false);
-    setReviewsService(null);
-  };
-
   // Filter states
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [sortBy, setSortBy] = useState<"name" | "price" | "createdAt">("createdAt");
 
-  // Load business and services on mount
-  useEffect(() => {
-    loadBusinessAndServices();
-  }, []);
+  // Fetch business profile (includes business and isVerified status)
+  const { business, isLoading: isLoadingBusiness } = useProviderBusinessProfile(userData?.id);
 
-  const loadBusinessAndServices = async () => {
-    setIsLoading(true);
-    try {
-      // Get business ID from user data (from localStorage or JWT)
-      const { getUserData } = await import("@/lib/auth-utils");
-      const userData = getUserData();
+  // Fetch services using cached hook
+  const {
+    data: services = [],
+    isLoading: isLoadingServices,
+    refetch: refetchServices,
+  } = useProviderServices(business?.id);
 
-      if (!userData || !userData.id) {
-        toast.error("Please login to continue");
-        router.push("/login");
-        return;
-      }
+  // Mutations
+  const createServiceMutation = useCreateService();
+  const updateServiceMutation = useUpdateService();
+  const deleteServiceMutation = useDeleteService();
+  const toggleStatusMutation = useToggleServiceStatus();
+  const uploadImageMutation = useUploadServiceImage();
 
-      const business = await getProviderBusiness(userData.id);
-      if (!business) {
-        toast.error("Business profile not found");
-        router.push("/onboarding");
-        return;
-      }
+  const isLoading = isLoadingBusiness || Boolean(business?.id && isLoadingServices);
 
-      setBusinessId(business.id);
-      setIsVerified(business.isVerified || false);
-      await loadServices(business.id);
-      await loadStats(business.id);
-    } catch (error: any) {
-      console.error("Error loading business:", error);
-      toast.error("Failed to load business information");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadServices = async (bizId: number) => {
-    try {
-      const servicesList = await getBusinessServices(bizId);
-      setServices(servicesList);
-    } catch (error: any) {
-      console.error("Error loading services:", error);
-      toast.error("Failed to load services");
-    }
-  };
-
-  const loadStats = async (bizId: number) => {
-    try {
-      const serviceStats = await getServiceStats(bizId);
-      setStats(serviceStats);
-    } catch (error: any) {
-      console.error("Error loading stats:", error);
-      // Fallback to calculated stats
-      const calculated = calculateServiceStats(services);
-      setStats(calculated);
-    }
-  };
+  // Redirect if no business
+  if (!isLoadingBusiness && !business) {
+    router.push("/onboarding");
+    return null;
+  }
 
   const handleRefresh = async () => {
-    if (!businessId) return;
-    setIsRefreshing(true);
-    await loadServices(businessId);
-    await loadStats(businessId);
-    setIsRefreshing(false);
+    await refetchServices();
     toast.success("Services refreshed");
   };
 
   const handleCreateService = async (serviceData: Partial<Service> & { imageFile?: File | null }) => {
-    if (!businessId) return;
+    if (!business?.id) return;
 
-    try {
-      let imageUrl: string | undefined;
+    let imageUrl: string | undefined;
 
-      // Upload image if provided
-      if (serviceData.imageFile) {
-        try {
-          const uploadResult = await uploadServiceImage(serviceData.imageFile);
-          imageUrl = uploadResult.url;
-        } catch (error) {
-          console.error("Failed to upload image:", error);
-          toast.error("Failed to upload image");
-          return;
-        }
-      }
-
-      // Create service
-      const newService = await createService(businessId, {
-        name: serviceData.name,
-        description: serviceData.description,
-        price: serviceData.price,
-        duration: serviceData.duration,
-        image: imageUrl,
-        isActive: serviceData.isActive ?? true,
-      });
-
-      toast.success("Service created successfully", {
-        description: `${newService.name} has been added`,
-      });
-
-      // Refresh list and stats
-      await loadServices(businessId);
-      await loadStats(businessId);
-      setIsDialogOpen(false);
-    } catch (error: any) {
-      console.error("Error creating service:", error);
-      toast.error("Failed to create service", {
-        description: error.message || "Please try again",
-      });
+    // Upload image if provided
+    if (serviceData.imageFile) {
+      const uploadResult = await uploadImageMutation.mutateAsync(serviceData.imageFile);
+      imageUrl = uploadResult.url;
     }
+
+    createServiceMutation.mutate(
+      {
+        businessId: business.id,
+        serviceData: {
+          name: serviceData.name!,
+          description: serviceData.description,
+          price: serviceData.price!,
+          duration: serviceData.duration,
+          image: imageUrl,
+          isActive: serviceData.isActive ?? true,
+        },
+      },
+      {
+        onSuccess: () => {
+          setIsDialogOpen(false);
+        },
+      }
+    );
   };
 
   const handleEditService = async (serviceData: Partial<Service> & { imageFile?: File | null }) => {
-    if (!editingService || !businessId) return;
+    if (!editingService || !business?.id) return;
 
-    try {
-      let imageUrl = editingService.image;
+    let imageUrl: string | undefined = editingService.image || undefined;
 
-      // Upload new image if provided
-      if (serviceData.imageFile) {
-        try {
-          const uploadResult = await uploadServiceImage(serviceData.imageFile);
-          imageUrl = uploadResult.url;
-        } catch (error) {
-          console.error("Failed to upload image:", error);
-          toast.error("Failed to upload image");
-          return;
-        }
-      }
-
-      // Update service
-      const updatedService = await updateService(editingService.id, {
-        name: serviceData.name,
-        description: serviceData.description,
-        price: serviceData.price,
-        duration: serviceData.duration,
-        image: imageUrl,
-        isActive: serviceData.isActive,
-      });
-
-      toast.success("Service updated successfully");
-
-      // Refresh list and stats
-      await loadServices(businessId);
-      await loadStats(businessId);
-      setIsDialogOpen(false);
-      setEditingService(null);
-    } catch (error: any) {
-      console.error("Error updating service:", error);
-      toast.error("Failed to update service", {
-        description: error.message || "Please try again",
-      });
+    // Upload new image if provided
+    if (serviceData.imageFile) {
+      const uploadResult = await uploadImageMutation.mutateAsync(serviceData.imageFile);
+      imageUrl = uploadResult.url;
     }
+
+    updateServiceMutation.mutate(
+      {
+        serviceId: editingService.id,
+        serviceData: {
+          name: serviceData.name!,
+          description: serviceData.description,
+          price: serviceData.price!,
+          duration: serviceData.duration,
+          image: imageUrl,
+          isActive: serviceData.isActive,
+        },
+      },
+      {
+        onSuccess: () => {
+          setIsDialogOpen(false);
+          setEditingService(null);
+        },
+      }
+    );
   };
 
   const handleDeleteService = async (serviceId: number) => {
@@ -226,43 +148,39 @@ export default function ProviderServicesPage() {
       return;
     }
 
-    try {
-      await deleteService(serviceId);
-      toast.success("Service deleted successfully");
-
-      // Refresh list and stats
-      if (businessId) {
-        await loadServices(businessId);
-        await loadStats(businessId);
+    deleteServiceMutation.mutate(
+      { serviceId, businessId: business?.id },
+      {
+        onSuccess: () => {
+          // Service deleted, cache invalidated automatically
+        },
       }
-    } catch (error: any) {
-      console.error("Error deleting service:", error);
-      toast.error("Failed to delete service", {
-        description: error.message || "Please try again",
-      });
-    }
+    );
   };
 
   const handleToggleStatus = async (serviceId: number, isActive: boolean) => {
-    try {
-      await toggleServiceStatus(serviceId, isActive);
-      toast.success(isActive ? "Service activated" : "Service deactivated");
-
-      // Refresh list and stats
-      if (businessId) {
-        await loadServices(businessId);
-        await loadStats(businessId);
+    toggleStatusMutation.mutate(
+      { serviceId, isActive, businessId: business?.id },
+      {
+        onSuccess: () => {
+          // Status toggled, cache invalidated automatically
+        },
       }
-    } catch (error: any) {
-      console.error("Error toggling status:", error);
-      toast.error("Failed to update status", {
-        description: error.message || "Please try again",
-      });
-    }
+    );
+  };
+
+  const handleViewReviews = (service: Service) => {
+    setReviewsService(service);
+    setIsReviewsDialogOpen(true);
+  };
+
+  const handleCloseReviewsDialog = () => {
+    setIsReviewsDialogOpen(false);
+    setReviewsService(null);
   };
 
   const handleOpenCreateDialog = () => {
-    if (!isVerified) {
+    if (!business?.isVerified) {
       toast.error("Your business must be verified before adding services", {
         description: "Please wait for admin verification. This usually takes 1-2 business days.",
       });
@@ -282,12 +200,23 @@ export default function ProviderServicesPage() {
     setEditingService(null);
   };
 
+  // Calculate stats from services (matching ServiceStats interface)
+  const stats = {
+    total: services.length,
+    active: services.filter((s) => s.isActive === true).length,
+    inactive: services.filter((s) => s.isActive !== true).length,
+    averagePrice: services.length > 0
+      ? Math.round(services.reduce((sum, s) => sum + s.price, 0) / services.length)
+      : 0,
+  };
+
   // Filter and sort services
   const filteredServices = services
     .filter((service) => {
-      // Status filter
-      if (statusFilter === "active" && !service.isActive) return false;
-      if (statusFilter === "inactive" && service.isActive) return false;
+      // Status filter - handle undefined as inactive
+      const isActive = service.isActive === true;
+      if (statusFilter === "active" && !isActive) return false;
+      if (statusFilter === "inactive" && isActive) return false;
 
       // Search filter
       if (search) {
@@ -318,6 +247,12 @@ export default function ProviderServicesPage() {
     return <ProviderServicesSkeleton />;
   }
 
+  const isAnyMutationPending =
+    createServiceMutation.isPending ||
+    updateServiceMutation.isPending ||
+    deleteServiceMutation.isPending ||
+    toggleStatusMutation.isPending;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -331,10 +266,10 @@ export default function ProviderServicesPage() {
             onClick={handleRefresh}
             variant="outline"
             size="icon"
-            disabled={isRefreshing}
+            disabled={isAnyMutationPending}
             title="Refresh"
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className="h-4 w-4" />
           </Button>
           <Button
             variant={viewMode === "grid" ? "default" : "outline"}
@@ -354,7 +289,7 @@ export default function ProviderServicesPage() {
           >
             <List className="h-4 w-4" />
           </Button>
-          <Button onClick={handleOpenCreateDialog} disabled={!isVerified} className="whitespace-nowrap">
+          <Button onClick={handleOpenCreateDialog} disabled={!business?.isVerified} className="whitespace-nowrap">
             <Plus className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Add Service</span>
             <span className="sm:hidden">Add</span>

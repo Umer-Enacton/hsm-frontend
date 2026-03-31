@@ -15,6 +15,9 @@ export type { DashboardLayoutProps } from "./DashboardLayout";
 export { ImageUpload } from "./ImageUpload";
 export { StateCityPicker } from "./StateCityPicker";
 
+// Optimized image components
+export { OptimizedImage, AvatarImage, ServiceImage, BusinessLogo } from "./OptimizedImage";
+
 // Image lightbox
 export { ImageLightbox } from "./ImageLightbox";
 

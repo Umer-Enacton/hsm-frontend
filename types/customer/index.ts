@@ -25,7 +25,7 @@ export interface CustomerService {
   isActive: boolean;
   rating: number;
   totalReviews: number;
-  provider: {
+  provider?: {
     id: number;
     businessName: string;
     description?: string;
@@ -77,7 +77,16 @@ export interface CustomerBooking {
   serviceId: number;
   slotId: number;
   addressId: number;
-  status: BookingStatus | "pending" | "payment_pending" | "confirmed" | "reschedule_pending" | "completed" | "cancelled" | "rejected" | "refunded";
+  status:
+    | BookingStatus
+    | "pending"
+    | "payment_pending"
+    | "confirmed"
+    | "reschedule_pending"
+    | "completed"
+    | "cancelled"
+    | "rejected"
+    | "refunded";
   paymentStatus?: "pending" | "initiated" | "paid" | "failed" | "refunded";
   totalPrice: number;
   bookingDate: string;

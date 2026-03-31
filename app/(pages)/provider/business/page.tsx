@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Loader2,
@@ -23,143 +23,35 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { getUserData } from "@/lib/auth-utils";
-import { getProviderBusiness, updateBusiness } from "@/lib/provider/api";
-import { api, API_ENDPOINTS } from "@/lib/api";
+import { updateBusiness } from "@/lib/provider/api";
+import { useProviderBusinessProfile } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Image from "next/image";
 import { EditBusinessDialog } from "./components/EditBusinessDialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BusinessProfileSkeleton } from "@/components/provider/skeletons/BusinessProfileSkeleton";
 
-interface BusinessStats {
-  totalServices: number;
-  activeServices: number;
-  totalBookings: number;
-  pendingBookings: number;
-  confirmedBookings: number;
-  completedBookings: number;
-  completionRate: number;
-  totalRevenue: number;
-  averageJobValue: number;
-  totalReviews: number;
-  averageRating: number;
-  recentReviews: any[];
-}
-
 export default function ProviderBusinessPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [business, setBusiness] = useState<any>(null);
-  const [stats, setStats] = useState<BusinessStats | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const userData = getUserData();
-        if (userData) {
-          const businessData = await getProviderBusiness(userData.id);
-          setBusiness(businessData);
+  // Get current user
+  const userData = getUserData();
+  const userId = userData?.id;
 
-          if (!businessData) {
-            setIsLoading(false);
-            return;
-          }
-
-          // Fetch services
-          const servicesResponse: any = await api.get(
-            API_ENDPOINTS.SERVICES_BY_BUSINESS(businessData.id),
-          );
-          const services = Array.isArray(servicesResponse)
-            ? servicesResponse
-            : servicesResponse?.services || servicesResponse?.data || [];
-          const activeServices = services.filter(
-            (s: any) => s.isActive || s.is_active,
-          ).length;
-
-          // Fetch bookings
-          const bookingsResponse: any = await api.get(
-            API_ENDPOINTS.PROVIDER_BOOKINGS,
-          );
-          const bookings = Array.isArray(bookingsResponse)
-            ? bookingsResponse
-            : bookingsResponse?.bookings || [];
-
-          const pendingBookings = bookings.filter(
-            (b: any) => b.status === "pending",
-          ).length;
-          const confirmedBookings = bookings.filter(
-            (b: any) => b.status === "confirmed",
-          ).length;
-          const completedBookings = bookings.filter(
-            (b: any) => b.status === "completed",
-          ).length;
-          const totalBookings = bookings.length;
-          const completionRate =
-            totalBookings > 0
-              ? Math.round((completedBookings / totalBookings) * 100)
-              : 0;
-
-          const totalRevenue = bookings
-            .filter((b: any) => b.status === "completed")
-            .reduce(
-              (sum: number, b: any) => sum + (b.price || b.totalPrice || 0),
-              0,
-            );
-
-          const averageJobValue =
-            completedBookings > 0
-              ? Math.round(totalRevenue / completedBookings)
-              : 0;
-
-          // Fetch reviews
-          let recentReviews: any[] = [];
-          try {
-            const feedbackResponse: any = await api.get(
-              API_ENDPOINTS.FEEDBACK_BUSINESS(businessData.id),
-            );
-            const feedback = Array.isArray(feedbackResponse)
-              ? feedbackResponse
-              : feedbackResponse?.feedback || feedbackResponse?.data || [];
-            recentReviews = feedback.slice(0, 5);
-          } catch (e) {
-            console.log("Could not fetch reviews");
-          }
-
-          setStats({
-            totalServices: services.length,
-            activeServices,
-            totalBookings,
-            pendingBookings,
-            confirmedBookings,
-            completedBookings,
-            completionRate,
-            totalRevenue,
-            averageJobValue,
-            totalReviews: businessData.totalReviews || 0,
-            averageRating: businessData.rating || 0,
-            recentReviews,
-          });
-        }
-      } catch (error) {
-        console.error("Error loading data:", error);
-        toast.error("Failed to load business profile");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
+  // Use optimized query hook with caching
+  const { business, stats, isLoading, error, refetch } =
+    useProviderBusinessProfile(userId);
 
   const handleEditSave = async (updatedData: any) => {
     setIsSaving(true);
     try {
-      const updatedBusiness = await updateBusiness(business.id, {
+      const updatedBusiness = await updateBusiness(business!.id, {
         name: updatedData.name,
         description: updatedData.description,
         categoryId: updatedData.categoryId,
@@ -171,7 +63,9 @@ export default function ProviderBusinessPage() {
         website: updatedData.website,
       });
 
-      setBusiness(updatedBusiness);
+      // Refetch to update cache
+      refetch();
+
       setIsEditDialogOpen(false);
 
       toast.success("Business profile updated successfully!", {
@@ -306,9 +200,11 @@ export default function ProviderBusinessPage() {
         {/* Cover Image */}
         <div className="relative h-36 sm:h-48 bg-muted">
           {business.coverImage || business.logo ? (
-            <img
-              src={business.coverImage || business.logo || undefined}
+            <Image
+              src={business.coverImage || business.logo || ""}
               alt={`${business.name} cover`}
+              width={800}
+              height={300}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -322,9 +218,11 @@ export default function ProviderBusinessPage() {
             <div className="absolute -bottom-4 sm:-bottom-6 left-3 sm:left-6">
               <div className="h-14 w-14 sm:h-20 sm:w-20 rounded-md border-4 border-background overflow-hidden bg-card shadow-lg">
                 {business.logo ? (
-                  <img
+                  <Image
                     src={business.logo}
                     alt={business.name}
+                    width={100}
+                    height={100}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -372,11 +270,11 @@ export default function ProviderBusinessPage() {
               <h1 className="text-xl sm:text-2xl font-bold truncate">
                 {business.name}
               </h1>
-              {business.rating > 0 && (
+              {(business.rating ?? 0) > 0 && (
                 <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
                   <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
                   <span className="font-semibold text-sm sm:text-base">
-                    {business.rating.toFixed(1)}
+                    {(business.rating ?? 0).toFixed(1)}
                   </span>
                   <span className="text-xs sm:text-sm text-muted-foreground">
                     ({business.totalReviews || 0}{" "}
@@ -593,20 +491,33 @@ export default function ProviderBusinessPage() {
         {/* Right Column - Status & Quick Actions */}
         <div className="space-y-6">
           {/* Verification Status */}
-          <Card className={cn(
-            business.isVerified
-              ? "bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800"
-              : "bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800"
-          )}>
+          <Card
+            className={cn(
+              business.isVerified
+                ? "bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800"
+                : "bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800",
+            )}
+          >
             <CardHeader>
-              <CardTitle className={cn("text-base", business.isVerified ? "text-emerald-900 dark:text-emerald-100" : "text-yellow-900 dark:text-yellow-100")}>Account Status</CardTitle>
+              <CardTitle
+                className={cn(
+                  "text-base",
+                  business.isVerified
+                    ? "text-emerald-900 dark:text-emerald-100"
+                    : "text-yellow-900 dark:text-yellow-100",
+                )}
+              >
+                Account Status
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-3">
                 <div
                   className={cn(
                     "flex h-12 w-12 items-center justify-center rounded-full",
-                    business.isVerified ? "bg-emerald-100 dark:bg-emerald-900/30" : "bg-yellow-100 dark:bg-yellow-900/30",
+                    business.isVerified
+                      ? "bg-emerald-100 dark:bg-emerald-900/30"
+                      : "bg-yellow-100 dark:bg-yellow-900/30",
                   )}
                 >
                   {business.isVerified ? (
@@ -616,12 +527,26 @@ export default function ProviderBusinessPage() {
                   )}
                 </div>
                 <div>
-                  <p className={cn("font-semibold", business.isVerified ? "text-emerald-900 dark:text-emerald-100" : "text-yellow-900 dark:text-yellow-100")}>
+                  <p
+                    className={cn(
+                      "font-semibold",
+                      business.isVerified
+                        ? "text-emerald-900 dark:text-emerald-100"
+                        : "text-yellow-900 dark:text-yellow-100",
+                    )}
+                  >
                     {business.isVerified
                       ? "Verified Business"
                       : "Pending Verification"}
                   </p>
-                  <p className={cn("text-sm", business.isVerified ? "text-emerald-700/70 dark:text-emerald-400/70" : "text-yellow-700/70 dark:text-yellow-400/70")}>
+                  <p
+                    className={cn(
+                      "text-sm",
+                      business.isVerified
+                        ? "text-emerald-700/70 dark:text-emerald-400/70"
+                        : "text-yellow-700/70 dark:text-yellow-400/70",
+                    )}
+                  >
                     {business.isVerified
                       ? "Your business is verified"
                       : "Awaiting admin approval"}
@@ -641,7 +566,9 @@ export default function ProviderBusinessPage() {
                 <div className="flex items-center justify-between p-3 rounded-md bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-800">
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <span className="text-sm text-blue-800 dark:text-blue-200">Active Services</span>
+                    <span className="text-sm text-blue-800 dark:text-blue-200">
+                      Active Services
+                    </span>
                   </div>
                   <span className="text-lg font-bold text-blue-900 dark:text-blue-100">
                     {stats.activeServices}
@@ -651,7 +578,9 @@ export default function ProviderBusinessPage() {
                 <div className="flex items-center justify-between p-3 rounded-md bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-800">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                    <span className="text-sm text-orange-800 dark:text-orange-200">Total Bookings</span>
+                    <span className="text-sm text-orange-800 dark:text-orange-200">
+                      Total Bookings
+                    </span>
                   </div>
                   <span className="text-lg font-bold text-orange-900 dark:text-orange-100">
                     {stats.totalBookings}
@@ -661,7 +590,9 @@ export default function ProviderBusinessPage() {
                 <div className="flex items-center justify-between p-3 rounded-md bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-100 dark:border-yellow-800">
                   <div className="flex items-center gap-2">
                     <Star className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                    <span className="text-sm text-yellow-800 dark:text-yellow-200">Rating</span>
+                    <span className="text-sm text-yellow-800 dark:text-yellow-200">
+                      Rating
+                    </span>
                   </div>
                   <span className="text-sm font-bold text-yellow-900 dark:text-yellow-100">
                     {stats.averageRating > 0
@@ -711,7 +642,7 @@ export default function ProviderBusinessPage() {
 
       {/* Edit Dialog */}
       <EditBusinessDialog
-        business={business}
+        business={business as any}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         onSave={handleEditSave}

@@ -66,28 +66,28 @@ export function AdminBookingsSkeleton() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                       {/* Customer */}
                       <div className="space-y-1">
-                        <p className="flex items-center gap-1 text-muted-foreground">
+                        <div className="flex items-center gap-1 text-muted-foreground">
                           <Skeleton className="h-3 w-3" />
                           <Skeleton className="h-3 w-16" />
-                        </p>
+                        </div>
                         <Skeleton className="h-4 w-32" />
                         <Skeleton className="h-3 w-40 text-xs" />
                       </div>
                       {/* Provider */}
                       <div className="space-y-1">
-                        <p className="flex items-center gap-1 text-muted-foreground">
+                        <div className="flex items-center gap-1 text-muted-foreground">
                           <Skeleton className="h-3 w-3" />
                           <Skeleton className="h-3 w-14" />
-                        </p>
+                        </div>
                         <Skeleton className="h-4 w-36" />
                         <Skeleton className="h-3 w-28 text-xs" />
                       </div>
                       {/* Amount */}
                       <div className="space-y-1">
-                        <p className="flex items-center gap-1 text-muted-foreground">
+                        <div className="flex items-center gap-1 text-muted-foreground">
                           <Skeleton className="h-3 w-3" />
                           <Skeleton className="h-3 w-14" />
-                        </p>
+                        </div>
                         <Skeleton className="h-4 w-20 text-green-600" />
                       </div>
                     </div>
