@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api, API_ENDPOINTS } from '@/lib/api';
 import { QUERY_KEYS } from './query-keys';
+import { invalidateBookingQueries, invalidateNotificationQueries } from './query-invalidation';
 
 export interface AdminBookingFilters {
   status?: string;
@@ -78,7 +79,8 @@ export function useAcceptBooking() {
       return await api.put(API_ENDPOINTS.ACCEPT_BOOKING(bookingId), {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_BOOKINGS] });
+      invalidateBookingQueries(queryClient);
+      invalidateNotificationQueries(queryClient);
       toast.success('Booking accepted');
     },
     onError: (error: any) => {
@@ -98,7 +100,8 @@ export function useRejectBooking() {
       return await api.put(API_ENDPOINTS.REJECT_BOOKING(bookingId), {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_BOOKINGS] });
+      invalidateBookingQueries(queryClient);
+      invalidateNotificationQueries(queryClient);
       toast.success('Booking rejected');
     },
     onError: (error: any) => {
@@ -118,7 +121,8 @@ export function useCancelBooking() {
       return await api.put(API_ENDPOINTS.CANCEL_BOOKING(bookingId), {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_BOOKINGS] });
+      invalidateBookingQueries(queryClient);
+      invalidateNotificationQueries(queryClient);
       toast.success('Booking cancelled');
     },
     onError: (error: any) => {

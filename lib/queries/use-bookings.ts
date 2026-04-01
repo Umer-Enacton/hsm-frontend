@@ -7,6 +7,10 @@ import {
   rescheduleBooking,
 } from "@/lib/customer/api";
 import { QUERY_KEYS } from "./query-keys";
+import {
+  invalidateBookingQueries,
+  invalidateNotificationQueries,
+} from "./query-invalidation";
 import type { CustomerBooking, BookingStatus } from "@/types/customer";
 
 // QUERIES
@@ -14,7 +18,10 @@ import type { CustomerBooking, BookingStatus } from "@/types/customer";
  * Bookings list with filters
  * Bookings can change status frequently, but list doesn't need to be real-time
  */
-export function useBookings(filters?: { status?: BookingStatus; limit?: number }) {
+export function useBookings(filters?: {
+  status?: BookingStatus;
+  limit?: number;
+}) {
   return useQuery({
     queryKey: [QUERY_KEYS.BOOKINGS, "list", filters || {}],
     queryFn: async () => {
@@ -24,6 +31,7 @@ export function useBookings(filters?: { status?: BookingStatus; limit?: number }
         total: data?.total || 0,
       };
     },
+    refetchOnWindowFocus: true,
     staleTime: 2 * 60 * 1000, // 2 minutes - bookings can change status
     gcTime: 10 * 60 * 1000, // 10 minutes cache
   });
@@ -48,13 +56,21 @@ export function useCancelBooking() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ bookingId, reason }: { bookingId: number; reason?: string }) =>
-      cancelBooking(bookingId, reason),
+    mutationFn: ({
+      bookingId,
+      reason,
+    }: {
+      bookingId: number;
+      reason?: string;
+    }) => cancelBooking(bookingId, reason),
 
     onMutate: async ({ bookingId }) => {
       await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.BOOKINGS] });
 
-      const previousBookings = queryClient.getQueryData([QUERY_KEYS.BOOKINGS, "list"]);
+      const previousBookings = queryClient.getQueryData([
+        QUERY_KEYS.BOOKINGS,
+        "list",
+      ]);
 
       // Optimistically update to cancelled
       queryClient.setQueryData([QUERY_KEYS.BOOKINGS, "list"], (old: any) => {
@@ -71,12 +87,16 @@ export function useCancelBooking() {
     },
 
     onError: (error, variables, context) => {
-      queryClient.setQueryData([QUERY_KEYS.BOOKINGS, "list"], context?.previousBookings);
+      queryClient.setQueryData(
+        [QUERY_KEYS.BOOKINGS, "list"],
+        context?.previousBookings,
+      );
       toast.error("Failed to cancel booking");
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BOOKINGS] });
+      invalidateBookingQueries(queryClient);
+      invalidateNotificationQueries(queryClient);
       toast.success("Booking cancelled successfully");
     },
   });
@@ -95,7 +115,8 @@ export function useRescheduleBooking() {
     }) => rescheduleBooking(bookingId, newData),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BOOKINGS] });
+      invalidateBookingQueries(queryClient);
+      invalidateNotificationQueries(queryClient);
       toast.success("Booking rescheduled successfully");
     },
 

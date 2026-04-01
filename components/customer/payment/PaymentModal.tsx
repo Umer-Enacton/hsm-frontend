@@ -6,10 +6,12 @@
  * UPDATED: Receives pre-created order data from parent
  * Parent checks availability BEFORE opening this modal
  * UPDATED: Uses Portal to render outside parent container for proper z-index
+ * UPDATED: Invalidates all booking queries after successful payment
  */
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import type { PaymentOrderResponse, RazorpayOptions } from "@/types/payment";
 import { RazorpayCheckoutButton } from "./RazorpayCheckout";
@@ -23,6 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
+import { invalidateAfterBookingAction } from "@/lib/queries/query-invalidation";
 
 interface PaymentModalProps {
   orderData: PaymentOrderResponse; // Required: order data from parent
@@ -51,6 +54,7 @@ export function PaymentModal({
   onCancel,
 }: PaymentModalProps) {
   const { theme } = useTheme();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState<PaymentStep>("ready"); // Start at "ready" since order already created
   const [error, setError] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(60); // 1 minute in seconds
@@ -154,6 +158,9 @@ export function PaymentModal({
       });
 
       console.log("✅ Payment verified successfully:", verifyResponse);
+
+      // Invalidate ALL booking and notification queries so customer, provider, and admin see updates
+      invalidateAfterBookingAction(queryClient);
 
       // Mark as handled to prevent duplicates
       flowHandledRef.current = true;

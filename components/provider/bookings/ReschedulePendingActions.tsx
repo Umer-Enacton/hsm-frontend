@@ -26,6 +26,7 @@ import {
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { invalidateAfterBookingAction } from "@/lib/queries/query-invalidation";
 
 interface ReschedulePendingActionsProps {
   bookingId: number;
@@ -57,7 +58,8 @@ export function ReschedulePendingActions({
       setIsProcessing(true);
       await api.put(API_ENDPOINTS.APPROVE_RESCHEDULE(bookingId), {});
       toast.success("Reschedule approved successfully");
-      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      // Invalidate ALL booking and notification queries
+      invalidateAfterBookingAction(queryClient);
       onActionComplete?.();
     } catch (error: any) {
       console.error("Error approving reschedule:", error);
@@ -74,7 +76,8 @@ export function ReschedulePendingActions({
         reason: "Provider declined the reschedule request",
       });
       toast.success("Reschedule declined. Original booking restored.");
-      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      // Invalidate ALL booking and notification queries
+      invalidateAfterBookingAction(queryClient);
       setShowDeclineDialog(false);
       onActionComplete?.();
     } catch (error: any) {

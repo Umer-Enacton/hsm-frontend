@@ -61,8 +61,13 @@ const getServiceActivityData = (bookings: any[]) => {
   // Safe date parsing helper
   const parseDate = (dateStr: string | Date) => {
     if (!dateStr) return new Date();
-    const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
-    return isNaN(date.getTime()) ? new Date() : date;
+    try {
+      const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
+      return isNaN(date.getTime()) ? new Date() : date;
+    } catch (e) {
+      console.error("Error parsing date:", dateStr, e);
+      return new Date();
+    }
   };
 
   // Count bookings by status
@@ -313,7 +318,7 @@ export default function CustomerDashboardPage() {
                 className="text-foreground"
               >
                 <BarChart
-                  data={getServiceActivityData(recentBookings)}
+                  data={getServiceActivityData(allBookings)}
                   layout="vertical"
                   margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                 >
@@ -365,7 +370,7 @@ export default function CustomerDashboardPage() {
                     radius={[0, 8, 8, 0]}
                     isAnimationActive={false}
                   >
-                    {getServiceActivityData(recentBookings).map(
+                    {getServiceActivityData(allBookings).map(
                       (entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ),

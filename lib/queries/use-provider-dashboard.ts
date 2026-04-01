@@ -63,7 +63,7 @@ export function useProviderDashboardBookings() {
  * This is DERIVED data from bookings/services - no separate API call needed
  * Uses the already-cached bookings and services data
  */
-export function useProviderDashboardStats(businessId?: number) {
+export function useProviderDashboardStats(businessId?: number, business?: Business | null) {
   const { data: bookings = [] } = useProviderDashboardBookings();
   const { data: services = [] } = useProviderServices(businessId);
 
@@ -109,10 +109,10 @@ export function useProviderDashboardStats(businessId?: number) {
       confirmedBookings,
       completedBookings,
       totalEarnings: monthlyRevenue,
-      averageRating: 0, // Will be enhanced with business data
+      averageRating: business?.rating || 0,
       activeServices,
     };
-  }, [bookings, services]);
+  }, [bookings, services, business]);
 
   return {
     data: stats,

@@ -118,8 +118,10 @@ export default function ProviderDashboardPage() {
         (b: ProviderBooking) => b.status === "completed",
       ).length,
       totalEarnings: revenueStats?.totalEarnings || 0,
+      averageRating: business?.rating || 0,
+      totalReviews: business?.totalReviews || 0,
     };
-  }, [bookings, revenueStats]);
+  }, [bookings, revenueStats, business]);
 
   const isLoading = !business || isLoadingRevenue || isLoadingAnalytics;
 
@@ -349,16 +351,16 @@ export default function ProviderDashboardPage() {
           <CardContent>
             <div className="flex items-center gap-2">
               <div className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
-                {formatRating(business.rating || 0)}
+                {formatRating(computedStats.averageRating)}
               </div>
-              {(business.rating || 0) > 0 && (
+              {computedStats.averageRating > 0 && (
                 <div className="flex items-center">
                   <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                 </div>
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              {business.totalReviews || 0} reviews
+              {computedStats.totalReviews} reviews
             </p>
           </CardContent>
         </Card>

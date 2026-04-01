@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { invalidateAfterBookingAction } from "@/lib/queries/query-invalidation";
 import type { Slot } from "@/types/customer";
 
 // Preset reschedule reasons for provider
@@ -301,7 +302,8 @@ export function ProviderRescheduleDialog({
       toast.success(
         "Booking rescheduled successfully. Customer will be notified.",
       );
-      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      // Invalidate ALL booking and notification queries
+      invalidateAfterBookingAction(queryClient);
       onOpenChange(false);
       onRescheduled?.();
 

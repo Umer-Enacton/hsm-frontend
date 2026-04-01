@@ -270,7 +270,7 @@ export default function LandingPage() {
         <Button
           size="icon"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="fixed bottom-6 left-6 z-40 h-14 w-14 rounded-full shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 md:hidden transition-all hover:scale-105 active:scale-95 border-2 border-background"
+          className="fixed bottom-6 left-6 z-40 h-14 w-14 rounded-lg shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 md:hidden transition-all hover:scale-105 active:scale-95 border-2 border-background"
           aria-label="Open menu"
         >
           <Menu className="h-6 w-6" />

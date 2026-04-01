@@ -11,6 +11,10 @@ import {
   uploadCompletionPhotos,
 } from "@/lib/provider/api";
 import { QUERY_KEYS } from "./query-keys";
+import {
+  invalidateBookingQueries,
+  invalidateNotificationQueries,
+} from "./query-invalidation";
 import type { ProviderBooking } from "@/types/provider";
 
 // ============================================================================
@@ -28,6 +32,7 @@ export function useProviderBookings(filters?: { status?: string }) {
       const data = await getProviderBookings(filters?.status);
       return Array.isArray(data) ? data : [];
     },
+    refetchOnWindowFocus: true,
     staleTime: 5 * 60 * 1000, // 5 minutes - was 30 sec, way too short!
     gcTime: 15 * 60 * 1000, // 15 minutes cache
   });
@@ -65,10 +70,9 @@ export function useAcceptBooking() {
     mutationFn: (bookingId: number) => acceptBooking(bookingId),
 
     onSuccess: () => {
-      // Invalidate all provider booking queries
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS],
-      });
+      // Invalidate ALL booking queries (customer, provider, admin)
+      invalidateBookingQueries(queryClient);
+      invalidateNotificationQueries(queryClient);
       toast.success("Booking accepted successfully");
     },
 
@@ -77,9 +81,7 @@ export function useAcceptBooking() {
 
       // Check if booking is already in a terminal state
       if (error.message?.includes("Current status:")) {
-        queryClient.invalidateQueries({
-          queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS],
-        });
+        invalidateBookingQueries(queryClient);
         toast.error(
           error.message ||
             "This booking has already been processed. Refreshing...",
@@ -101,10 +103,9 @@ export function useRejectBooking() {
     mutationFn: (bookingId: number) => rejectBooking(bookingId),
 
     onSuccess: () => {
-      // Invalidate all provider booking queries
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS],
-      });
+      // Invalidate ALL booking queries
+      invalidateBookingQueries(queryClient);
+      invalidateNotificationQueries(queryClient);
       toast.success("Booking rejected successfully");
     },
 
@@ -114,9 +115,7 @@ export function useRejectBooking() {
       // Check if booking is already in a terminal state
       if (error.message?.includes("Current status:")) {
         // Refresh data to show current state
-        queryClient.invalidateQueries({
-          queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS],
-        });
+        invalidateBookingQueries(queryClient);
         toast.error(
           error.message ||
             "This booking has already been processed. Refreshing...",
@@ -138,10 +137,9 @@ export function useCompleteBooking() {
     mutationFn: (bookingId: number) => completeBooking(bookingId),
 
     onSuccess: () => {
-      // Invalidate all provider booking queries
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS],
-      });
+      // Invalidate ALL booking queries
+      invalidateBookingQueries(queryClient);
+      invalidateNotificationQueries(queryClient);
       toast.success("Booking marked as complete successfully");
     },
 
@@ -150,9 +148,7 @@ export function useCompleteBooking() {
 
       // Check if booking is already in a terminal state
       if (error.message?.includes("Current status:")) {
-        queryClient.invalidateQueries({
-          queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS],
-        });
+        invalidateBookingQueries(queryClient);
         toast.error(
           error.message ||
             "This booking has already been processed. Refreshing...",
@@ -183,9 +179,8 @@ export function useInitiateCompletion() {
       };
     }) => initiateCompletion(bookingId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS],
-      });
+      invalidateBookingQueries(queryClient);
+      invalidateNotificationQueries(queryClient);
       toast.success("OTP sent to customer's email");
     },
     onError: (error: any) => {
@@ -205,9 +200,8 @@ export function useVerifyCompletionOTP() {
     mutationFn: ({ bookingId, otp }: { bookingId: number; otp: string }) =>
       verifyCompletionOTP(bookingId, otp),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS],
-      });
+      invalidateBookingQueries(queryClient);
+      invalidateNotificationQueries(queryClient);
       if (data.success) {
         toast.success("Booking completed successfully!");
       } else {
@@ -254,9 +248,8 @@ export function useUploadCompletionPhotos() {
       afterPhotoUrl?: string;
     }) => uploadCompletionPhotos(bookingId, beforePhotoUrl, afterPhotoUrl),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS],
-      });
+      invalidateBookingQueries(queryClient);
+      invalidateNotificationQueries(queryClient);
       toast.success("Photos uploaded successfully");
     },
     onError: (error: any) => {

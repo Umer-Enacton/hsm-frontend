@@ -45,7 +45,7 @@ export function useNotifications(options?: {
       return response;
     },
     staleTime: 1000 * 30, // Consider data fresh for 30 seconds
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 
   const unreadCountQuery = useQuery<{ count: number }>({
