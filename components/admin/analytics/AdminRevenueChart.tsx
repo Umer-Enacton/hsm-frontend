@@ -92,13 +92,18 @@ export function AdminRevenueChart({
     return `₹${rupees}`;
   };
 
-  // Calculate growth
+  // Calculate growth - compare recent vs earlier period
+  // Split data into two halves and compare totals
   const hasGrowth = data.length >= 2;
-  const growth = hasGrowth
-    ? ((data[data.length - 1].revenue - data[0].revenue) /
-        (data[0].revenue || 1)) *
-      100
-    : 0;
+  let growth = 0;
+  if (hasGrowth) {
+    const midPoint = Math.floor(data.length / 2);
+    const earlierRevenue = data.slice(0, midPoint).reduce((sum, d) => sum + d.revenue, 0);
+    const recentRevenue = data.slice(midPoint).reduce((sum, d) => sum + d.revenue, 0);
+    growth = earlierRevenue > 0
+      ? ((recentRevenue - earlierRevenue) / earlierRevenue) * 100
+      : (recentRevenue > 0 ? 100 : 0);
+  }
 
   // Calculate actual total bookings from chart data
   const actualTotalBookings = data.reduce(
@@ -115,7 +120,7 @@ export function AdminRevenueChart({
               Platform Revenue & Bookings
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm">
-              Track your 5% platform fee earnings and booking trends over time
+              Track your 5% platform fee earnings and booking trends for selected period
             </CardDescription>
           </div>
           <div className="text-right sm:text-left">
@@ -124,7 +129,7 @@ export function AdminRevenueChart({
             </div>
             <div className="text-[10px] sm:text-xs text-muted-foreground">
               Your 5% from {actualTotalBookings} booking
-              {actualTotalBookings !== 1 ? "s" : ""}
+              {actualTotalBookings !== 1 ? "s" : ""} ({period})
             </div>
           </div>
         </div>

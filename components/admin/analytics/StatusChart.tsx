@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   PieChart,
   Pie,
@@ -49,6 +50,19 @@ const formatStatusName = (status: any) => {
   return status.charAt(0).toUpperCase() + status.slice(1);
 };
 
+// Get status color for chart
+const getStatusColor = (status: string) => {
+  const colors: Record<string, string> = {
+    completed: "hsl(142, 76%, 36%)", // Green
+    confirmed: "hsl(217, 91%, 60%)", // Blue
+    pending: "hsl(38, 92%, 50%)", // Orange
+    cancelled: "hsl(0, 84%, 60%)", // Red
+    rejected: "hsl(240, 5%, 26%)", // Dark gray
+    reschedule_pending: "hsl(267, 88%, 65%)", // Purple
+  };
+  return colors[status] || "hsl(0, 0%, 50%)";
+};
+
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -68,7 +82,55 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export function StatusChart({ data, totalPlatformFees }: StatusChartProps) {
-  if (data.length === 0) {
+  // Process data: only show pending, confirmed, completed
+  // Group reschedule_pending with confirmed
+  const processedData = useMemo(() => {
+    const result = new Map<string, StatusData>();
+
+    data.forEach((item) => {
+      const status = item.status;
+
+      // Skip cancelled, rejected, refunded
+      if (status === "cancelled" || status === "rejected" || status === "refunded") {
+        return;
+      }
+
+      // Group reschedule_pending with confirmed
+      const targetStatus = status === "reschedule_pending" ? "confirmed" : status;
+
+      if (!result.has(targetStatus)) {
+        result.set(targetStatus, {
+          status: targetStatus,
+          count: 0,
+          revenue: 0,
+          platformFees: 0,
+          percentage: "0",
+          fill: getStatusColor(targetStatus),
+        });
+      }
+
+      const existing = result.get(targetStatus)!;
+      existing.count += item.count;
+      existing.revenue += item.revenue;
+      existing.platformFees += item.platformFees;
+    });
+
+    // Calculate percentages and convert to array
+    const totalCount = Array.from(result.values()).reduce((sum, s) => sum + s.count, 0);
+    const array = Array.from(result.values()).map((item) => ({
+      ...item,
+      percentage: totalCount > 0 ? ((item.count / totalCount) * 100).toFixed(1) : "0",
+    }));
+
+    // Sort by meaningful order: pending -> confirmed -> completed
+    const order: Record<string, number> = { pending: 1, confirmed: 2, completed: 3 };
+    return array.sort((a, b) => (order[a.status] || 99) - (order[b.status] || 99));
+  }, [data]);
+
+  // Calculate new total platform fees from processed data
+  const processedTotalFees = processedData.reduce((sum, s) => sum + s.platformFees, 0);
+
+  if (processedData.length === 0) {
     return (
       <Card className="shadow-lg hover:shadow-xl transition-all">
         <CardHeader>
@@ -102,7 +164,7 @@ export function StatusChart({ data, totalPlatformFees }: StatusChartProps) {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={data}
+                data={processedData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -114,7 +176,7 @@ export function StatusChart({ data, totalPlatformFees }: StatusChartProps) {
                 dataKey="platformFees"
                 nameKey="status"
               >
-                {data.map((entry, index) => (
+                {processedData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
               </Pie>
@@ -133,7 +195,7 @@ export function StatusChart({ data, totalPlatformFees }: StatusChartProps) {
           <h4 className="text-sm font-medium text-muted-foreground">
             Status Breakdown
           </h4>
-          {data.map((status) => (
+          {processedData.map((status) => (
             <div
               key={status.status}
               className="flex items-center justify-between text-sm"
