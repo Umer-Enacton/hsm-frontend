@@ -174,3 +174,29 @@ export function usePayProvider() {
     },
   });
 }
+
+/**
+ * Pay multiple providers at once (bulk payment)
+ */
+export function usePayBulkProviders() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ providerIds }: { providerIds: number[] }) => {
+      // Process all providers in parallel
+      const promises = providerIds.map((providerId) =>
+        api.put(`${API_ENDPOINTS.ADMIN_PAYOUTS}/provider/${providerId}/pay-all`, {})
+      );
+      return await Promise.all(promises);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_PAYOUTS] });
+      toast.success(
+        `Successfully paid ${variables.providerIds.length} provider${variables.providerIds.length > 1 ? 's' : ''}`
+      );
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to process some payments');
+    },
+  });
+}

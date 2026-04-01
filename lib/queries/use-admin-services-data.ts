@@ -71,11 +71,12 @@ export function useAdminServices() {
 }
 
 /**
- * Fetch all businesses for admin
+ * Fetch all businesses for admin (simple array version)
+ * Note: For full-featured business management, use useAdminBusinessList from use-admin-business.ts
  */
-export function useAdminBusinesses() {
+export function useAdminBusinessesArray() {
   return useQuery<AdminBusiness[]>({
-    queryKey: [QUERY_KEYS.ADMIN_BUSINESSES, 'list'],
+    queryKey: [QUERY_KEYS.ADMIN_BUSINESSES, 'array'],
     queryFn: async () => {
       const response = await api.get<{ businesses: AdminBusiness[] }>(API_ENDPOINTS.BUSINESSES);
       return response.businesses || [];

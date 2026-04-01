@@ -1,19 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Briefcase, Building2, Badge, User, Ban } from "lucide-react";
-import { toast } from "sonner";
 import {
-  getAllBusinesses,
-  getBusinessStats,
-  verifyBusiness,
-  unverifyBusiness,
-  blockBusiness,
-  unblockBusiness,
-  type AdminBusinessListParams,
-  type BusinessStats,
-} from "@/lib/admin/business";
+  useAdminBusinessList,
+  useBusinessStats,
+  useVerifyBusiness,
+  useUnverifyBusiness,
+  useBlockBusiness,
+  useUnblockBusiness,
+} from "@/lib/queries/use-admin-business";
 import type { Business } from "@/types/provider";
 import {
   AdminPageHeader,
@@ -60,11 +57,6 @@ type ViewMode = "grid" | "list";
 
 export default function AdminBusinessPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
-  const [stats, setStats] = useState<BusinessStats | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [blockDialogBusiness, setBlockDialogBusiness] =
     useState<Business | null>(null);
@@ -73,40 +65,36 @@ export default function AdminBusinessPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  // Load businesses and stats on mount
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Fetch data using TanStack Query hooks
+  const {
+    data: businessesData,
+    isLoading: businessesLoading,
+    error: businessesError,
+    refetch: refetchBusinesses,
+  } = useAdminBusinessList({
+    page: 1,
+    limit: 100,
+    status: "all",
+    sortBy: "createdAt",
+    sortOrder: "desc",
+  });
 
-  // Filter businesses when filters change
-  useEffect(() => {
-    filterBusinesses();
-  }, [businesses, statusFilter, searchQuery]);
+  const {
+    data: stats,
+    isLoading: statsLoading,
+  } = useBusinessStats();
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [businessResult, businessStats] = await Promise.all([
-        getAllBusinesses({
-          page: 1,
-          limit: 100,
-          status: "all",
-          sortBy: "createdAt",
-          sortOrder: "desc",
-        }),
-        getBusinessStats(),
-      ]);
-      setBusinesses(businessResult.businesses);
-      setStats(businessStats);
-    } catch (error: any) {
-      console.error("Error loading businesses:", error);
-      toast.error("Failed to load businesses");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Mutations
+  const verifyMutation = useVerifyBusiness();
+  const unverifyMutation = useUnverifyBusiness();
+  const blockMutation = useBlockBusiness();
+  const unblockMutation = useUnblockBusiness();
 
-  const filterBusinesses = () => {
+  const businesses = businessesData?.businesses || [];
+  const isLoading = businessesLoading || statsLoading;
+
+  // Filter businesses client-side
+  const filteredBusinesses = useMemo(() => {
     let filtered = [...businesses];
 
     // Status filter
@@ -130,14 +118,11 @@ export default function AdminBusinessPage() {
       );
     }
 
-    setFilteredBusinesses(filtered);
-  };
+    return filtered;
+  }, [businesses, statusFilter, searchQuery]);
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await loadData();
-    setIsRefreshing(false);
-    toast.success("Businesses refreshed");
+    await refetchBusinesses();
   };
 
   const handleViewDetails = (businessId: number) => {
@@ -145,33 +130,13 @@ export default function AdminBusinessPage() {
   };
 
   const handleVerify = async (businessId: number) => {
-    try {
-      const result = await verifyBusiness(businessId);
-      toast.success("Business verified successfully", {
-        description: `${result.business.name} is now verified`,
-      });
-      await loadData();
-      window.dispatchEvent(new CustomEvent("business-updated"));
-    } catch (error: any) {
-      toast.error("Failed to verify business", {
-        description: error.message || "Please try again",
-      });
-    }
+    await verifyMutation.mutateAsync(businessId);
+    window.dispatchEvent(new CustomEvent("business-updated"));
   };
 
   const handleUnverify = async (businessId: number) => {
-    try {
-      const result = await unverifyBusiness(businessId);
-      toast.success("Business unverified", {
-        description: `${result.business.name} is now pending verification`,
-      });
-      await loadData();
-      window.dispatchEvent(new CustomEvent("business-updated"));
-    } catch (error: any) {
-      toast.error("Failed to unverify business", {
-        description: error.message || "Please try again",
-      });
-    }
+    await unverifyMutation.mutateAsync(businessId);
+    window.dispatchEvent(new CustomEvent("business-updated"));
   };
 
   const handleBlock = (business: Business) => {
@@ -179,26 +144,33 @@ export default function AdminBusinessPage() {
   };
 
   const handleUnblock = async (businessId: number) => {
-    try {
-      await unblockBusiness(businessId);
-      toast.success("Business unblocked successfully");
-      await loadData();
-      window.dispatchEvent(new CustomEvent("business-updated"));
-    } catch (error: any) {
-      toast.error("Failed to unblock business", {
-        description: error.message || "Please try again",
-      });
-    }
+    await unblockMutation.mutateAsync(businessId);
+    window.dispatchEvent(new CustomEvent("business-updated"));
   };
 
   const handleBlocked = () => {
     setBlockDialogBusiness(null);
-    loadData();
     window.dispatchEvent(new CustomEvent("business-updated"));
   };
 
   if (isLoading) {
     return <AdminBusinessSkeleton />;
+  }
+
+  if (businessesError) {
+    return (
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Businesses"
+          description="Manage and verify provider businesses"
+          onRefresh={handleRefresh}
+        />
+        <ErrorState
+          message={businessesError instanceof Error ? businessesError.message : "Failed to load businesses"}
+          onRetry={handleRefresh}
+        />
+      </div>
+    );
   }
 
   if (!businesses.length) {
@@ -208,7 +180,6 @@ export default function AdminBusinessPage() {
           title="Businesses"
           description="Manage and verify provider businesses"
           onRefresh={handleRefresh}
-          isRefreshing={isRefreshing}
         />
         <EmptyState
           icon={Briefcase}
@@ -226,7 +197,6 @@ export default function AdminBusinessPage() {
         title="Businesses"
         description="Manage and verify provider businesses"
         onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
       />
 
       {/* Statistics Cards */}

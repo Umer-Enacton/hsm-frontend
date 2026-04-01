@@ -44,6 +44,7 @@ import {
   useProviderGroupedPayouts,
   usePayoutSummary,
   usePayProvider,
+  usePayBulkProviders,
 } from "@/lib/queries";
 import type { Payout, ProviderPayout, PayoutSummary } from "@/lib/queries/use-admin-payouts";
 
@@ -143,35 +144,19 @@ export default function AdminPayoutsPage() {
     setBulkPayDialogOpen(true);
   };
 
+  // Mutations
+  const payBulkMutation = usePayBulkProviders();
+
   const confirmPayAllReady = async () => {
     if (providersReadyToPay.length === 0) return;
 
     try {
-      // Process all ready providers in parallel
-      const promises = providersReadyToPay.map((provider) =>
-        fetch(`${API_ENDPOINTS.ADMIN_PAYOUTS}/provider/${provider.providerId}/pay-all`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-        }).then(res => res.json())
-      );
+      const providerIds = providersReadyToPay.map((p) => p.providerId);
+      await payBulkMutation.mutateAsync({ providerIds });
 
-      await Promise.all(promises);
-
-      const totalAmount = providersReadyToPay.reduce(
-        (sum, p) => sum + p.totalPending,
-        0,
-      );
-
-      toast.success(
-        `Successfully paid ₹${(totalAmount / 100).toFixed(2)} to ${providersReadyToPay.length} provider${providersReadyToPay.length > 1 ? "s" : ""}`,
-      );
       setBulkPayDialogOpen(false);
-      refetchPayouts();
-      refetchProviders();
-    } catch (err: any) {
-      console.error("Failed to pay all providers:", err);
-      toast.error(err.message || "Failed to process some payments");
+    } catch (err) {
+      // Error handling done in mutation
     }
   };
 

@@ -20,9 +20,13 @@ export { usePaymentDetails, useUpdatePaymentDetail, useSetActivePaymentDetail, u
 export * from './use-notifications';
 export * from './use-admin-bookings';
 // Admin payment details (use different names to avoid conflicts)
-export { useAdminPaymentDetails, useUpdatePaymentDetail as useAdminUpdatePaymentDetail, useSetActivePaymentDetail as useAdminSetActivePaymentDetail, useDeletePaymentDetail as useAdminDeletePaymentDetail } from './use-admin-payments';
+export { useAdminPaymentDetails, useCreatePaymentDetail as useAdminCreatePaymentDetail, useUpdatePaymentDetail as useAdminUpdatePaymentDetail, useSetActivePaymentDetail as useAdminSetActivePaymentDetail, useDeletePaymentDetail as useAdminDeletePaymentDetail } from './use-admin-payments';
 // Admin services data (use different names to avoid conflicts)
-export { useAdminServices, useAdminServiceDetail, useUpdateService as useAdminUpdateService, useDeleteService as useAdminDeleteService, useToggleServiceStatus as useAdminToggleServiceStatus, useAdminBusinesses, useBusinessById, useUserById, useServicesByBusiness, type AdminService, type AdminBusiness } from './use-admin-services-data';
+export { useAdminServices, useAdminServiceDetail, useUpdateService as useAdminUpdateService, useDeleteService as useAdminDeleteService, useToggleServiceStatus as useAdminToggleServiceStatus, useBusinessById, useUserById, useServicesByBusiness, type AdminService, type AdminBusiness } from './use-admin-services-data';
+// Admin business, categories, and users hooks
+export { useAdminBusinessList as useAdminBusinesses, useBusinessStats } from './use-admin-business';
+export * from './use-admin-categories';
+export * from './use-admin-users';
 export * from './use-admin-payouts';
 export * from './use-admin-settings';
 export * from './use-customer-slots';

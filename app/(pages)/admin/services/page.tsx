@@ -83,9 +83,17 @@ export default function AdminServicesPage() {
   } = useAdminServices();
 
   const {
-    data: businesses = [],
+    data: businessesData,
     isLoading: businessesLoading,
   } = useAdminBusinesses();
+
+  // Handle different response structures - defensive coding
+  const businesses = Array.isArray(businessesData)
+    ? businessesData
+    : (businessesData?.businesses || []);
+
+  // Ensure businesses is always an array
+  const safeBusinesses = Array.isArray(businesses) ? businesses : [];
 
   const isLoading = servicesLoading || businessesLoading;
   const error = servicesError;
@@ -98,7 +106,7 @@ export default function AdminServicesPage() {
   // Create business map for lookup
   const businessMap = useMemo(() => {
     const map = new Map<number, BusinessMapInfo>();
-    businesses.forEach((b: AdminBusiness) => {
+    safeBusinesses.forEach((b: any) => {
       map.set(b.id, {
         name: b.businessName || b.name || "",
         category: b.category,

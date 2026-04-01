@@ -35,11 +35,12 @@ import {
 import { toast } from "sonner";
 import {
   useAdminPaymentDetails,
+  useAdminCreatePaymentDetail,
   useUpdatePaymentDetail,
   useSetActivePaymentDetail,
   useDeletePaymentDetail,
 } from "@/lib/queries";
-import { api, API_ENDPOINTS } from "@/lib/api";
+import { API_ENDPOINTS } from "@/lib/api";
 
 export default function AdminPaymentsPage() {
   // Use hooks for data fetching
@@ -49,6 +50,7 @@ export default function AdminPaymentsPage() {
     refetch,
   } = useAdminPaymentDetails();
 
+  const createMutation = useAdminCreatePaymentDetail();
   const updateMutation = useUpdatePaymentDetail();
   const setActiveMutation = useSetActivePaymentDetail();
   const deleteMutation = useDeletePaymentDetail();
@@ -125,20 +127,17 @@ export default function AdminPaymentsPage() {
             : { paymentType: "bank", bankAccount, ifscCode, accountHolderName },
       });
     } else {
-      // For new payment details, use direct API call (mutation not available for create)
-      try {
-        const payload =
-          paymentType === "upi"
-            ? { paymentType: "upi", upiId }
-            : { paymentType: "bank", bankAccount, ifscCode, accountHolderName };
-        await api.post(API_ENDPOINTS.PAYMENT_DETAILS, payload);
-        toast.success("Payment details added successfully");
-        closeDialog();
-        refetch();
-      } catch (error: any) {
-        console.error("Error saving payment details:", error);
-        toast.error(error.message || "Failed to save payment details");
-      }
+      // For new payment details, use the create mutation
+      createMutation.mutate(
+        paymentType === "upi"
+          ? { paymentType: "upi", upiId }
+          : { paymentType: "bank", bankAccount, ifscCode, accountHolderName },
+        {
+          onSuccess: () => {
+            closeDialog();
+          },
+        }
+      );
     }
   };
 

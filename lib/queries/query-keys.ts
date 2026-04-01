@@ -18,6 +18,7 @@ export const QUERY_KEYS = {
   NOTIFICATIONS: "notifications",
   REVIEWS: "reviews",
   FEEDBACK: "feedback",
+  USERS: "users",
 
   // Provider specific base keys
   PROVIDER_BOOKINGS: "provider_bookings",

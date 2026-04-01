@@ -1,15 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { toast } from "sonner";
 import {
-  getCategories,
-  addCategory,
-  updateCategory,
-  deleteCategory,
-} from "@/lib/category-api";
+  useAdminCategories,
+  useAddCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+} from "@/lib/queries";
 import { CategoryList, type ViewMode } from "./components/CategoryList";
 import { AddCategoryDialog } from "./components/AddCategoryDialog";
 import { EditCategoryDialog } from "./components/EditCategoryDialog";
@@ -17,7 +16,6 @@ import { DeleteCategoryDialog } from "./components/DeleteCategoryDialog";
 import type { Category, CategoryFormData } from "@/types/category";
 import {
   AdminPageHeader,
-  LoadingState,
   ErrorState,
 } from "@/components/admin/shared";
 import { AdminCategoriesSkeleton } from "@/components/admin/skeletons";
@@ -27,62 +25,39 @@ const DEFAULT_PAGE_SIZE = 12;
 const PAGE_SIZE_OPTIONS = [12, 24, 48, 96] as const;
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
-    null,
-  );
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isAdding, setIsAdding] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
-  // Fetch categories on mount
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  // Fetch categories using TanStack Query
+  const {
+    data: categories = [],
+    isLoading,
+    error,
+    refetch,
+  } = useAdminCategories();
 
-  const fetchCategories = async (showRefreshLoading = false) => {
-    if (showRefreshLoading) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
-    setError(null);
+  // Mutations
+  const addMutation = useAddCategory();
+  const updateMutation = useUpdateCategory();
+  const deleteMutation = useDeleteCategory();
 
-    try {
-      const data = await getCategories();
-      setCategories(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load categories");
-      toast.error(err.message || "Failed to load categories");
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
+  // Check if any mutation is in progress
+  const isPending = addMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
   const handleAddCategory = async (data: CategoryFormData) => {
-    setIsAdding(true);
-
     try {
-      await addCategory(data);
-      toast.success("Category added successfully");
-      await fetchCategories(); // Refresh list
-    } catch (err: any) {
-      toast.error(err.message || "Failed to add category");
-      throw err; // Re-throw to keep dialog open on error
-    } finally {
-      setIsAdding(false);
+      await addMutation.mutateAsync(data);
+      setIsAddDialogOpen(false);
+    } catch (err) {
+      // Dialog stays open on error
     }
   };
 
@@ -92,19 +67,12 @@ export default function CategoriesPage() {
   };
 
   const handleUpdateCategory = async (id: number, data: CategoryFormData) => {
-    setIsUpdating(true);
-
     try {
-      await updateCategory(id, data);
-      toast.success("Category updated successfully");
-      await fetchCategories(); // Refresh list
+      await updateMutation.mutateAsync({ id, data });
       setIsEditDialogOpen(false);
       setCategoryToEdit(null);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update category");
-      throw err; // Re-throw to keep dialog open on error
-    } finally {
-      setIsUpdating(false);
+    } catch (err) {
+      // Dialog stays open on error
     }
   };
 
@@ -115,11 +83,8 @@ export default function CategoriesPage() {
   const handleDeleteConfirm = async () => {
     if (!categoryToDelete) return;
 
-    setIsDeleting(true);
-
     try {
-      await deleteCategory(categoryToDelete.id);
-      toast.success("Category deleted successfully");
+      await deleteMutation.mutateAsync(categoryToDelete.id);
 
       // Adjust page if deleting last item on current page
       const totalPages = Math.ceil(categories.length / pageSize);
@@ -131,18 +96,18 @@ export default function CategoriesPage() {
         setCurrentPage(currentPage - 1);
       }
 
-      await fetchCategories(); // Refresh list
       setCategoryToDelete(null);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete category");
-      throw err; // Re-throw to keep dialog open on error
-    } finally {
-      setIsDeleting(false);
+    } catch (err) {
+      // Dialog stays open on error
     }
   };
 
+  const handleRefresh = async () => {
+    await refetch();
+  };
+
   // Reset to page 1 when page size changes
-  useEffect(() => {
+  useMemo(() => {
     setCurrentPage(1);
   }, [pageSize]);
 
@@ -159,7 +124,18 @@ export default function CategoriesPage() {
   }
 
   if (error) {
-    return <ErrorState message={error} onRetry={() => fetchCategories()} />;
+    return (
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Categories"
+          description="Manage service categories for your platform"
+        />
+        <ErrorState
+          message={error instanceof Error ? error.message : "Failed to load categories"}
+          onRetry={handleRefresh}
+        />
+      </div>
+    );
   }
 
   return (
@@ -174,11 +150,7 @@ export default function CategoriesPage() {
             Add Category
           </Button>
         }
-        onRefresh={() => {
-          fetchCategories(true);
-          toast.success("Categories refreshed");
-        }}
-        isRefreshing={isRefreshing}
+        onRefresh={handleRefresh}
       />
 
       {/* Page Size Selector - Only show when there are many categories */}
@@ -221,7 +193,7 @@ export default function CategoriesPage() {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onAdd={handleAddCategory}
-        isLoading={isAdding}
+        isLoading={addMutation.isPending}
       />
 
       {/* Edit Category Dialog */}
@@ -233,7 +205,7 @@ export default function CategoriesPage() {
         }}
         category={categoryToEdit}
         onUpdate={handleUpdateCategory}
-        isLoading={isUpdating}
+        isLoading={updateMutation.isPending}
       />
 
       {/* Delete Category Dialog */}
@@ -242,7 +214,7 @@ export default function CategoriesPage() {
         onOpenChange={(open) => !open && setCategoryToDelete(null)}
         category={categoryToDelete}
         onConfirm={handleDeleteConfirm}
-        isLoading={isDeleting}
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

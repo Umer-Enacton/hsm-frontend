@@ -1,18 +1,21 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Users, UserCheck, Briefcase, Shield } from "lucide-react";
-import { toast } from "sonner";
-import { getUsers, deleteUser, filterUsers } from "@/lib/user-api";
 import { getUserData } from "@/lib/auth-utils";
+import {
+  useAdminUsers,
+  useFilteredUsers,
+  useDeleteUser,
+} from "@/lib/queries";
 import { UserList, type ViewMode } from "./components/UserList";
 import { UserFilters } from "./components/UserFilters";
 import { ViewUserDialog } from "./components/ViewUserDialog";
 import { DeleteUserDialog } from "./components/DeleteUserDialog";
 import type { AppUser, UserFilters as UserFiltersType } from "@/types/user";
-import { AdminPageHeader, StatCard, LoadingState, ErrorState } from "@/components/admin/shared";
+import { AdminPageHeader, StatCard, ErrorState } from "@/components/admin/shared";
 import { AdminUsersSkeleton } from "@/components/admin/skeletons";
 
 // Pagination constants
@@ -21,13 +24,6 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
 
 export default function UsersPage() {
   const router = useRouter();
-  const [allUsers, setAllUsers] = useState<AppUser[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<AppUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<number | undefined>();
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,7 +41,8 @@ export default function UsersPage() {
   const [deletingUser, setDeletingUser] = useState<AppUser | null>(null);
 
   // Get current user ID on mount
-  useEffect(() => {
+  const [currentUserId, setCurrentUserId] = useState<number | undefined>();
+  useMemo(() => {
     const userData = getUserData();
     if (!userData || !userData.id) {
       router.push("/login");
@@ -54,84 +51,24 @@ export default function UsersPage() {
     setCurrentUserId(userData.id);
   }, [router]);
 
-  // Fetch users on mount
-  useEffect(() => {
-    if (currentUserId) {
-      fetchUsers();
-    }
-  }, [currentUserId]);
+  // Fetch users using TanStack Query
+  const {
+    data: allUsers = [],
+    isLoading,
+    error,
+    refetch,
+  } = useAdminUsers();
 
-  // Apply filters client-side when users or filters change
-  useEffect(() => {
-    const filtered = filterUsers(allUsers, filters);
-    setFilteredUsers(filtered);
-    setCurrentPage(1); // Reset to first page on filter change
-  }, [allUsers, filters]);
+  // Filter users client-side
+  const filteredUsers = useFilteredUsers(allUsers, filters);
 
-  const fetchUsers = async (showRefreshLoading = false) => {
-    if (showRefreshLoading) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
-    setError(null);
+  // Delete mutation
+  const deleteMutation = useDeleteUser();
 
-    try {
-      const data = await getUsers();
-      setAllUsers(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load users");
-      toast.error(err.message || "Failed to load users");
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
-
-  const handleViewUser = (user: AppUser) => {
-    setViewingUser(user);
-  };
-
-  const handleDeleteClick = (user: AppUser) => {
-    setDeletingUser(user);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!deletingUser) return;
-
-    setIsDeleting(true);
-
-    try {
-      await deleteUser(deletingUser.id);
-      toast.success("User deleted successfully");
-
-      // Remove deleted user from state
-      setAllUsers((prev) => prev.filter((u) => u.id !== deletingUser.id));
-
-      // Adjust page if deleting last item on current page
-      const totalPages = Math.ceil(filteredUsers.length / pageSize);
-      if (
-        currentPage > 1 &&
-        currentPage === totalPages &&
-        filteredUsers.length % pageSize === 1
-      ) {
-        setCurrentPage(currentPage - 1);
-      }
-
-      setDeletingUser(null);
-      setViewingUser(null); // Close view dialog if open
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete user");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-
-  // Reset to page 1 when page size changes
-  useEffect(() => {
+  // Reset to page 1 when filters or page size changes
+  useMemo(() => {
     setCurrentPage(1);
-  }, [pageSize]);
+  }, [pageSize, filters]);
 
   // Calculate user stats by role
   const userStats = useMemo(() => {
@@ -149,12 +86,58 @@ export default function UsersPage() {
     return filteredUsers.slice(startIndex, endIndex);
   }, [filteredUsers, currentPage, pageSize]);
 
+  const handleViewUser = (user: AppUser) => {
+    setViewingUser(user);
+  };
+
+  const handleDeleteClick = (user: AppUser) => {
+    setDeletingUser(user);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingUser) return;
+
+    try {
+      await deleteMutation.mutateAsync(deletingUser.id);
+
+      // Adjust page if deleting last item on current page
+      const totalPages = Math.ceil(filteredUsers.length / pageSize);
+      if (
+        currentPage > 1 &&
+        currentPage === totalPages &&
+        filteredUsers.length % pageSize === 1
+      ) {
+        setCurrentPage(currentPage - 1);
+      }
+
+      setDeletingUser(null);
+      setViewingUser(null); // Close view dialog if open
+    } catch (err) {
+      // Error handling is done in the mutation
+    }
+  };
+
+  const handleRefresh = async () => {
+    await refetch();
+  };
+
   if (isLoading) {
     return <AdminUsersSkeleton />;
   }
 
   if (error) {
-    return <ErrorState message={error} onRetry={() => fetchUsers()} />;
+    return (
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Users"
+          description="Manage platform users and permissions"
+        />
+        <ErrorState
+          message={error instanceof Error ? error.message : "Failed to load users"}
+          onRetry={handleRefresh}
+        />
+      </div>
+    );
   }
 
   return (
@@ -163,11 +146,7 @@ export default function UsersPage() {
       <AdminPageHeader
         title="Users"
         description="Manage platform users and permissions"
-        onRefresh={() => {
-          fetchUsers(true);
-          toast.success("Users refreshed");
-        }}
-        isRefreshing={isRefreshing}
+        onRefresh={handleRefresh}
       />
 
       {/* User Stats */}
@@ -260,7 +239,7 @@ export default function UsersPage() {
         onOpenChange={(open) => !open && setDeletingUser(null)}
         user={deletingUser}
         onConfirm={handleDeleteConfirm}
-        isLoading={isDeleting}
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

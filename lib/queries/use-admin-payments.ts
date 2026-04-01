@@ -37,6 +37,26 @@ export function useAdminPaymentDetails() {
 }
 
 /**
+ * Create payment detail mutation
+ */
+export function useCreatePaymentDetail() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: Partial<PaymentDetail>) => {
+      return await api.post(API_ENDPOINTS.PAYMENT_DETAILS, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_PAYOUTS, 'payment-details'] });
+      toast.success('Payment detail added successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to add payment detail');
+    },
+  });
+}
+
+/**
  * Update payment detail mutation
  */
 export function useUpdatePaymentDetail() {
