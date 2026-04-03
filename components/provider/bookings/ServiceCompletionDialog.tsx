@@ -26,6 +26,7 @@ import {
   useVerifyCompletionOTP,
   useResendCompletionOTP,
 } from "@/lib/queries/use-provider-bookings";
+import { cn } from "@/lib/utils";
 
 interface ServiceCompletionDialogProps {
   open: boolean;
@@ -64,6 +65,7 @@ export function ServiceCompletionDialog({
   const [otpExpiry, setOtpExpiry] = useState<Date | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [isVerifyingWithUpload, setIsVerifyingWithUpload] = useState(false);
 
   const initiateCompletion = useInitiateCompletion();
   const verifyOTP = useVerifyCompletionOTP();
@@ -194,6 +196,9 @@ export function ServiceCompletionDialog({
       return;
     }
 
+    // Set loading state immediately to prevent double-clicks
+    setIsVerifyingWithUpload(true);
+
     try {
       // First upload photos if any selected (this is the last step)
       let beforePhotoUrl: string | undefined = undefined;
@@ -232,15 +237,18 @@ export function ServiceCompletionDialog({
             } else {
               setErrorMessage(result.message || "Invalid OTP");
               setOtp(["", "", "", "", "", ""]);
+              setIsVerifyingWithUpload(false);
             }
           },
           onError: (error: any) => {
             setErrorMessage(error.message || "Failed to verify OTP");
+            setIsVerifyingWithUpload(false);
           },
         },
       );
     } catch (error: any) {
       setErrorMessage(error.message || "Failed to upload photos");
+      setIsVerifyingWithUpload(false);
     }
   };
 
@@ -275,6 +283,7 @@ export function ServiceCompletionDialog({
     setOtpExpiry(null);
     setTimeRemaining("");
     setErrorMessage("");
+    setIsVerifyingWithUpload(false);
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -301,7 +310,7 @@ export function ServiceCompletionDialog({
 
   // Direct loading states from mutations
   const isSending = initiateCompletion.isPending;
-  const isVerifying = verifyOTP.isPending;
+  const isVerifying = verifyOTP.isPending || isVerifyingWithUpload;
 
   return (
     <Dialog

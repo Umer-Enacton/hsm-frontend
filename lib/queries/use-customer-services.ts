@@ -36,7 +36,12 @@ export interface CustomerService {
 
 export interface ServicesResponse {
   data: CustomerService[];
-  total: number;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface ServiceFilters {
@@ -104,14 +109,24 @@ export function useCustomerServices(
     queryFn: async () => {
       const url =
         API_ENDPOINTS.SERVICES + (queryString ? `?${queryString}` : "");
-      // Backend returns { services: [...], total: ... } but we use { data: [...], total: ... }
+      // Backend returns { services: [...], pagination: { ... } }
       const response = await api.get<{
         services: CustomerService[];
-        total: number;
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
       }>(url);
       return {
         data: response.services || [],
-        total: response.total || 0,
+        pagination: response.pagination || {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
       };
     },
     staleTime: 3 * 60 * 1000, // 3 minutes - services can be filtered/booked

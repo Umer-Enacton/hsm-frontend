@@ -224,7 +224,16 @@ export async function getCustomerBookings(params?: {
   status?: BookingStatus;
   limit?: number;
   offset?: number;
-}): Promise<{ bookings: CustomerBooking[]; total: number }> {
+}): Promise<{
+  bookings: CustomerBooking[];
+  total: number;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}> {
   const queryParams = new URLSearchParams();
   if (params?.status) queryParams.append("status", params.status);
   if (params?.limit) queryParams.append("limit", params.limit.toString());
@@ -235,7 +244,16 @@ export async function getCustomerBookings(params?: {
     ? `${API_ENDPOINTS.CUSTOMER_BOOKINGS}?${queryString}`
     : API_ENDPOINTS.CUSTOMER_BOOKINGS;
 
-  const response = await api.get<{ bookings: CustomerBooking[]; total: number }>(endpoint);
+  const response = await api.get<{
+    bookings: CustomerBooking[];
+    total: number;
+    pagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }>(endpoint);
   return response;
 }
 

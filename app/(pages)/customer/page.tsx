@@ -14,6 +14,7 @@ import {
   CalendarDays,
   TrendingUp,
   Wallet,
+  XCircle,
   IndianRupee,
   BarChart3,
   ArrowRight,
@@ -77,7 +78,7 @@ const getServiceActivityData = (bookings: any[]) => {
     return bookingDate >= new Date();
   }).length;
 
-  const pending = bookings.filter((b) => b.status === "pending").length;
+  const cancelled = bookings.filter((b) => b.status === "cancelled").length;
 
   const completed = bookings.filter((b) => b.status === "completed").length;
 
@@ -90,11 +91,11 @@ const getServiceActivityData = (bookings: any[]) => {
       status: "services",
     },
     {
-      name: "Pending",
-      count: pending,
-      description: "Awaiting confirmation",
-      color: "#f59e0b",
-      status: "requests",
+      name: "Cancelled",
+      count: cancelled,
+      description: "Cancelled services",
+      color: "#ef4444",
+      status: "cancelled",
     },
     {
       name: "Completed",
@@ -115,8 +116,9 @@ export default function CustomerDashboardPage() {
   const {
     data: stats = {
       totalBookings: 0,
-      pendingBookings: 0,
+      confirmedBookings: 0,
       completedBookings: 0,
+      cancelledBookings: 0,
     },
     isLoading: isLoadingStats,
   } = useBookingStats();
@@ -239,23 +241,25 @@ export default function CustomerDashboardPage() {
             <Calendar className="h-4 w-4 text-blue-500 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalBookings}</div>
+            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+              {stats.totalBookings}
+            </div>
             <p className="text-xs text-muted-foreground">All time bookings</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800">
+        <Card className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 border-red-200 dark:border-red-800">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">
-              Pending
+            <CardTitle className="text-sm font-medium text-red-700 dark:text-red-400">
+              Cancelled
             </CardTitle>
-            <Clock className="h-4 w-4 text-orange-500 dark:text-orange-400" />
+            <XCircle className="h-4 w-4 text-red-500 dark:text-red-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">{stats.pendingBookings}</div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting confirmation
-            </p>
+            <div className="text-2xl font-bold text-red-900 dark:text-red-100">
+              {stats.cancelledBookings || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Cancelled services</p>
           </CardContent>
         </Card>
 
@@ -267,7 +271,9 @@ export default function CustomerDashboardPage() {
             <CheckCircle className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{stats.completedBookings}</div>
+            <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+              {stats.completedBookings}
+            </div>
             <p className="text-xs text-muted-foreground">
               Successfully completed
             </p>
@@ -370,11 +376,9 @@ export default function CustomerDashboardPage() {
                     radius={[0, 8, 8, 0]}
                     isAnimationActive={false}
                   >
-                    {getServiceActivityData(allBookings).map(
-                      (entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ),
-                    )}
+                    {getServiceActivityData(allBookings).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>

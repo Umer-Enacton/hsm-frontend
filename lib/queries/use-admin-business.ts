@@ -10,7 +10,7 @@ export interface AdminBusinessListParams {
   page?: number;
   limit?: number;
   search?: string;
-  status?: 'all' | 'pending' | 'verified';
+  status?: 'all' | 'pending' | 'verified' | 'blocked';
   state?: string;
   categoryId?: number;
   sortBy?: 'name' | 'createdAt' | 'rating' | 'status';
@@ -29,12 +29,22 @@ export interface BusinessStats {
  * Fetch all businesses for admin with filters
  */
 export function useAdminBusinessList(params: AdminBusinessListParams = {}) {
-  return useQuery({
+  const { page = 1, limit = 10 } = params;
+
+  return useQuery<{
+    businesses: Business[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }>({
     queryKey: [QUERY_KEYS.ADMIN_BUSINESSES, 'list', params],
     queryFn: async () => {
       const queryParams = new URLSearchParams();
-      if (params.page) queryParams.append('page', params.page.toString());
-      if (params.limit) queryParams.append('limit', params.limit.toString());
+      queryParams.append('page', page.toString());
+      queryParams.append('limit', limit.toString());
       if (params.search) queryParams.append('search', params.search);
       if (params.status && params.status !== 'all') queryParams.append('status', params.status);
       if (params.state) queryParams.append('state', params.state);
@@ -42,11 +52,27 @@ export function useAdminBusinessList(params: AdminBusinessListParams = {}) {
       if (params.sortBy) queryParams.append('sortBy', params.sortBy);
       if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
 
-      const endpoint = queryParams.toString()
-        ? `${API_ENDPOINTS.BUSINESSES}?${queryParams.toString()}`
-        : API_ENDPOINTS.BUSINESSES;
+      const endpoint = `${API_ENDPOINTS.BUSINESSES}?${queryParams.toString()}`;
 
-      return await api.get<{ businesses: Business[] }>(endpoint);
+      const response = await api.get<{
+        businesses: Business[];
+        pagination?: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      }>(endpoint);
+
+      return {
+        businesses: response.businesses || [],
+        pagination: response.pagination || {
+          page,
+          limit,
+          total: response.businesses?.length || 0,
+          totalPages: Math.ceil((response.businesses?.length || 0) / limit),
+        },
+      };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - business list changes moderately
     gcTime: 15 * 60 * 1000,

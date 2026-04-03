@@ -20,7 +20,7 @@ export function useRecentBookings() {
 }
 
 /**
- * Booking stats (total, pending, completed)
+ * Booking stats (total, confirmed, completed, cancelled)
  * Changes when booking status changes
  */
 export function useBookingStats() {
@@ -32,8 +32,9 @@ export function useBookingStats() {
 
       return {
         totalBookings: data?.total || 0,
-        pendingBookings: bookings.filter((b) => b.status === "pending").length,
+        confirmedBookings: bookings.filter((b) => b.status === "confirmed").length,
         completedBookings: bookings.filter((b) => b.status === "completed").length,
+        cancelledBookings: bookings.filter((b) => b.status === "cancelled").length,
       };
     },
     staleTime: 2 * 60 * 1000, // 2 minutes - stats can change quickly

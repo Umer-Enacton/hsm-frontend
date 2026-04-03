@@ -39,12 +39,15 @@ import type {
   PaymentOrderRequest,
   PaymentOrderResponse,
 } from "@/types/payment";
-import { PaymentModal } from "@/components/customer/payment";
 import { ServiceDetailSkeleton } from "@/components/customer/skeletons/ServiceDetailSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateAfterBookingAction } from "@/lib/queries/query-invalidation";
+import { useRazorpayScript } from "@/components/customer/payment/RazorpayCheckout";
+import { useTheme } from "next-themes";
 
 interface Feedback {
   id: number;
@@ -70,6 +73,9 @@ export default function ServiceDetailsPage({
 }) {
   const router = useRouter();
   const { id } = use(params);
+  const { theme } = useTheme();
+  const queryClient = useQueryClient();
+  const scriptLoaded = useRazorpayScript();
 
   // Use cached hooks for data fetching
   const {
@@ -91,10 +97,8 @@ export default function ServiceDetailsPage({
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [isBooking, setIsBooking] = useState(false);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Payment order data (created when slot is available)
-  const [paymentOrderData, setPaymentOrderData] = useState<any>(null);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   // Carousel state
@@ -291,10 +295,121 @@ export default function ServiceDetailsPage({
         response.paymentIntentId,
       );
 
-      // Success! Slot is available and locked
-      setPaymentOrderData(response);
-      setShowPaymentModal(true);
+      // Verify Razorpay is loaded
+      if (!scriptLoaded || typeof window === "undefined" || !(window as any).Razorpay) {
+        toast.error("Payment gateway is loading. Please wait a moment and try again.");
+        setIsCheckingAvailability(false);
+        return;
+      }
+
+      const isDark = theme === "dark";
+
+      const options = {
+        key: response.keyId,
+        amount: response.amount,
+        currency: response.currency,
+        name: "Home Service Management",
+        description: `Payment for ${service.name}`,
+        order_id: response.razorpayOrderId,
+        prefill: {
+          name: "",
+          email: "",
+          contact: "",
+        },
+        notes: {
+          payment_intent_id: response.paymentIntentId.toString(),
+          service_name: service.name,
+        },
+        timeout: 60, // Enforce 1-minute expiration directly in Razorpay SDK
+        theme: {
+          color: isDark ? "#334155" : "#000000",
+        },
+        modal: {
+          ondismiss: async () => {
+            console.log("ℹ️ Razorpay modal closed by user - cancelling payment intent");
+            setIsCheckingAvailability(false);
+            try {
+              await api.post(API_ENDPOINTS.PAYMENT.CANCEL_INTENT, {
+                paymentIntentId: response.paymentIntentId,
+              });
+            } catch (err) {
+              console.warn("⚠️ Failed to cancel payment intent:", err);
+            }
+          },
+          escape: true,
+          backdropclose: false,
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+
+      rzp.on("payment.success", async function (rzpResponse: any) {
+        console.log("✅ Razorpay payment.success event");
+        try {
+          const razorpayPaymentId =
+            rzpResponse.payload?.payment?.id ||
+            rzpResponse.payload?.payment?.razorpay_payment_id ||
+            rzpResponse.razorpay_payment_id;
+          
+          const razorpayOrderId = response.razorpayOrderId;
+          
+          const razorpaySignature =
+            rzpResponse.payload?.payment?.razorpay_signature ||
+            rzpResponse.razorpay_signature ||
+            rzpResponse.signature ||
+            "";
+
+          // Verify Payment backend
+          await api.post(API_ENDPOINTS.PAYMENT.VERIFY, {
+            razorpayOrderId,
+            razorpayPaymentId,
+            signature: razorpaySignature,
+            paymentIntentId: response.paymentIntentId,
+          });
+
+          invalidateAfterBookingAction(queryClient);
+
+          toast.success("Payment successful! Your booking is confirmed.");
+          setIsCheckingAvailability(false);
+          router.push("/customer/bookings");
+        } catch (err: any) {
+          console.error("❌ Error verifying payment:", err);
+          toast.error(err.message || "Payment verification failed");
+          setIsCheckingAvailability(false);
+        }
+      });
+
+      rzp.on("payment.failed", async function (error: any) {
+        console.error("❌ Razorpay payment.failed event:", error);
+        
+        let errorCode, errorDescription;
+        if (error.payload && error.payload.error) {
+          errorCode = error.payload.error.code;
+          errorDescription = error.payload.error.description;
+        } else if (error.error) {
+          errorCode = error.error.code;
+          errorDescription = error.error.description || error.error.metadata?.reason;
+        } else {
+          errorDescription = error.description || error.reason || "Payment failed";
+        }
+
+        try {
+          await api.post(API_ENDPOINTS.PAYMENT.FAILED, {
+            paymentIntentId: response.paymentIntentId,
+            errorCode,
+            errorDescription,
+          });
+        } catch (recordError) {
+          console.error("Error recording failed payment:", recordError);
+        }
+
+        toast.error(errorDescription || "Payment failed. Please try again.");
+        setIsCheckingAvailability(false);
+      });
+
+      rzp.open();
     } catch (err: any) {
+      setIsCheckingAvailability(false);
       console.error("❌ Slot availability check failed:", err);
 
       // Extract error details from enhanced error object
@@ -331,8 +446,6 @@ export default function ServiceDetailsPage({
           errorMessage || "Failed to initiate booking. Please try again.",
         );
       }
-    } finally {
-      setIsCheckingAvailability(false);
     }
   };
 
@@ -1070,46 +1183,6 @@ export default function ServiceDetailsPage({
         )}
       </div>
 
-      {/* Payment Modal */}
-      {showPaymentModal &&
-        paymentOrderData &&
-        service &&
-        selectedDate &&
-        selectedSlot &&
-        selectedAddress && (
-          <PaymentModal
-            key={paymentOrderData.paymentIntentId} // Prevent remounting
-            orderData={paymentOrderData}
-            serviceName={service.name}
-            servicePrice={service.price}
-            bookingDate={selectedDate}
-            slotTime={formatTime(selectedSlot.startTime)}
-            onSuccess={() => {
-              console.log("✅✅✅ PaymentModal onSuccess called");
-              console.log("📍 Current URL:", window.location.href);
-
-              // First close the modal
-              setShowPaymentModal(false);
-              setPaymentOrderData(null); // Clear payment order data
-
-              // Wait for modal to close, then redirect using replace to prevent back navigation
-              setTimeout(() => {
-                console.log(
-                  "🚀🚀🚀 NOW redirecting to /customer/bookings using router.replace()",
-                );
-                console.log("📍 Before redirect URL:", window.location.href);
-
-                // Use replace instead of push to prevent back button from returning here
-                router.replace("/customer/bookings");
-              }, 500);
-            }}
-            onCancel={() => {
-              console.log("❌ PaymentModal onCancel called");
-              setShowPaymentModal(false);
-              setPaymentOrderData(null); // Clear payment order data
-            }}
-          />
-        )}
     </div>
   );
 }

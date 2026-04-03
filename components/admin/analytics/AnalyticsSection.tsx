@@ -228,7 +228,6 @@ export function AnalyticsSection({ defaultPeriod = "7d", enabled = true }: Analy
         {statusData?.statusBreakdown && statusData.statusBreakdown.length > 0 && (
           <StatusChart
             data={statusData.statusBreakdown}
-            totalPlatformFees={statusData.totalPlatformFees}
           />
         )}
 

@@ -35,8 +35,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { toast } from "sonner";
-import { PaymentModal } from "@/components/customer/payment";
 import type { PaymentOrderResponse } from "@/types/payment";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateAfterBookingAction } from "@/lib/queries/query-invalidation";
+import { useRazorpayScript } from "@/components/customer/payment/RazorpayCheckout";
+import { useTheme } from "next-themes";
 
 interface Slot {
   id: number;
@@ -93,6 +96,9 @@ export function RescheduleButton({
   const [isLoading, setIsLoading] = useState(false);
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [slots, setSlots] = useState<Slot[]>([]);
+  const queryClient = useQueryClient();
+  const scriptLoaded = useRazorpayScript();
+  const { theme } = useTheme();
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [paymentOrderData, setPaymentOrderData] =
@@ -314,9 +320,105 @@ export function RescheduleButton({
         response.paymentIntentId,
       );
 
-      // Set payment order data and show payment modal
-      setPaymentOrderData(response);
+      // Close modal before opening razorpay
       setShowModal(false);
+
+      if (!scriptLoaded || typeof window === "undefined" || !(window as any).Razorpay) {
+        toast.error("Payment gateway is loading. Please try again.");
+        return;
+      }
+
+      const isDark = theme === "dark";
+
+      const options = {
+        key: response.keyId,
+        amount: response.amount,
+        currency: response.currency,
+        name: "Home Service Management",
+        description: `Payment for Reschedule: ${serviceName}`,
+        order_id: response.razorpayOrderId,
+        prefill: { name: "", email: "", contact: "" },
+        notes: {
+          payment_intent_id: response.paymentIntentId.toString(),
+          service_name: `Reschedule: ${serviceName}`,
+        },
+        timeout: 60, // 1 minute expiration
+        theme: { color: isDark ? "#334155" : "#000000" },
+        modal: {
+          ondismiss: async () => {
+            console.log("ℹ️ Razorpay modal closed by user");
+            try {
+              await api.post(API_ENDPOINTS.PAYMENT.CANCEL_INTENT, {
+                paymentIntentId: response.paymentIntentId,
+              });
+            } catch (err) {}
+            handlePaymentCancel();
+          },
+          escape: true,
+          backdropclose: false,
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+
+      rzp.on("payment.success", async function(rzpResp: any) {
+        try {
+          const razorpayPaymentId =
+            rzpResp.payload?.payment?.id ||
+            rzpResp.payload?.payment?.razorpay_payment_id ||
+            rzpResp.razorpay_payment_id;
+          
+          const razorpayOrderId = response.razorpayOrderId;
+          
+          const razorpaySignature =
+            rzpResp.payload?.payment?.razorpay_signature ||
+            rzpResp.razorpay_signature ||
+            rzpResp.signature ||
+            "";
+
+          // Verify Payment backend
+          await api.post(API_ENDPOINTS.PAYMENT.VERIFY, {
+            razorpayOrderId,
+            razorpayPaymentId,
+            signature: razorpaySignature,
+            paymentIntentId: response.paymentIntentId,
+          });
+
+          invalidateAfterBookingAction(queryClient);
+
+          toast.success("Reschedule payment successful!");
+          handlePaymentSuccess();
+        } catch (err: any) {
+          toast.error(err.message || "Payment verification failed");
+          handlePaymentCancel();
+        }
+      });
+
+      rzp.on("payment.failed", async function (error: any) {
+          let errorCode, errorDescription;
+          if (error.payload && error.payload.error) {
+            errorCode = error.payload.error.code;
+            errorDescription = error.payload.error.description;
+          } else if (error.error) {
+            errorCode = error.error.code;
+            errorDescription = error.error.description || error.error.metadata?.reason;
+          } else {
+            errorDescription = error.description || error.reason || "Payment failed";
+          }
+  
+          try {
+            await api.post(API_ENDPOINTS.PAYMENT.FAILED, {
+              paymentIntentId: response.paymentIntentId,
+              errorCode,
+              errorDescription,
+            });
+          } catch (recordError) {}
+  
+          toast.error(errorDescription || "Payment failed. Please try again.");
+          handlePaymentCancel();
+      });
+
+      rzp.open();
     } catch (error: any) {
       console.error("Reschedule payment order error:", error);
 
@@ -670,7 +772,7 @@ export function RescheduleButton({
               <AlertDialogAction
                 onClick={handleConfirmReschedule}
                 disabled={isRescheduling}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                className="bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
               >
                 {isRescheduling ? (
                   <>
@@ -685,19 +787,7 @@ export function RescheduleButton({
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Payment Modal */}
-        {paymentOrderData && selectedDate && selectedSlot && (
-          <PaymentModal
-            key={paymentOrderData.paymentIntentId}
-            orderData={paymentOrderData}
-            serviceName={`Reschedule: ${serviceName}`}
-            servicePrice={RESCHEDULE_FEE}
-            bookingDate={selectedDate}
-            slotTime={formatTime(selectedSlot.startTime)}
-            onSuccess={handlePaymentSuccess}
-            onCancel={handlePaymentCancel}
-          />
-        )}
+        {/* No inline Payment Modal rendering needed here */}
 
         <button
           onClick={() => {
@@ -774,7 +864,7 @@ export function RescheduleButton({
             <AlertDialogAction
               onClick={handleConfirmReschedule}
               disabled={isRescheduling}
-              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+              className="bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
             >
               {isRescheduling ? (
                 <>
@@ -789,19 +879,7 @@ export function RescheduleButton({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Payment Modal */}
-      {paymentOrderData && selectedDate && selectedSlot && (
-        <PaymentModal
-          key={paymentOrderData.paymentIntentId}
-          orderData={paymentOrderData}
-          serviceName={`Reschedule: ${serviceName}`}
-          servicePrice={RESCHEDULE_FEE}
-          bookingDate={selectedDate}
-          slotTime={formatTime(selectedSlot.startTime)}
-          onSuccess={handlePaymentSuccess}
-          onCancel={handlePaymentCancel}
-        />
-      )}
+      {/* No inline Payment Modal rendering needed here */}
 
       <Button
         size={size}

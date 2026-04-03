@@ -86,6 +86,7 @@ export function useProviderDashboardStats(businessId?: number, business?: Busine
     const pendingBookings = bookings.filter((b: ProviderBooking) => b.status === "pending").length;
     const confirmedBookings = bookings.filter((b: ProviderBooking) => b.status === "confirmed").length;
     const completedBookings = bookings.filter((b: ProviderBooking) => b.status === "completed").length;
+    const cancelledBookings = bookings.filter((b: ProviderBooking) => b.status === "cancelled").length;
 
     // Calculate monthly revenue
     const now = new Date();
@@ -108,6 +109,7 @@ export function useProviderDashboardStats(businessId?: number, business?: Busine
       pendingBookings,
       confirmedBookings,
       completedBookings,
+      cancelledBookings,
       totalEarnings: monthlyRevenue,
       averageRating: business?.rating || 0,
       activeServices,

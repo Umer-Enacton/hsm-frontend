@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Briefcase, Building2, Badge, User, Ban } from "lucide-react";
 import {
@@ -11,6 +11,7 @@ import {
   useBlockBusiness,
   useUnblockBusiness,
 } from "@/lib/queries/use-admin-business";
+import { useDebounce } from "@/hooks/use-debounce";
 import type { Business } from "@/types/provider";
 import {
   AdminPageHeader,
@@ -18,8 +19,10 @@ import {
   LoadingState,
   ErrorState,
   EmptyState,
+  ViewToggleButtons,
 } from "@/components/admin/shared";
-import { AdminBusinessSkeleton } from "@/components/admin/skeletons";
+import { DataTablePagination } from "@/components/common";
+import { AdminBusinessSkeleton, AdminBusinessTableSkeleton, AdminBusinessGridSkeleton } from "@/components/admin/skeletons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +53,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { BlockBusinessDialog } from "@/components/admin/BlockBusinessDialog";
 
@@ -57,32 +68,35 @@ type ViewMode = "grid" | "list";
 
 export default function AdminBusinessPage() {
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [blockDialogBusiness, setBlockDialogBusiness] =
     useState<Business | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  // Fetch data using TanStack Query hooks
+  // Debounce search to avoid excessive API calls
+  const debouncedSearch = useDebounce(searchQuery, 500);
+
+  // Fetch data using TanStack Query hooks with server-side filtering
   const {
     data: businessesData,
     isLoading: businessesLoading,
     error: businessesError,
     refetch: refetchBusinesses,
   } = useAdminBusinessList({
-    page: 1,
-    limit: 100,
-    status: "all",
-    sortBy: "createdAt",
-    sortOrder: "desc",
+    page: currentPage,
+    limit: pageSize,
+    search: debouncedSearch.trim() || undefined,
+    status: statusFilter === "all" ? undefined : (statusFilter as "verified" | "pending" | "blocked"),
   });
 
-  const {
-    data: stats,
-    isLoading: statsLoading,
-  } = useBusinessStats();
+  const { data: stats } = useBusinessStats();
 
   // Mutations
   const verifyMutation = useVerifyBusiness();
@@ -91,35 +105,23 @@ export default function AdminBusinessPage() {
   const unblockMutation = useUnblockBusiness();
 
   const businesses = businessesData?.businesses || [];
-  const isLoading = businessesLoading || statsLoading;
+  const pagination = businessesData?.pagination;
 
-  // Filter businesses client-side
-  const filteredBusinesses = useMemo(() => {
-    let filtered = [...businesses];
+  // Show full skeleton only on first render before any data (cached or fresh)
+  // Using state instead of ref to ensure it's checked synchronously
+  const [showFullSkeleton, setShowFullSkeleton] = useState(true);
 
-    // Status filter
-    if (statusFilter === "verified") {
-      filtered = filtered.filter((b) => b.isVerified && !b.isBlocked);
-    } else if (statusFilter === "pending") {
-      filtered = filtered.filter((b) => !b.isVerified && !b.isBlocked);
-    } else if (statusFilter === "blocked") {
-      filtered = filtered.filter((b) => b.isBlocked);
+  useEffect(() => {
+    // Hide full skeleton once we have data (cached or fresh)
+    if (businessesData) {
+      setShowFullSkeleton(false);
     }
+  }, [businessesData]);
 
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (b) =>
-          b.name?.toLowerCase().includes(query) ||
-          b.category?.toLowerCase().includes(query) ||
-          b.city?.toLowerCase().includes(query) ||
-          b.providerName?.toLowerCase().includes(query),
-      );
-    }
-
-    return filtered;
-  }, [businesses, statusFilter, searchQuery]);
+  // Reset to page 1 when filters change
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchQuery]);
 
   const handleRefresh = async () => {
     await refetchBusinesses();
@@ -153,41 +155,9 @@ export default function AdminBusinessPage() {
     window.dispatchEvent(new CustomEvent("business-updated"));
   };
 
-  if (isLoading) {
+  // Show full skeleton only on initial page load (before any data received)
+  if (showFullSkeleton) {
     return <AdminBusinessSkeleton />;
-  }
-
-  if (businessesError) {
-    return (
-      <div className="space-y-6">
-        <AdminPageHeader
-          title="Businesses"
-          description="Manage and verify provider businesses"
-          onRefresh={handleRefresh}
-        />
-        <ErrorState
-          message={businessesError instanceof Error ? businessesError.message : "Failed to load businesses"}
-          onRetry={handleRefresh}
-        />
-      </div>
-    );
-  }
-
-  if (!businesses.length) {
-    return (
-      <div className="space-y-6">
-        <AdminPageHeader
-          title="Businesses"
-          description="Manage and verify provider businesses"
-          onRefresh={handleRefresh}
-        />
-        <EmptyState
-          icon={Briefcase}
-          title="No businesses found"
-          description="No businesses have been registered yet"
-        />
-      </div>
-    );
   }
 
   return (
@@ -199,34 +169,38 @@ export default function AdminBusinessPage() {
         onRefresh={handleRefresh}
       />
 
-      {/* Statistics Cards */}
+      {/* Statistics Cards - Always show after initial load */}
       {stats && (
         <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-4">
           <StatCard
             title="Total Businesses"
-            value={stats.total}
+            value={stats?.total ?? 0}
             icon={Building2}
             variant="blue"
           />
           <StatCard
             title="Verified"
-            value={stats.verified}
-            change={`${Math.round((stats.verified / stats.total) * 100) || 0}% verified`}
+            value={stats?.verified ?? 0}
+            change={`${stats && stats.total > 0 ? Math.round((stats.verified / stats.total) * 100) : 0}% verified`}
             icon={CheckCircle}
             trend="up"
             variant="emerald"
           />
           <StatCard
             title="Pending Verification"
-            value={stats.pending}
+            value={stats?.pending ?? 0}
             icon={Clock}
             trend="neutral"
             variant="orange"
           />
           <StatCard
             title="Blocked"
-            value={stats.blocked}
-            change={stats.blocked > 0 ? `${Math.round((stats.blocked / stats.total) * 100)}% of total` : "No blocked"}
+            value={stats?.blocked ?? 0}
+            change={
+              stats && stats.blocked > 0
+                ? `${Math.round((stats.blocked / stats.total) * 100)}% of total`
+                : "No blocked"
+            }
             icon={Ban}
             trend="neutral"
             variant="red"
@@ -234,8 +208,7 @@ export default function AdminBusinessPage() {
         </div>
       )}
 
-
-      {/* Filters */}
+      {/* Filters - Always show */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <Input
@@ -257,42 +230,75 @@ export default function AdminBusinessPage() {
         </Select>
       </div>
 
-      {/* Results count */}
-      <div className="text-sm text-muted-foreground">
-        Showing <span className="font-medium">{filteredBusinesses.length}</span>{" "}
-        of <span className="font-medium">{businesses.length}</span> businesses
+      {/* Results count & View Toggle */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="text-sm text-muted-foreground">
+          Showing{" "}
+          <span className="font-medium">{businesses.length}</span> of{" "}
+          <span className="font-medium">{pagination?.total || 0}</span> businesses
+        </div>
+        <ViewToggleButtons viewMode={viewMode} onViewModeChange={setViewMode} />
       </div>
 
-      {/* Business Grid */}
-      {filteredBusinesses.length === 0 ? (
+      {/* Business Grid/List */}
+      {businessesLoading ? (
+        viewMode === "grid" ? <AdminBusinessGridSkeleton /> : <AdminBusinessTableSkeleton />
+      ) : businessesError ? (
+        <ErrorState
+          message={
+            businessesError instanceof Error
+              ? businessesError.message
+              : "Failed to load businesses"
+          }
+          onRetry={handleRefresh}
+        />
+      ) : businesses.length === 0 ? (
         <EmptyState
           icon={Briefcase}
           title="No businesses found"
           description="Try adjusting your filters or search query"
         />
-      ) : viewMode === "grid" ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredBusinesses.map((business) => (
-            <BusinessGridCard
-              key={business.id}
-              business={business}
-              onViewDetails={() => handleViewDetails(business.id)}
-              onVerify={() => handleVerify(business.id)}
-              onBlock={() => handleBlock(business)}
-              onUnblock={() => handleUnblock(business.id)}
-            />
-          ))}
-        </div>
       ) : (
-        <div className="border rounded-md overflow-hidden">
-          <BusinessListView
-            businesses={filteredBusinesses}
-            onViewDetails={handleViewDetails}
-            onVerify={handleVerify}
-            onBlock={handleBlock}
-            onUnblock={handleUnblock}
-          />
-        </div>
+        <>
+          {viewMode === "grid" ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {businesses.map((business) => (
+                <BusinessGridCard
+                  key={business.id}
+                  business={business}
+                  onViewDetails={() => handleViewDetails(business.id)}
+                  onVerify={() => handleVerify(business.id)}
+                  onBlock={() => handleBlock(business)}
+                  onUnblock={() => handleUnblock(business.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="border rounded-md overflow-hidden bg-card shadow-sm">
+              <BusinessListView
+                businesses={businesses}
+                onViewDetails={handleViewDetails}
+                onVerify={handleVerify}
+                onBlock={handleBlock}
+                onUnblock={handleUnblock}
+              />
+            </div>
+          )}
+
+          {/* Pagination */}
+          {pagination && (
+            <DataTablePagination
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.total}
+              pageSize={pagination.limit}
+              onPageChange={(page) => {
+                setCurrentPage(page);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            />
+          )}
+        </>
       )}
 
       {/* Block Business Dialog */}
@@ -493,121 +499,98 @@ function BusinessListView({
   onUnblock: (id: number) => void;
 }) {
   return (
-    <table className="w-full">
-      <thead>
-        <tr className="border-b bg-muted/50">
-          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground w-[30%]">
-            Business
-          </th>
-          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground w-[15%]">
-            Category
-          </th>
-          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground w-[20%]">
-            Location
-          </th>
-          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground w-[15%]">
-            Provider
-          </th>
-          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground w-[10%]">
-            Status
-          </th>
-          <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground w-[10%]">
-            Actions
-          </th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table>
+      <TableHeader>
+        <TableRow className="bg-muted/50 hover:bg-muted/50">
+          <TableHead className="w-[30%] py-4 px-4">Business</TableHead>
+          <TableHead className="w-[15%] py-4 px-4">Category</TableHead>
+          <TableHead className="w-[20%] py-4 px-4">Location</TableHead>
+          <TableHead className="w-[15%] py-4 px-4">Provider</TableHead>
+          <TableHead className="w-[10%] py-4 px-4">Rating</TableHead>
+          <TableHead className="w-[10%] py-4 px-4">Status</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {businesses.map((business) => (
-          <tr
+          <TableRow
             key={business.id}
-            className="border-b hover:bg-muted/50 cursor-pointer transition-colors"
+            className="hover:bg-muted/50 cursor-pointer transition-colors border-b last:border-b-0"
             onClick={() => onViewDetails(business.id)}
           >
-            <td className="p-4 align-middle">
+            <TableCell className="py-4 px-4">
               <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
+                <Avatar className="h-12 w-12">
                   {business.logo ? (
                     <AvatarImage src={business.logo} alt={business.name} />
                   ) : (
                     <AvatarFallback>
-                      {business.name?.charAt(0) || "B"}
+                      <Building2 className="h-5 w-5 text-muted-foreground" />
                     </AvatarFallback>
                   )}
                 </Avatar>
-                <div>
-                  <div className="font-medium line-clamp-1">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-sm line-clamp-1">
                     {business.name}
-                  </div>
-                  {business.rating && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      {business.rating.toFixed(1)}
-                    </div>
+                  </h3>
+                  {business.phone && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <Phone className="h-3 w-3" />
+                      {business.phone}
+                    </p>
                   )}
                 </div>
               </div>
-            </td>
-            <td className="p-4 align-middle text-sm text-muted-foreground">
-              {business.category || "-"}
-            </td>
-            <td className="p-4 align-middle text-sm text-muted-foreground">
-              {business.city && business.state
-                ? `${business.city}, ${business.state}`
-                : "-"}
-            </td>
-            <td className="p-4 align-middle text-sm text-muted-foreground">
-              {business.providerName || "-"}
-            </td>
-            <td className="p-4 align-middle">
+            </TableCell>
+            <TableCell className="py-4 px-4">
+              <span className="text-sm">{business.category || "-"}</span>
+            </TableCell>
+            <TableCell className="py-4 px-4">
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <MapPin className="h-3 w-3" />
+                {business.city && business.state
+                  ? `${business.city}, ${business.state}`
+                  : "-"}
+              </div>
+            </TableCell>
+            <TableCell className="py-4 px-4">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-sm">{business.providerName || "-"}</span>
+              </div>
+            </TableCell>
+            <TableCell className="py-4 px-4">
+              {business.rating ? (
+                <div className="flex items-center gap-1">
+                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                  <span className="text-sm font-medium">
+                    {business.rating.toFixed(1)}
+                  </span>
+                  {business.totalReviews && business.totalReviews > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      ({business.totalReviews})
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  No ratings
+                </span>
+              )}
+            </TableCell>
+            <TableCell className="py-4 px-4">
               {business.isBlocked ? (
-                <Badge className="bg-red-100 text-red-700 border-red-300">
-                  <Ban className="h-3 w-3 mr-1" />
-                  Blocked
-                </Badge>
+                <StatusBadge status="blocked" />
               ) : (
                 <StatusBadge
                   status={business.isVerified ? "verified" : "pending"}
                 />
               )}
-            </td>
-            <td
-              className="p-4 align-middle"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onViewDetails(business.id)}>
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Details
-                  </DropdownMenuItem>
-                  {business.isBlocked ? (
-                    <DropdownMenuItem
-                      onClick={() => onUnblock(business.id)}
-                      className="text-green-600"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Unblock
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem
-                      onClick={() => onBlock(business)}
-                      className="text-destructive"
-                    >
-                      <Ban className="h-4 w-4 mr-2" />
-                      Block
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   );
 }

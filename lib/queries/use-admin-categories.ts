@@ -7,14 +7,45 @@ import { QUERY_KEYS } from './query-keys';
 import type { Category, CategoryFormData } from '@/types/category';
 
 /**
- * Fetch all categories for admin
+ * Fetch all categories for admin with pagination
  */
-export function useAdminCategories() {
-  return useQuery<Category[]>({
-    queryKey: [QUERY_KEYS.CATEGORIES, 'admin'],
+export function useAdminCategories(params?: { page?: number; limit?: number }) {
+  const { page = 1, limit = 10 } = params || {};
+
+  return useQuery<{
+    categories: Category[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }>({
+    queryKey: [QUERY_KEYS.CATEGORIES, 'admin', params || {}],
     queryFn: async () => {
-      const response = await api.get<{ categories: Category[] }>(API_ENDPOINTS.CATEGORIES);
-      return response.categories || [];
+      const queryParams = new URLSearchParams();
+      queryParams.append('page', page.toString());
+      queryParams.append('limit', limit.toString());
+
+      const response = await api.get<{
+        categories: Category[];
+        pagination?: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      }>(`${API_ENDPOINTS.CATEGORIES}?${queryParams.toString()}`);
+
+      return {
+        categories: response.categories || [],
+        pagination: response.pagination || {
+          page,
+          limit,
+          total: response.categories?.length || 0,
+          totalPages: Math.ceil((response.categories?.length || 0) / limit),
+        },
+      };
     },
     staleTime: 10 * 60 * 1000, // 10 minutes - categories change rarely
     gcTime: 30 * 60 * 1000,

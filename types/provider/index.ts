@@ -158,6 +158,7 @@ export interface Service {
   EstimateDuration?: number; // Backend field name (for compatibility)
   image?: string | null;
   isActive: boolean;
+  maxAllowBooking?: number;
   rating?: number;
   totalReviews?: number;
   createdAt?: string;
@@ -198,11 +199,12 @@ export interface ProviderBooking {
   };
   // Reschedule-related fields
   rescheduleCount?: number;
-  lastRescheduleFee?: number;
+  lastRescheduleFee?: number; // Last reschedule fee charged (in paise)
   rescheduleOutcome?: "pending" | "accepted" | "rejected" | "cancelled" | null;
   rescheduleReason?: string | null;
   rescheduleBookingDate?: string;
   rescheduleSlotTime?: string;
+  rescheduledBy?: "customer" | "provider" | null; // Who initiated the reschedule
   previousSlotId?: number;
   previousSlotTime?: string; // "HH:mm:ss" format
   previousBookingDate?: string;
@@ -261,6 +263,7 @@ export interface ProviderDashboardStats {
   pendingBookings: number;
   confirmedBookings: number;
   completedBookings: number;
+  cancelledBookings: number;
   totalEarnings: number;
   averageRating: number;
   activeServices: number;

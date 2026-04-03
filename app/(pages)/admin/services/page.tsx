@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useDebounce } from "@/hooks/use-debounce";
 import {
   Wrench,
   Eye,
@@ -22,7 +23,8 @@ import {
   EmptyState,
   StatusBadge,
 } from "@/components/admin/shared";
-import { AdminServicesSkeleton } from "@/components/admin/skeletons";
+import { DataTablePagination } from "@/components/common";
+import { AdminServicesSkeleton, AdminServicesTableSkeleton } from "@/components/admin/skeletons";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -48,7 +50,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { useAdminServices, useAdminBusinesses } from "@/lib/queries";
+import { useAdminServices, useAdminBusinesses, useServiceStats } from "@/lib/queries";
 import type { AdminService, AdminBusiness } from "@/lib/queries/use-admin-services-data";
 
 interface BusinessMapInfo {
@@ -74,18 +76,44 @@ interface EnrichedService extends AdminService {
 export default function AdminServicesPage() {
   const router = useRouter();
 
-  // Fetch data using cached hooks
+  // Show full skeleton only on first render before any data
+  const [showFullSkeleton, setShowFullSkeleton] = useState(true);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
+  // Debounce search to avoid excessive API calls
+  const debouncedSearch = useDebounce(searchQuery, 500);
+
+  // Fetch data using server-side filtering
   const {
-    data: services = [],
+    data: servicesData,
     isLoading: servicesLoading,
     error: servicesError,
     refetch: refetchServices,
-  } = useAdminServices();
+  } = useAdminServices({
+    page: currentPage,
+    limit: pageSize,
+    status: statusFilter === "all" ? undefined : (statusFilter as "active" | "inactive"),
+    search: debouncedSearch.trim() || undefined,
+  });
 
   const {
     data: businessesData,
     isLoading: businessesLoading,
   } = useAdminBusinesses();
+
+  // Hide full skeleton once we have data
+  useEffect(() => {
+    if (servicesData) {
+      setShowFullSkeleton(false);
+    }
+  }, [servicesData]);
 
   // Handle different response structures - defensive coding
   const businesses = Array.isArray(businessesData)
@@ -95,13 +123,18 @@ export default function AdminServicesPage() {
   // Ensure businesses is always an array
   const safeBusinesses = Array.isArray(businesses) ? businesses : [];
 
-  const isLoading = servicesLoading || businessesLoading;
   const error = servicesError;
 
-  // Filters
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  // Get services and pagination from response
+  const services = servicesData?.services || [];
+  const pagination = servicesData?.pagination;
+
   const [actionDialogService, setActionDialogService] = useState<EnrichedService | null>(null);
+
+  // Reset to page 1 when filters change
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchQuery]);
 
   // Create business map for lookup
   const businessMap = useMemo(() => {
@@ -138,41 +171,8 @@ export default function AdminServicesPage() {
     });
   }, [services, businessMap]);
 
-  // Filter services
-  const filteredServices = useMemo(() => {
-    let filtered = [...enrichedServices];
-
-    // Status filter
-    if (statusFilter === "active") {
-      filtered = filtered.filter((s) => s.isActive);
-    } else if (statusFilter === "inactive") {
-      filtered = filtered.filter((s) => !s.isActive);
-    }
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (s) =>
-          s.name?.toLowerCase().includes(query) ||
-          s.business_name?.toLowerCase().includes(query) ||
-          s.description?.toLowerCase().includes(query) ||
-          s.business_category?.toLowerCase().includes(query),
-      );
-    }
-
-    return filtered;
-  }, [enrichedServices, statusFilter, searchQuery]);
-
-  // Calculate stats
-  const stats = useMemo(() => {
-    const activeCount = enrichedServices.filter((s) => s.isActive).length;
-    return {
-      total: enrichedServices.length,
-      active: activeCount,
-      inactive: enrichedServices.length - activeCount,
-    };
-  }, [enrichedServices]);
+  // Fetch overall stats (independent of filters)
+  const { data: stats } = useServiceStats();
 
   const handleToggleStatus = (service: EnrichedService) => {
     setActionDialogService(service);
@@ -193,12 +193,9 @@ export default function AdminServicesPage() {
     return isNaN(num) ? null : num;
   };
 
-  if (isLoading) {
+  // Show full skeleton only on initial page load
+  if (showFullSkeleton) {
     return <AdminServicesSkeleton />;
-  }
-
-  if (error && !services.length) {
-    return <ErrorState message={error.message || "Failed to load services"} onRetry={() => refetchServices()} />;
   }
 
   return (
@@ -211,29 +208,31 @@ export default function AdminServicesPage() {
       />
 
       {/* Statistics */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
-        <StatCard
-          title="Total Services"
-          value={stats.total}
-          icon={Wrench}
-          variant="blue"
-        />
-        <StatCard
-          title="Active Services"
-          value={stats.active}
-          change={`${stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}% of total`}
-          icon={CheckCircle}
-          trend="up"
-          variant="emerald"
-        />
-        <StatCard
-          title="Inactive Services"
-          value={stats.inactive}
-          icon={Ban}
-          trend="neutral"
-          variant="red"
-        />
-      </div>
+      {stats && (
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
+          <StatCard
+            title="Total Services"
+            value={stats.total}
+            icon={Wrench}
+            variant="blue"
+          />
+          <StatCard
+            title="Active Services"
+            value={stats.active}
+            change={`${stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}% of total`}
+            icon={CheckCircle}
+            trend="up"
+            variant="emerald"
+          />
+          <StatCard
+            title="Inactive Services"
+            value={stats.inactive}
+            icon={Ban}
+            trend="neutral"
+            variant="red"
+          />
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -258,12 +257,16 @@ export default function AdminServicesPage() {
 
       {/* Results count */}
       <div className="text-sm text-muted-foreground">
-        Showing <span className="font-medium">{filteredServices.length}</span>{" "}
-        of <span className="font-medium">{services.length}</span> services
+        Showing <span className="font-medium">{enrichedServices.length}</span>{" "}
+        of <span className="font-medium">{pagination?.total || 0}</span> services
       </div>
 
       {/* Services Table */}
-      {filteredServices.length === 0 ? (
+      {servicesLoading ? (
+        <AdminServicesTableSkeleton />
+      ) : error && !services.length ? (
+        <ErrorState message={error.message || "Failed to load services"} onRetry={() => refetchServices()} />
+      ) : enrichedServices.length === 0 ? (
         <EmptyState
           icon={Wrench}
           title="No services found"
@@ -290,7 +293,7 @@ export default function AdminServicesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredServices.map((service) => (
+              {enrichedServices.map((service) => (
                 <TableRow
                   key={service.id}
                   className="hover:bg-muted/50 cursor-pointer transition-colors border-b last:border-b-0"
@@ -438,6 +441,20 @@ export default function AdminServicesPage() {
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {/* Pagination */}
+      {pagination && (
+        <DataTablePagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.total}
+          pageSize={pagination.limit}
+          onPageChange={(page) => {
+            setCurrentPage(page);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
       )}
 
       {/* Service Action Dialog */}

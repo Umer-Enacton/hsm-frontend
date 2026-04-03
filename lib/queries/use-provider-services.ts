@@ -87,6 +87,7 @@ export function useCreateService() {
         duration?: number;
         image?: string;
         isActive?: boolean;
+        maxAllowBooking?: number;
       };
     }) => {
       const response = await api.post(API_ENDPOINTS.SERVICES, {
@@ -123,6 +124,7 @@ export function useUpdateService() {
         duration?: number;
         image?: string;
         isActive?: boolean;
+        maxAllowBooking?: number;
       };
     }) => {
       const response = await api.put(`${API_ENDPOINTS.SERVICES}/${serviceId}`, serviceData);

@@ -35,6 +35,7 @@ export interface BusinessStats {
   pendingBookings: number;
   confirmedBookings: number;
   completedBookings: number;
+  cancelledBookings: number;
   completionRate: number;
   totalRevenue: number;
   averageJobValue: number;
@@ -153,6 +154,7 @@ export function useProviderBusinessProfile(userId?: number) {
         const pendingBookings = bookings.filter((b: any) => b.status === 'pending').length;
         const confirmedBookings = bookings.filter((b: any) => b.status === 'confirmed').length;
         const completedBookings = bookings.filter((b: any) => b.status === 'completed').length;
+        const cancelledBookings = bookings.filter((b: any) => b.status === 'cancelled').length;
         const completionRate = totalBookings > 0
           ? Math.round((completedBookings / totalBookings) * 100)
           : 0;
@@ -176,6 +178,7 @@ export function useProviderBusinessProfile(userId?: number) {
           pendingBookings,
           confirmedBookings,
           completedBookings,
+          cancelledBookings,
           completionRate,
           totalRevenue,
           averageJobValue,

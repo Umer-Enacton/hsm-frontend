@@ -13,22 +13,51 @@ import {
 } from "./query-invalidation";
 import type { CustomerBooking, BookingStatus } from "@/types/customer";
 
+interface PaginationParams {
+  page?: number;
+  limit?: number;
+}
+
 // QUERIES
 /**
- * Bookings list with filters
+ * Bookings list with pagination and filters
  * Bookings can change status frequently, but list doesn't need to be real-time
  */
 export function useBookings(filters?: {
   status?: BookingStatus;
-  limit?: number;
+  pagination?: PaginationParams;
 }) {
-  return useQuery({
+  const { page = 1, limit = 10 } = filters?.pagination || {};
+
+  // Convert page to offset
+  const offset = (page - 1) * limit;
+
+  return useQuery<{
+    bookings: CustomerBooking[];
+    total: number;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }>({
     queryKey: [QUERY_KEYS.BOOKINGS, "list", filters || {}],
     queryFn: async () => {
-      const data = await getCustomerBookings(filters);
+      const data = await getCustomerBookings({
+        status: filters?.status,
+        limit,
+        offset,
+      });
       return {
         bookings: Array.isArray(data?.bookings) ? data.bookings : [],
         total: data?.total || 0,
+        pagination: data?.pagination || {
+          page,
+          limit,
+          total: data?.total || 0,
+          totalPages: Math.ceil((data?.total || 0) / limit),
+        },
       };
     },
     refetchOnWindowFocus: true,

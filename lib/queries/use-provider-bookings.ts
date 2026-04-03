@@ -22,18 +22,32 @@ import type { ProviderBooking } from "@/types/provider";
 // ============================================================================
 
 /**
- * Get all provider bookings with optional status filter
+ * Get all provider bookings with optional status filter and pagination
  * Bookings status can change, but list doesn't need real-time updates
  */
-export function useProviderBookings(filters?: { status?: string }) {
+export function useProviderBookings(filters?: {
+  status?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const { page = 1, limit = 10 } = filters || {};
+
   return useQuery({
     queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS, "list", filters || {}],
     queryFn: async () => {
-      const data = await getProviderBookings(filters?.status);
-      return Array.isArray(data) ? data : [];
+      const data = await getProviderBookings(filters?.status, page, limit);
+      return {
+        bookings: data.bookings || [],
+        pagination: data.pagination || {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
+      };
     },
     refetchOnWindowFocus: true,
-    staleTime: 5 * 60 * 1000, // 5 minutes - was 30 sec, way too short!
+    staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes cache
   });
 }
@@ -47,8 +61,9 @@ export function useProviderBooking(bookingId: number) {
     queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS, "detail", bookingId],
     queryFn: async () => {
       // For now, fetch all and filter (backend doesn't have single booking endpoint)
-      const bookings = await getProviderBookings();
-      return bookings.find((b: ProviderBooking) => b.id === bookingId) || null;
+      const data = await getProviderBookings();
+      const bookings = data.bookings || data || [];
+      return (Array.isArray(bookings) ? bookings : []).find((b: ProviderBooking) => b.id === bookingId) || null;
     },
     enabled: !!bookingId,
     staleTime: 10 * 60 * 1000, // 10 minutes - booking details change rarely
@@ -270,12 +285,8 @@ export function useUploadCompletionPhotos() {
 export function useBookingStats(bookings: ProviderBooking[]) {
   return {
     total: bookings.length,
-    pending: bookings.filter((b) => b.status === "pending").length,
     confirmed: bookings.filter((b) => b.status === "confirmed").length,
-    reschedulePending: bookings.filter((b) => b.status === "reschedule_pending")
-      .length,
     completed: bookings.filter((b) => b.status === "completed").length,
     cancelled: bookings.filter((b) => b.status === "cancelled").length,
-    rejected: bookings.filter((b) => b.status === "rejected").length,
   };
 }

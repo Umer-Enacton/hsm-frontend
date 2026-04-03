@@ -33,7 +33,7 @@ import { useCategories, useCustomerServices } from "@/lib/queries";
 import type { CustomerService, ServiceFilters } from "@/types/customer";
 import { getAllStates, getCitiesByState } from "@/lib/data/india-locations";
 import { cn } from "@/lib/utils";
-import { ServiceImage } from "@/components/common";
+import { ServiceImage, DataTablePagination } from "@/components/common";
 
 // Types
 type ViewMode = "grid" | "list";
@@ -114,7 +114,7 @@ export default function CustomerServicesPage() {
     isFetching: isRefetching,
   } = useCustomerServices(filters, page);
   const services = servicesData?.data || [];
-  const total = servicesData?.total || 0;
+  const pagination = servicesData?.pagination;
 
   // Mark first load as complete
   useEffect(() => {
@@ -132,13 +132,15 @@ export default function CustomerServicesPage() {
       key: K,
       value: (typeof filterState)[K],
     ) => {
-      setFilterState((prev) => ({ ...prev, [key]: value, page: 1 })); // Single update
+      setFilterState((prev) => ({ ...prev, [key]: value })); // Single update
+      setPage(1); // Reset to page 1 when filter changes
     },
     [],
   );
 
   const handleStateChange = useCallback((state: string) => {
-    setFilterState((prev) => ({ ...prev, state, city: "all", page: 1 })); // Single update
+    setFilterState((prev) => ({ ...prev, state, city: "all" }));
+    setPage(1); // Reset to page 1 when state changes
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -174,9 +176,15 @@ export default function CustomerServicesPage() {
           updates.priceRange = [0, 10000];
           break;
       }
-      return { ...prev, ...updates, page: 1 };
+      return { ...prev, ...updates };
     });
+    setPage(1); // Reset to page 1 when clearing filter
   }, []);
+
+  // Reset to page 1 when filters change
+  useMemo(() => {
+    setPage(1);
+  }, [filters]);
 
   // Computed values
   const hasActiveFilters = useMemo(() => {
@@ -209,7 +217,7 @@ export default function CustomerServicesPage() {
         {/* Search Bar - ALWAYS VISIBLE */}
         <div className="mb-6">
           <div className="flex gap-3">
-            <div className="relative flex-1 max-w-2xl">
+            <div className="relative flex-1 max-w-7xl">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search services..."
@@ -426,7 +434,9 @@ export default function CustomerServicesPage() {
             {/* Toolbar - ALWAYS VISIBLE */}
             <div className="flex items-center justify-between mb-4 pb-3 border-b">
               <span className="text-sm text-muted-foreground">
-                {total} {total === 1 ? "service" : "services"} found
+                Showing <span className="font-medium">{services.length}</span>{" "}
+                of <span className="font-medium">{pagination?.total || 0}</span>{" "}
+                services
               </span>
               <div className="flex items-center gap-1.5">
                 <Button
@@ -674,28 +684,19 @@ export default function CustomerServicesPage() {
                   </div>
                 )}
 
-                {/* Pagination */}
-                {total > services.length && (
-                  <div className="flex justify-center items-center gap-3 mt-6 pt-4 border-t">
-                    <Button
-                      variant="outline"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1 || isLoading}
-                      className="h-9"
-                    >
-                      Previous
-                    </Button>
-                    <span className="text-sm text-muted-foreground px-3">
-                      Page {page} of {Math.ceil(total / 20)}
-                    </span>
-                    <Button
-                      variant="outline"
-                      onClick={() => setPage((p) => p + 1)}
-                      disabled={page * 20 >= total || isLoading}
-                      className="h-9"
-                    >
-                      Next
-                    </Button>
+                {/* Pagination - Always show */}
+                {pagination && (
+                  <div className="mt-6 pt-4 border-t">
+                    <DataTablePagination
+                      currentPage={pagination.page}
+                      totalPages={pagination.totalPages}
+                      totalItems={pagination.total}
+                      pageSize={pagination.limit}
+                      onPageChange={(newPage) => {
+                        setPage(newPage);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    />
                   </div>
                 )}
               </>
@@ -827,7 +828,7 @@ export default function CustomerServicesPage() {
                 className="w-full"
                 onClick={() => setIsMobileFilterOpen(false)}
               >
-                Show Results ({total})
+                Show Results ({pagination?.total || 0})
               </Button>
             </div>
           </div>

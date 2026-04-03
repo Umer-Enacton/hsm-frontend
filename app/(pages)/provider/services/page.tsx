@@ -97,6 +97,7 @@ export default function ProviderServicesPage() {
           duration: serviceData.duration,
           image: imageUrl,
           isActive: serviceData.isActive ?? true,
+          maxAllowBooking: serviceData.maxAllowBooking,
         },
       },
       {
@@ -128,6 +129,7 @@ export default function ProviderServicesPage() {
           duration: serviceData.duration,
           image: imageUrl,
           isActive: serviceData.isActive,
+          maxAllowBooking: serviceData.maxAllowBooking,
         },
       },
       {

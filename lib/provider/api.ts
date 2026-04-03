@@ -274,23 +274,37 @@ export async function createService(
 // ============================================================================
 
 /**
- * Get bookings for provider
+ * Get bookings for provider with pagination
  */
 export async function getProviderBookings(
-  status?: string
-): Promise<ProviderBooking[]> {
+  status?: string,
+  page?: number,
+  limit?: number
+): Promise<{ bookings: ProviderBooking[]; pagination?: { page: number; limit: number; total: number; totalPages: number } }> {
   try {
-    let endpoint = API_ENDPOINTS.PROVIDER_BOOKINGS;
-    if (status) {
-      endpoint += `?status=${status}`;
-    }
+    const queryParams = new URLSearchParams();
+    if (status) queryParams.append("status", status);
+    if (page) queryParams.append("page", page.toString());
+    if (limit) queryParams.append("limit", limit.toString());
+
+    const queryString = queryParams.toString();
+    const endpoint = queryString
+      ? `${API_ENDPOINTS.PROVIDER_BOOKINGS}?${queryString}`
+      : API_ENDPOINTS.PROVIDER_BOOKINGS;
+
     console.log("[Provider API] Fetching bookings from:", endpoint);
-    const response = await api.get<{ bookings: ProviderBooking[] }>(endpoint);
+    const response = await api.get<{ bookings: ProviderBooking[]; pagination?: any }>(endpoint);
     console.log("[Provider API] Received bookings:", response.bookings?.length || 0);
-    return response.bookings || [];
+    return {
+      bookings: response.bookings || [],
+      pagination: response.pagination,
+    };
   } catch (error) {
     console.error("Error fetching bookings:", error);
-    return [];
+    return {
+      bookings: [],
+      pagination: { page: 1, limit: limit || 10, total: 0, totalPages: 0 },
+    };
   }
 }
 
@@ -400,6 +414,7 @@ export async function getProviderDashboardStats(): Promise<ProviderDashboardStat
       pendingBookings: 0,
       confirmedBookings: 0,
       completedBookings: 0,
+      cancelledBookings: 0,
       totalEarnings: 0,
       averageRating: 0,
       activeServices: 0,

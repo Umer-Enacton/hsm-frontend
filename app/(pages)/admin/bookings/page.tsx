@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useDebounce } from "@/hooks/use-debounce";
 import {
   Calendar,
   Search,
@@ -21,7 +22,7 @@ import {
   ErrorState,
   StatusBadge,
 } from "@/components/admin/shared";
-import { AdminBookingsSkeleton } from "@/components/admin/skeletons";
+import { AdminBookingsSkeleton, AdminBookingsTableSkeleton } from "@/components/admin/skeletons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ImageLightbox } from "@/components/common";
+import { ImageLightbox, DataTablePagination } from "@/components/common";
 import { BookingTimelineModal } from "@/components/admin/bookings/BookingTimelineModal";
 import { History as HistoryIcon } from "lucide-react";
 import {
@@ -44,21 +45,49 @@ import {
 } from "@/lib/queries";
 
 export default function AdminBookingsPage() {
-  // Use hooks for data fetching
-  const {
-    data: bookings = [],
-    isLoading,
-    error,
-    refetch,
-  } = useAdminBookings();
+  // Show full skeleton only on first render before any data
+  const [showFullSkeleton, setShowFullSkeleton] = useState(true);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  // Debounce search to avoid excessive API calls
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  // Use hooks for data fetching with filters and pagination
+  const { data: response, isLoading, error, refetch } = useAdminBookings({
+    status: statusFilter === "all" ? undefined : statusFilter,
+    search: debouncedSearch || undefined,
+    page: currentPage,
+    limit: pageSize,
+  });
+
+  // Fetch overall stats separately (without filters - always shows total counts)
+  const { data: overallResponse } = useAdminBookings({
+    page: 1,
+    limit: 1000, // Large limit to get all bookings for stats
+  });
+
+  const bookings = response?.bookings || [];
+  const overallBookings = overallResponse?.bookings || [];
+  const pagination = response?.pagination;
+
+  // Hide full skeleton once we have data
+  useEffect(() => {
+    if (response) {
+      setShowFullSkeleton(false);
+    }
+  }, [response]);
 
   // Mutations
   const acceptMutation = useAcceptBooking();
   const rejectMutation = useRejectBooking();
   const cancelMutation = useCancelBooking();
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Image lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -70,35 +99,16 @@ export default function AdminBookingsPage() {
   );
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
 
-  // Filter bookings
-  const filteredBookings = useMemo(() => {
-    let filtered = bookings;
+  // Reset to page 1 when filters change
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [statusFilter, debouncedSearch]);
 
-    // Filter by status
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((b) => b.status === statusFilter);
-    }
-
-    // Filter by search term
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (b) =>
-          b.businessName?.toLowerCase().includes(term) ||
-          b.customerName?.toLowerCase().includes(term) ||
-          b.customerEmail?.toLowerCase().includes(term) ||
-          b.serviceName?.toLowerCase().includes(term) ||
-          b.id.toString().includes(term),
-      );
-    }
-
-    return filtered;
-  }, [bookings, searchTerm, statusFilter]);
+  // Note: Both status and search are now server-side filtered
+  // No need for client-side filtering
 
   const getStatusInfo = (status: string) => {
     switch (status) {
-      case "pending":
-        return { label: "Pending", color: "bg-yellow-100 text-yellow-700" };
       case "confirmed":
         return { label: "Confirmed", color: "bg-blue-100 text-blue-700" };
       case "completed":
@@ -106,7 +116,10 @@ export default function AdminBookingsPage() {
       case "cancelled":
         return { label: "Cancelled", color: "bg-red-100 text-red-700" };
       case "rejected":
-        return { label: "Rejected", color: "bg-orange-100 text-orange-700 font-bold" };
+        return {
+          label: "Rejected",
+          color: "bg-orange-100 text-orange-700 font-bold",
+        };
       case "reschedule_pending":
         return {
           label: "Reschedule Pending",
@@ -133,12 +146,18 @@ export default function AdminBookingsPage() {
     }).format(amount);
   };
 
-  if (isLoading) {
-    return <AdminBookingsSkeleton />;
+  if (error && bookings.length === 0) {
+    return (
+      <ErrorState
+        message={error instanceof Error ? error.message : String(error)}
+        onRetry={() => refetch()}
+      />
+    );
   }
 
-  if (error && bookings.length === 0) {
-    return <ErrorState message={error instanceof Error ? error.message : String(error)} onRetry={() => refetch()} />;
+  // Show full skeleton only on initial page load
+  if (showFullSkeleton) {
+    return <AdminBookingsSkeleton />;
   }
 
   return (
@@ -150,29 +169,20 @@ export default function AdminBookingsPage() {
         onRefresh={() => refetch()}
       />
 
-      {/* Stats Cards */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+      {/* Stats Cards - Always show overall counts (never affected by filters) */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-purple-700 dark:text-purple-400 font-medium">Total</p>
-                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{bookings.length}</p>
-              </div>
-              <Calendar className="h-8 w-8 text-purple-500 dark:text-purple-400" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">Pending</p>
-                <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
-                  {bookings.filter((b) => b.status === "pending").length}
+                <p className="text-sm text-purple-700 dark:text-purple-400 font-medium">
+                  Total
+                </p>
+                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                  {overallBookings.length}
                 </p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-500 dark:text-yellow-400" />
+              <Calendar className="h-8 w-8 text-purple-500 dark:text-purple-400" />
             </div>
           </CardContent>
         </Card>
@@ -180,9 +190,11 @@ export default function AdminBookingsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-700 dark:text-blue-400 font-medium">Confirmed</p>
+                <p className="text-sm text-blue-700 dark:text-blue-400 font-medium">
+                  Confirmed
+                </p>
                 <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                  {bookings.filter((b) => b.status === "confirmed").length}
+                  {overallBookings.filter((b) => b.status === "confirmed").length}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-blue-500 dark:text-blue-400" />
@@ -193,9 +205,11 @@ export default function AdminBookingsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">Completed</p>
+                <p className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">
+                  Completed
+                </p>
                 <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                  {bookings.filter((b) => b.status === "completed").length}
+                  {overallBookings.filter((b) => b.status === "completed").length}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-emerald-500 dark:text-emerald-400" />
@@ -206,9 +220,11 @@ export default function AdminBookingsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-red-700 dark:text-red-400 font-medium">Cancelled</p>
+                <p className="text-sm text-red-700 dark:text-red-400 font-medium">
+                  Cancelled
+                </p>
                 <p className="text-2xl font-bold text-red-900 dark:text-red-100">
-                  {bookings.filter((b) => b.status === "cancelled").length}
+                  {overallBookings.filter((b) => b.status === "cancelled").length}
                 </p>
               </div>
               <XCircle className="h-8 w-8 text-red-500 dark:text-red-400" />
@@ -239,13 +255,12 @@ export default function AdminBookingsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="confirmed">Confirmed</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
-                  <SelectItem value="reschedule_pending">
+                  {/* <SelectItem value="reschedule_pending">
                     Reschedule Pending
-                  </SelectItem>
+                  </SelectItem> */}
                 </SelectContent>
               </Select>
             </div>
@@ -253,13 +268,21 @@ export default function AdminBookingsPage() {
         </CardContent>
       </Card>
 
+      {/* Results count */}
+      <div className="text-sm text-muted-foreground">
+        Showing <span className="font-medium">{bookings.length}</span> of{" "}
+        <span className="font-medium">{pagination?.total || 0}</span> bookings
+      </div>
+
       {/* Bookings List */}
       <Card>
         <CardHeader>
-          <CardTitle>Bookings ({filteredBookings.length})</CardTitle>
+          <CardTitle>Bookings</CardTitle>
         </CardHeader>
         <CardContent>
-          {filteredBookings.length === 0 ? (
+          {isLoading ? (
+            <AdminBookingsTableSkeleton />
+          ) : bookings.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No bookings found</p>
@@ -267,7 +290,7 @@ export default function AdminBookingsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredBookings.map((booking) => {
+              {bookings.map((booking) => {
                 const statusInfo = getStatusInfo(booking.status);
                 return (
                   <div
@@ -420,6 +443,22 @@ export default function AdminBookingsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {pagination && (
+        <div className="mt-4">
+          <DataTablePagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
+            pageSize={pagination.limit}
+            onPageChange={(page) => {
+              setCurrentPage(page);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          />
+        </div>
+      )}
 
       {/* Image Lightbox */}
       <ImageLightbox

@@ -7,7 +7,6 @@ import { RescheduleButton } from "./RescheduleButton";
 import { RebookButton } from "./RebookButton";
 import { DownloadInvoiceButton } from "./DownloadInvoiceButton";
 import { ViewInvoiceButton } from "./ViewInvoiceButton";
-import { CancelRescheduleButton } from "./CancelRescheduleButton";
 
 interface BookingActionsProps {
   booking: CustomerBooking;
@@ -41,18 +40,7 @@ export function BookingActions({
           👁 View Details
         </button>
 
-        {/* Status-Specific Actions */}
-        {status === "pending" && (
-          <>
-            <CancelBookingButton
-              bookingId={id}
-              status={status}
-              totalPrice={booking.service?.price || 0}
-              onCancel={onActionComplete}
-              variant="dropdown"
-            />
-          </>
-        )}
+
 
         {status === "confirmed" && (
           <>
@@ -72,21 +60,15 @@ export function BookingActions({
               bookingId={id}
               status={status}
               totalPrice={booking.service?.price || 0}
+              bookingDate={booking.bookingDate}
+              bookingTime={booking.slot?.startTime || (booking as { startTime?: string }).startTime}
               onCancel={onActionComplete}
               variant="dropdown"
             />
           </>
         )}
 
-        {status === "reschedule_pending" && (
-          <>
-            <CancelRescheduleButton
-              bookingId={id}
-              onCancel={onActionComplete}
-              variant="dropdown"
-            />
-          </>
-        )}
+
 
         {status === "completed" && (
           <>
@@ -119,19 +101,6 @@ export function BookingActions({
   // Expanded row variant - shows buttons inline
   return (
     <div className={`flex flex-wrap gap-2 ${className}`}>
-      {/* PENDING: Cancel + View Invoice + Download Invoice */}
-      {status === "pending" && (
-        <>
-          <CancelBookingButton
-            bookingId={id}
-            status={status}
-            totalPrice={booking.service?.price || 0}
-            onCancel={onActionComplete}
-          />
-          <ViewInvoiceButton bookingId={id} />
-          <DownloadInvoiceButton bookingId={id} />
-        </>
-      )}
 
       {/* CONFIRMED: Reschedule + Cancel + View Invoice + Download Invoice */}
       {status === "confirmed" && (
@@ -151,6 +120,8 @@ export function BookingActions({
             bookingId={id}
             status={status}
             totalPrice={booking.service?.price || 0}
+            bookingDate={booking.bookingDate}
+            bookingTime={booking.slot?.startTime || (booking as any).startTime}
             onCancel={onActionComplete}
           />
           <ViewInvoiceButton bookingId={id} />
@@ -158,17 +129,7 @@ export function BookingActions({
         </>
       )}
 
-      {/* RESCHEDULE_PENDING: Cancel Reschedule + View Invoice + Download Invoice */}
-      {status === "reschedule_pending" && (
-        <>
-          <CancelRescheduleButton
-            bookingId={id}
-            onCancel={onActionComplete}
-          />
-          <ViewInvoiceButton bookingId={id} />
-          <DownloadInvoiceButton bookingId={id} />
-        </>
-      )}
+
 
       {/* COMPLETED: Review + View Invoice + Download Invoice + Rebook */}
       {status === "completed" && (
@@ -195,17 +156,10 @@ export function BookingActions({
         </>
       )}
 
-      {/* REJECTED: Rebook + View Invoice + Download Invoice */}
-      {status === "rejected" && (
-        <>
-          <RebookButton serviceId={serviceId} />
-          <ViewInvoiceButton bookingId={id} />
-          <DownloadInvoiceButton bookingId={id} />
-        </>
-      )}
+
 
       {/* Default fallback */}
-      {!["pending", "confirmed", "reschedule_pending", "completed", "cancelled", "rejected"].includes(
+      {!["confirmed", "completed", "cancelled"].includes(
         status
       ) && (
         <>

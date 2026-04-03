@@ -4,7 +4,6 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VerificationAlert } from "@/components/provider/shared/VerificationAlert";
 import { ProviderDashboardSkeleton } from "@/components/provider/skeletons/ProviderDashboardSkeleton";
@@ -14,16 +13,9 @@ import {
   Clock,
   DollarSign,
   Star,
-  TrendingUp,
-  Users,
-  Loader2,
-  Package,
-  CheckCircle,
-  XCircle,
-  ArrowRight,
-  IndianRupee,
   RefreshCw,
   AlertCircle,
+  IndianRupee,
 } from "lucide-react";
 import { getUserData } from "@/lib/auth-utils";
 import {
@@ -34,7 +26,6 @@ import { useProviderBookings } from "@/lib/queries/use-provider-bookings";
 import { useProviderRevenueStats } from "@/lib/queries/use-provider-revenue";
 import { useProviderAnalytics } from "@/lib/queries/use-provider-analytics";
 import { QUERY_KEYS } from "@/lib/queries/query-keys";
-import { cn } from "@/lib/utils";
 import type { ProviderBooking } from "@/types/provider";
 
 export default function ProviderDashboardPage() {
@@ -44,58 +35,14 @@ export default function ProviderDashboardPage() {
 
   // TanStack Query hooks - all run in parallel
   const { data: business } = useProviderBusiness(userData?.id);
-  const { data: bookings = [] } = useProviderBookings();
+  const { data: bookingsData } = useProviderBookings();
+  const bookings = bookingsData?.bookings || [];
   const { data: services = [] } = useProviderServices(business?.id);
   const { data: revenueStats, isLoading: isLoadingRevenue } =
     useProviderRevenueStats();
   const { isLoading: isLoadingAnalytics } = useProviderAnalytics();
 
-  // Helper function to get booking date safely
-  const getBookingDate = (b: ProviderBooking) => {
-    const dateStr = b.date || b.bookingDate || "";
-    return new Date(dateStr).getTime();
-  };
 
-  // Derived values
-  const upcomingBookings = useMemo(
-    () =>
-      bookings
-        .filter(
-          (b: ProviderBooking) =>
-            b.status === "confirmed" || b.status === "pending",
-        )
-        .sort((a, b) => getBookingDate(a) - getBookingDate(b))
-        .slice(0, 3),
-    [bookings],
-  );
-
-  // Calculate today's bookings
-  const todayBookings = useMemo(
-    () =>
-      bookings.filter((b: ProviderBooking) => {
-        const dateStr = b.date || b.bookingDate || "";
-        if (!dateStr) return false;
-        const bookingDate = new Date(dateStr).toDateString();
-        return bookingDate === new Date().toDateString();
-      }).length,
-    [bookings],
-  );
-
-  // Calculate cancelled bookings
-  const cancelledBookings = useMemo(
-    () =>
-      bookings.filter(
-        (b: ProviderBooking) =>
-          b.status === "cancelled" || b.status === "rejected",
-      ).length,
-    [bookings],
-  );
-
-  // Calculate active services
-  const activeServices = useMemo(
-    () => (Array.isArray(services) ? services : []).filter((s: any) => s.isActive || s.is_active).length,
-    [services],
-  );
 
   // Calculate stats directly from bookings data (to avoid race condition with separate query)
   const computedStats = useMemo(() => {
@@ -103,19 +50,19 @@ export default function ProviderDashboardPage() {
     console.log(
       "Dashboard bookings:",
       bookings.length,
-      bookings.map((b: any) => ({ id: b.id, status: b.status })),
+      bookings.map((b: ProviderBooking) => ({ id: b.id, status: b.status })),
     );
 
     return {
       totalBookings: bookings.length,
-      pendingBookings: bookings.filter(
-        (b: ProviderBooking) => b.status === "pending",
-      ).length,
       confirmedBookings: bookings.filter(
         (b: ProviderBooking) => b.status === "confirmed",
       ).length,
       completedBookings: bookings.filter(
         (b: ProviderBooking) => b.status === "completed",
+      ).length,
+      cancelledBookings: bookings.filter(
+        (b: ProviderBooking) => b.status === "cancelled",
       ).length,
       totalEarnings: revenueStats?.totalEarnings || 0,
       averageRating: business?.rating || 0,
@@ -142,26 +89,21 @@ export default function ProviderDashboardPage() {
     queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PROVIDER_ANALYTICS] });
   };
 
+  // Calculate today's bookings (Only confirmed ones for today's schedule)
+  const todayBookings = useMemo(
+    () =>
+      bookings.filter((b: ProviderBooking) => {
+        if (b.status !== "confirmed") return false;
+        const dateStr = b.date || b.bookingDate || "";
+        if (!dateStr) return false;
+        const bookingDate = new Date(dateStr).toDateString();
+        return bookingDate === new Date().toDateString();
+      }).length,
+    [bookings],
+  );
+
   const formatRating = (rating: number) => {
     return rating > 0 ? rating.toFixed(1) : "N/A";
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    if (date.toDateString() === today.toDateString()) return "Today";
-    if (date.toDateString() === tomorrow.toDateString()) return "Tomorrow";
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  };
-
-  const formatTime = (timeStr: string) => {
-    const [hours, minutes] = timeStr.split(":").map(Number);
-    const period = hours >= 12 ? "PM" : "AM";
-    const displayHours = hours % 12 || 12;
-    return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
   };
 
   if (isLoading) {
@@ -186,7 +128,7 @@ export default function ProviderDashboardPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back! Here's what's happening with your business.
+            Welcome back! Here&apos;s what&apos;s happening with your business.
           </p>
         </div>
         <Button
@@ -231,49 +173,6 @@ export default function ProviderDashboardPage() {
         </Card>
       )}
 
-      {/* Today's Snapshot */}
-      {(todayBookings > 0 || computedStats.pendingBookings > 0) && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Today's Snapshot
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <div>
-                  <p className="text-2xl font-bold">{todayBookings}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Bookings today
-                  </p>
-                </div>
-                {computedStats.pendingBookings > 0 && (
-                  <div>
-                    <p className="text-2xl font-bold text-orange-600">
-                      {computedStats.pendingBookings}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Need action</p>
-                  </div>
-                )}
-              </div>
-              {computedStats.pendingBookings > 0 && (
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    router.push("/provider/bookings?status=pending")
-                  }
-                  className="gap-2"
-                >
-                  View Pending
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -296,17 +195,17 @@ export default function ProviderDashboardPage() {
 
         <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">
+              Bookings Today
+            </CardTitle>
             <Clock className="h-4 w-4 text-orange-500 dark:text-orange-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-              {computedStats.pendingBookings}
+              {todayBookings}
             </div>
             <p className="text-xs text-muted-foreground">
-              {computedStats.pendingBookings > 0
-                ? "Action required"
-                : "No pending"}
+              {todayBookings > 0 ? "Check your schedule" : "Quiet day today"}
             </p>
           </CardContent>
         </Card>
@@ -330,7 +229,7 @@ export default function ProviderDashboardPage() {
             </div>
             <div className="flex flex-col gap-0.5 mt-1">
               <p className="text-[10px] text-muted-foreground">
-                95% share from bookings
+                Net earnings from services
               </p>
               {Number(revenueStats?.rescheduleRevenue || 0) > 0 && (
                 <p className="text-[10px] text-purple-600 font-medium">

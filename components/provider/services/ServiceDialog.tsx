@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Upload, X, Image as ImageIcon } from "lucide-react";
+import { Loader2, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import type { Service } from "@/types/provider";
 
@@ -54,18 +54,21 @@ export function ServiceDialog({
   const [duration, setDuration] = useState("30");
   const [durationUnit, setDurationUnit] = useState("minutes");
   const [isActive, setIsActive] = useState(true);
+  const [maxAllowBooking, setMaxAllowBooking] = useState("1");
 
   // Validation error states
   const [nameError, setNameError] = useState("");
   const [descriptionError, setDescriptionError] = useState("");
   const [priceError, setPriceError] = useState("");
   const [durationError, setDurationError] = useState("");
+  const [maxAllowBookingError, setMaxAllowBookingError] = useState("");
 
   // Track which fields have been touched (blurred)
   const [nameTouched, setNameTouched] = useState(false);
   const [descriptionTouched, setDescriptionTouched] = useState(false);
   const [priceTouched, setPriceTouched] = useState(false);
   const [durationTouched, setDurationTouched] = useState(false);
+  const [maxAllowBookingTouched, setMaxAllowBookingTouched] = useState(false);
 
   // Validation functions
   const validateName = (value: string): string => {
@@ -106,6 +109,13 @@ export function ServiceDialog({
     return "";
   };
 
+  const validateMaxAllowBooking = (value: string): string => {
+    const num = Number(value);
+    if (!value || isNaN(num)) return "Required";
+    if (num < 1) return "Must be at least 1";
+    return "";
+  };
+
   // Reset form when dialog opens or service changes
   useEffect(() => {
     if (service) {
@@ -118,6 +128,7 @@ export function ServiceDialog({
         service.duration || service.EstimateDuration || 30;
       setDuration(serviceDuration.toString());
       setDurationUnit("minutes"); // Always default to minutes for editing
+      setMaxAllowBooking((service.maxAllowBooking || 1).toString());
 
       setIsActive(service.isActive ?? true);
       setImagePreview(service.image || null);
@@ -128,16 +139,19 @@ export function ServiceDialog({
       setDescriptionError("");
       setPriceError("");
       setDurationError("");
+      setMaxAllowBookingError("");
       setNameTouched(false);
       setDescriptionTouched(false);
       setPriceTouched(false);
       setDurationTouched(false);
+      setMaxAllowBookingTouched(false);
     } else {
       setName("");
       setDescription("");
       setPrice("");
       setDuration("30");
       setDurationUnit("minutes");
+      setMaxAllowBooking("1");
       setIsActive(true);
       setImagePreview(null);
       setImageFile(null);
@@ -147,10 +161,12 @@ export function ServiceDialog({
       setDescriptionError("");
       setPriceError("");
       setDurationError("");
+      setMaxAllowBookingError("");
       setNameTouched(false);
       setDescriptionTouched(false);
       setPriceTouched(false);
       setDurationTouched(false);
+      setMaxAllowBookingTouched(false);
     }
   }, [service, open]);
 
@@ -193,21 +209,24 @@ export function ServiceDialog({
     setDescriptionTouched(true);
     setPriceTouched(true);
     setDurationTouched(true);
+    setMaxAllowBookingTouched(true);
 
     // Validate all fields
     const nameErr = validateName(name);
     const descErr = validateDescription(description);
     const priceErr = validatePrice(price);
     const durationErr = validateDuration(duration, durationUnit);
+    const maxErr = validateMaxAllowBooking(maxAllowBooking);
 
     // Set all errors
     setNameError(nameErr);
     setDescriptionError(descErr);
     setPriceError(priceErr);
     setDurationError(durationErr);
+    setMaxAllowBookingError(maxErr);
 
     // Check if any errors exist
-    if (nameErr || descErr || priceErr || durationErr) {
+    if (nameErr || descErr || priceErr || durationErr || maxErr) {
       toast.error("Please fix the validation errors");
       return;
     }
@@ -228,6 +247,7 @@ export function ServiceDialog({
         description: description.trim(),
         price: Number(price),
         duration: durationInMinutes,
+        maxAllowBooking: Number(maxAllowBooking),
         isActive,
         imageFile,
       });
@@ -423,7 +443,7 @@ export function ServiceDialog({
                   />
                   <Select
                     value={durationUnit}
-                    onValueChange={(value: any) => {
+                    onValueChange={(value: string) => {
                       setDurationUnit(value);
                       // Re-validate duration when unit changes
                       if (durationTouched) {
@@ -448,12 +468,48 @@ export function ServiceDialog({
               </div>
             </div>
 
+            {/* Max Allow Booking */}
+            <div className="space-y-2">
+              <Label htmlFor="maxAllowBooking">
+                Max Concurrent Bookings <span className="text-destructive">*</span>
+              </Label>
+              <div className="flex flex-col gap-1">
+                <Input
+                  id="maxAllowBooking"
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="1"
+                  value={maxAllowBooking}
+                  onChange={(e) => {
+                    setMaxAllowBooking(e.target.value);
+                    if (maxAllowBookingTouched) {
+                      setMaxAllowBookingError(validateMaxAllowBooking(e.target.value));
+                    }
+                  }}
+                  onBlur={() => {
+                    setMaxAllowBookingTouched(true);
+                    setMaxAllowBookingError(validateMaxAllowBooking(maxAllowBooking));
+                  }}
+                  disabled={isSubmitting}
+                  required
+                  className={maxAllowBookingError ? "border-destructive" : ""}
+                />
+                <p className="text-xs text-muted-foreground">
+                  How many customers can book this exact same time slot?
+                </p>
+                {maxAllowBookingError && maxAllowBookingTouched && (
+                  <p className="text-xs text-destructive">{maxAllowBookingError}</p>
+                )}
+              </div>
+            </div>
+
             {/* Active Status */}
             <div className="flex items-center justify-between rounded-md border p-4">
               <div className="space-y-0.5">
                 <Label>Active Status</Label>
                 <p className="text-xs text-muted-foreground">
-                  Inactive services won't be visible to customers
+                  Inactive services won&apos;t be visible to customers
                 </p>
               </div>
               <Switch

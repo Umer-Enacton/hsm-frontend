@@ -12,3 +12,7 @@ export { AdminBookingsSkeleton } from "./AdminBookingsSkeleton";
 export { AdminRevenueSkeleton } from "./AdminRevenueSkeleton";
 export { AdminBusinessDetailSkeleton } from "./AdminBusinessDetailSkeleton";
 export { AdminServiceDetailSkeleton } from "./AdminServiceDetailSkeleton";
+export { AdminBookingsTableSkeleton } from "./AdminBookingsTableSkeleton";
+export { AdminBusinessTableSkeleton } from "./AdminBusinessTableSkeleton";
+export { AdminBusinessGridSkeleton } from "./AdminBusinessGridSkeleton";
+export { AdminServicesTableSkeleton } from "./AdminServicesTableSkeleton";

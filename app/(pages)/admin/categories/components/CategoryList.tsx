@@ -146,7 +146,7 @@ export function CategoryList({
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {totalPages >= 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
           <div className="text-sm text-muted-foreground order-2 sm:order-1">
             Page {currentPage} of {totalPages}

@@ -68,11 +68,8 @@ export function BookingHistoryTimeline({
       case "completed":
         return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case "cancelled":
-      case "rejected":
-      case "reschedule_rejected":
         return <XCircle className="h-4 w-4 text-red-500" />;
-      case "reschedule_requested":
-      case "reschedule_accepted":
+      case "rescheduled":
         return <History className="h-4 w-4 text-purple-500" />;
       case "refunded":
         return <RotateCcw className="h-4 w-4 text-gray-500" />;
@@ -81,22 +78,57 @@ export function BookingHistoryTimeline({
     }
   };
 
-  const formatEventTitle = (action: string) => {
+  const formatEventTitle = (event: BookingHistoryEvent) => {
+    if (event.message && event.message.length > 0) {
+      return event.message;
+    }
+
     const titles: Record<string, string> = {
       booked: "Booking Created",
       confirmed: "Booking Confirmed",
-      reschedule_requested: "Reschedule Requested",
-      reschedule_accepted: "Reschedule Accepted",
-      reschedule_rejected: "Reschedule Rejected",
+      rescheduled: "Booking Rescheduled",
       cancelled: "Booking Cancelled",
-      rejected: "Booking Rejected",
-      completed: "Service Completed",
+      completed: "Booking Completed",
       refunded: "Refund Processed",
     };
     return (
-      titles[action] ||
-      action.charAt(0).toUpperCase() + action.slice(1).replace(/_/g, " ")
+      titles[event.action] ||
+      event.action.charAt(0).toUpperCase() + event.action.slice(1).replace(/_/g, " ")
     );
+  };
+
+  const parseHistoryData = (rawData: any) => {
+    if (!rawData) return null;
+    let data = rawData;
+    // Defensive: handle multi-encoded JSON strings (e.g. from previous double-encoding)
+    let iterations = 0;
+    while (typeof data === "string" && iterations < 3) {
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed === data) break;
+        data = parsed;
+        iterations++;
+      } catch (e) {
+        break;
+      }
+    }
+    return data;
+  };
+
+  const formatTime12h = (timeStr: string) => {
+    if (!timeStr || timeStr === "N/A" || typeof timeStr !== "string") return timeStr;
+    try {
+      // Split "HH:mm:ss" or "HH:mm"
+      const parts = timeStr.split(":");
+      if (parts.length < 2) return timeStr;
+      const h = parseInt(parts[0], 10);
+      const m = parts[1];
+      const ampm = h >= 12 ? "PM" : "AM";
+      const h12 = h % 12 || 12;
+      return `${h12}:${m} ${ampm}`;
+    } catch (e) {
+      return timeStr;
+    }
   };
 
   if (isLoading) {
@@ -146,15 +178,41 @@ export function BookingHistoryTimeline({
             <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-md border bg-card shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-1">
                 <h5 className="font-semibold text-sm">
-                  {formatEventTitle(event.action)}
+                  {formatEventTitle(event)}
                 </h5>
                 <span className="text-xs text-muted-foreground whitespace-nowrap">
                   {format(new Date(event.createdAt), "MMM d, h:mm a")}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                {event.message}
-              </p>
+              
+              {/* Display "From -> To" details for reschedules if historyData exists */}
+              {(() => {
+                const data = parseHistoryData(event.historyData);
+                
+                if (data && data.previousTime && data.newTime) {
+                  return (
+                    <div className="mt-2 pt-2 border-t border-dashed space-y-1.5 border-muted/50">
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground/80">
+                          <span className="font-medium shrink-0 w-9">From:</span>
+                          <div className="flex items-center gap-1.5 overflow-hidden">
+                            <span className="truncate">{format(new Date(data.previousDate), "EEE, MMM d")}</span>
+                            <span className="shrink-0 opacity-50">•</span>
+                            <span className="shrink-0">{formatTime12h(data.previousTime)}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-primary/90">
+                          <span className="font-medium shrink-0 w-9">To:</span>
+                          <div className="flex items-center gap-1.5 overflow-hidden">
+                            <span className="font-semibold truncate">{format(new Date(data.newDate), "EEE, MMM d")}</span>
+                            <span className="shrink-0">•</span>
+                            <span className="shrink-0 font-semibold">{formatTime12h(data.newTime)}</span>
+                          </div>
+                        </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </div>
         ))}

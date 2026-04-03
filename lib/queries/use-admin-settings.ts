@@ -10,7 +10,7 @@ export interface AdminSettings {
   siteDescription?: string;
   contactEmail?: string;
   contactPhone?: string;
-  commissionRate?: number;
+  // commissionRate?: number; // Platform fee is hardcoded at 5%, no longer configurable via settings
   currency?: string;
   timezone?: string;
   maintenanceMode?: boolean;

@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock, XCircle, AlertCircle, Ban } from "lucide-react";
 
-type Status = "active" | "pending" | "inactive" | "error" | "verified" | "suspended" | "rejected";
+type Status = "active" | "pending" | "inactive" | "error" | "verified" | "suspended" | "rejected" | "blocked";
 
 interface StatusBadgeProps {
   status: Status;
@@ -39,6 +39,11 @@ export function StatusBadge({ status, label }: StatusBadgeProps) {
       className: "bg-red-100 text-red-700 hover:bg-red-200 border-red-300",
       icon: XCircle,
       defaultLabel: "Rejected",
+    },
+    blocked: {
+      className: "bg-red-100 text-red-700 hover:bg-red-200 border-red-300",
+      icon: Ban,
+      defaultLabel: "Blocked",
     },
     error: {
       className: "bg-red-100 text-red-700 hover:bg-red-200 border-red-300",

@@ -21,3 +21,6 @@ export { OptimizedImage, AvatarImage, ServiceImage, BusinessLogo } from "./Optim
 // Image lightbox
 export { ImageLightbox } from "./ImageLightbox";
 
+// Data table pagination
+export { DataTablePagination } from "../shared/DataTablePagination";
+

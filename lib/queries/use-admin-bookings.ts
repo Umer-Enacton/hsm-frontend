@@ -13,6 +13,8 @@ export interface AdminBookingFilters {
   customerId?: number;
   dateFrom?: string;
   dateTo?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface AdminBooking {
@@ -42,10 +44,12 @@ export interface AdminBooking {
 }
 
 /**
- * Fetch all admin bookings with optional filters
+ * Fetch all admin bookings with optional filters and pagination
  * Bookings change status frequently, so shorter cache time
  */
 export function useAdminBookings(filters?: AdminBookingFilters) {
+  const { page = 1, limit = 10 } = filters || {};
+
   const params = new URLSearchParams();
   if (filters?.status) params.append('status', filters.status);
   if (filters?.search) params.append('search', filters.search);
@@ -53,15 +57,41 @@ export function useAdminBookings(filters?: AdminBookingFilters) {
   if (filters?.customerId) params.append('customerId', filters.customerId.toString());
   if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
   if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+  if (page) params.append('page', page.toString());
+  if (limit) params.append('limit', limit.toString());
 
   const queryString = params.toString();
 
-  return useQuery<AdminBooking[]>({
+  return useQuery<{
+    bookings: AdminBooking[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }>({
     queryKey: [QUERY_KEYS.ADMIN_BOOKINGS, 'list', filters],
     queryFn: async () => {
       const url = API_ENDPOINTS.ADMIN_BOOKINGS_ALL + (queryString ? `?${queryString}` : '');
-      const response = await api.get<{ bookings: AdminBooking[] }>(url);
-      return response.bookings || [];
+      const response = await api.get<{
+        bookings: AdminBooking[];
+        pagination?: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      }>(url);
+      return {
+        bookings: response.bookings || [],
+        pagination: response.pagination || {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
+      };
     },
     staleTime: 2 * 60 * 1000, // 2 minutes - bookings change status often
     gcTime: 10 * 60 * 1000,

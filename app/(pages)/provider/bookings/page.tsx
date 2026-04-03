@@ -1,38 +1,37 @@
 "use client";
 import React from "react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { api } from "@/lib/api";
-import { API_ENDPOINTS } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import {
   Loader2,
   Calendar,
   CalendarDays,
   CheckCircle,
   XCircle,
-  Clock,
   MapPin,
   Phone,
-  AlertCircle,
   AlertTriangle,
   Package,
+  History as HistoryIcon,
+  Image as ImageIcon,
+  Info,
+  RotateCcw,
+  IndianRupee,
+  RefreshCw,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Mail,
+  MessageSquare,
   Check,
   X,
   Star,
-  MessageSquare,
-  ChevronRight,
-  ChevronDown,
-  Mail,
-  RefreshCw,
-  IndianRupee,
-  History as HistoryIcon,
-  RotateCcw,
-  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import Image from "next/image";
@@ -56,6 +55,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { getUserData } from "@/lib/auth-utils";
 import { getProviderBusiness } from "@/lib/provider/api";
@@ -63,47 +67,58 @@ import type { ProviderBooking } from "@/types/provider";
 import type { Business } from "@/types/provider";
 import {
   useProviderBookings,
-  useAcceptBooking,
-  useRejectBooking,
   useCompleteBooking,
   useBookingStats,
 } from "@/lib/queries/use-provider-bookings";
-import { ProviderBookingsSkeleton } from "@/components/provider/skeletons/ProviderBookingsSkeleton";
-import { ReschedulePendingActions } from "@/components/provider/bookings/ReschedulePendingActions";
 import { ProviderRescheduleDialog } from "@/components/provider/bookings/ProviderRescheduleDialog";
 import { ServiceCompletionDialog } from "@/components/provider/bookings/ServiceCompletionDialog";
-import { ImageLightbox } from "@/components/common";
+import { ImageLightbox, DataTablePagination } from "@/components/common";
 import { BookingHistoryTimeline } from "@/components/customer/bookings/BookingHistoryTimeline";
-
-interface BookingStats {
-  total: number;
-  pending: number;
-  confirmed: number;
-  reschedulePending: number;
-  completed: number;
-  cancelled: number;
-  rejected: number;
-}
+import { ProviderBookingsSkeleton, ProviderBookingsTableSkeleton } from "@/components/provider/skeletons";
 
 export default function ProviderBookingsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  // Show full skeleton only on first render before any data
+  const [showFullSkeleton, setShowFullSkeleton] = useState(true);
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<
+    "all" | "confirmed" | "completed" | "cancelled"
+  >("all");
+
   // TanStack Query hooks
   const {
-    data: bookings = [],
+    data: bookingsData,
     isLoading,
     error,
     refetch,
     isFetching,
     dataUpdatedAt,
-  } = useProviderBookings();
-  const acceptBooking = useAcceptBooking();
-  const rejectBooking = useRejectBooking();
+  } = useProviderBookings({
+    status: activeTab === "all" ? undefined : activeTab,
+    page: currentPage,
+    limit: pageSize,
+  });
   const completeBooking = useCompleteBooking();
 
-  // Compute stats from bookings data
-  const stats = useBookingStats(bookings);
+  const bookings = bookingsData?.bookings || [];
+
+  // Fetch overall stats separately (without status filter - always shows total counts)
+  const { data: overallBookingsData } = useProviderBookings({
+    status: undefined,
+    page: 1,
+    limit: 1000, // Large limit to get all bookings for stats
+  });
+
+  // Compute stats from overall bookings data (never changes with status filter)
+  const overallBookings = overallBookingsData?.bookings || [];
+  const stats = useBookingStats(overallBookings);
 
   // Business state for payment details check
   const [business, setBusiness] = useState<Business | null>(null);
@@ -119,16 +134,19 @@ export default function ProviderBookingsPage() {
     fetchBusiness();
   }, []);
 
+  // Hide full skeleton once we have data (cached or fresh)
+  useEffect(() => {
+    if (bookingsData) {
+      setShowFullSkeleton(false);
+    }
+  }, [bookingsData]);
+
   // Local UI state
-  const [activeTab, setActiveTab] = useState<
-    | "all"
-    | "pending"
-    | "confirmed"
-    | "reschedule_pending"
-    | "completed"
-    | "cancelled"
-    | "rejected"
-  >("all");
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedBookingForCancel, setSelectedBookingForCancel] =
+    useState<ProviderBooking | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [isCancellingBooking, setIsCancellingBooking] = useState(false);
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
   const [pendingExpandId, setPendingExpandId] = useState<number | null>(null);
   const [processedInitialParams, setProcessedInitialParams] = useState(false);
@@ -136,13 +154,7 @@ export default function ProviderBookingsPage() {
   const [selectedBookingForReschedule, setSelectedBookingForReschedule] =
     useState<ProviderBooking | null>(null);
 
-  // Confirmation dialogs state
-  const [acceptDialogOpen, setAcceptDialogOpen] = useState(false);
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
-  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(
-    null,
-  );
+  // Confirmation dialogs state - legacy complete dialog kept for fallback
 
   // New OTP-based completion dialog state
   const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
@@ -156,6 +168,7 @@ export default function ProviderBookingsPage() {
   // Sync tab to URL
   const updateTab = (newTab: string) => {
     setActiveTab(newTab as any);
+    setCurrentPage(1); // Reset to page 1 when tab changes
     const params = new URLSearchParams(searchParams.toString());
     if (newTab === "all") {
       params.delete("tab");
@@ -180,16 +193,7 @@ export default function ProviderBookingsPage() {
       });
 
       // Switch to the tab based on booking's status
-      if (
-        [
-          "pending",
-          "confirmed",
-          "reschedule_pending",
-          "completed",
-          "cancelled",
-          "rejected",
-        ].includes(bookingStatus)
-      ) {
+      if (["confirmed", "completed", "cancelled"].includes(bookingStatus)) {
         updateTab(bookingStatus);
         // Store for expansion after tab switch
         setPendingExpandId(bookingId);
@@ -278,28 +282,29 @@ export default function ProviderBookingsPage() {
     };
   }, [bookings, isLoading]);
 
-  // Action handlers using mutations with confirmation dialogs
-  const handleAccept = () => {
-    if (selectedBookingId !== null) {
-      acceptBooking.mutate(selectedBookingId);
-      setAcceptDialogOpen(false);
-      setSelectedBookingId(null);
-    }
-  };
-
-  const handleReject = () => {
-    if (selectedBookingId !== null) {
-      rejectBooking.mutate(selectedBookingId);
-      setRejectDialogOpen(false);
-      setSelectedBookingId(null);
-    }
-  };
-
-  const handleComplete = () => {
-    if (selectedBookingId !== null) {
-      completeBooking.mutate(selectedBookingId);
-      setCompleteDialogOpen(false);
-      setSelectedBookingId(null);
+  // Action handlers
+  const handleCancelByProvider = async () => {
+    if (!selectedBookingForCancel) return;
+    try {
+      setIsCancellingBooking(true);
+      await apiRequest(
+        `/provider/booking/${selectedBookingForCancel.id}/cancel`,
+        {
+          method: "DELETE",
+          body: JSON.stringify({
+            reason: cancelReason || "Cancelled by provider",
+          }),
+        },
+      );
+      toast.success("Booking cancelled. Full refund issued to customer.");
+      setCancelDialogOpen(false);
+      setSelectedBookingForCancel(null);
+      setCancelReason("");
+      refetch();
+    } catch (err: unknown) {
+      toast.error((err as Error).message || "Failed to cancel booking");
+    } finally {
+      setIsCancellingBooking(false);
     }
   };
 
@@ -325,27 +330,18 @@ export default function ProviderBookingsPage() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, string> = {
-      pending:
-        "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400",
       confirmed:
         "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400",
-      reschedule_pending:
-        "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400",
       completed:
         "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400",
       cancelled:
         "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400",
-      rejected:
-        "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400",
     };
 
     const icons: Record<string, React.ReactNode> = {
-      pending: <Clock className="h-3 w-3" />,
       confirmed: <CheckCircle className="h-3 w-3" />,
-      reschedule_pending: <HistoryIcon className="h-3 w-3" />,
       completed: <CheckCircle className="h-3 w-3" />,
       cancelled: <XCircle className="h-3 w-3" />,
-      rejected: <XCircle className="h-3 w-3" />,
     };
 
     // Format status text for display
@@ -360,97 +356,245 @@ export default function ProviderBookingsPage() {
     };
 
     return (
-      <Badge className={variants[status] || variants.pending} variant="outline">
-        <span className="mr-1">{icons[status] || icons.pending}</span>
+      <Badge
+        className={variants[status] || variants.confirmed}
+        variant="outline"
+      >
+        <span className="mr-1">{icons[status] || icons.confirmed}</span>
         {formatStatusText(status)}
       </Badge>
     );
   };
 
-  // Enhanced status badge that shows refund indicator and provider payout
-  const getStatusBadgeWithRefund = (booking: ProviderBooking) => {
-    const baseBadge = getStatusBadge(booking.status);
+  // Helper to calculate provider earning breakdown
+  const calculateProviderEarningBreakdown = (booking: ProviderBooking) => {
+    const servicePrice = Number(booking.price || 0);
+    let baseEarning = 0;
+    let rescheduleFee = 0;
+    let cancellationPayout = 0;
 
-    // Show reschedule fee badge for bookings with reschedule outcome
-    if (booking.rescheduleOutcome) {
-      if (
-        booking.rescheduleOutcome === "pending" ||
-        booking.rescheduleOutcome === "accepted"
-      ) {
-        return (
-          <div className="flex flex-col gap-1">
-            {baseBadge}
-            <Badge
-              variant="outline"
-              className="text-xs px-2 py-0 h-6 bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800"
-            >
-              <HistoryIcon className="h-2.5 w-2.5 mr-1" />
-              Customer paid ₹100 reschedule fee
-            </Badge>
-          </div>
-        );
-      }
-      if (
-        booking.rescheduleOutcome === "rejected" ||
-        booking.rescheduleOutcome === "cancelled"
-      ) {
-        return (
-          <div className="flex flex-col gap-1">
-            {baseBadge}
-            <Badge
-              variant="outline"
-              className="text-xs px-2 py-0 h-6 bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-            >
-              <RotateCcw className="h-2.5 w-2.5 mr-1" />
-              ₹100 refunded to customer
-            </Badge>
-          </div>
-        );
-      }
+    // Reschedule fee calculation
+    const hasCustomerRescheduleFee =
+      booking.rescheduleCount && booking.rescheduleCount > 0;
+    const isRescheduleAccepted =
+      booking.rescheduleOutcome === "accepted" ||
+      booking.status === "completed" ||
+      booking.status === "confirmed";
+
+    if (hasCustomerRescheduleFee && isRescheduleAccepted) {
+      rescheduleFee = (booking.rescheduleCount || 0) * 100;
     }
 
-    // Show payout amount for cancelled bookings where provider received their share (15%)
-    if (booking.status === "cancelled" && booking.providerPayoutAmount) {
-      // Convert from paise to rupees if needed
-      const payoutAmount =
-        booking.providerPayoutAmount > 100
-          ? Math.round(booking.providerPayoutAmount / 100)
-          : booking.providerPayoutAmount;
+    // Use backend calculated payout for cancelled bookings
+    if (
+      booking.providerPayoutAmount !== undefined &&
+      booking.providerPayoutAmount !== null
+    ) {
+      cancellationPayout = Number(booking.providerPayoutAmount);
+      baseEarning = cancellationPayout;
+    } else if (booking.status === "cancelled") {
+      baseEarning = 0; // No payout if cancelled without backend amount
+    } else {
+      // Confirmed/Completed: 95% of service price
+      baseEarning = Math.round(servicePrice * 0.95);
+    }
 
-      return (
-        <div className="flex flex-col gap-1">
-          {baseBadge}
-          <Badge
-            variant="outline"
-            className="text-xs px-2 py-0 h-6 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
-          >
-            <IndianRupee className="h-2.5 w-2.5 mr-1" />
-            You received: ₹{payoutAmount}
-          </Badge>
-        </div>
+    const total = baseEarning + rescheduleFee;
+
+    return {
+      baseEarning,
+      rescheduleFee,
+      cancellationPayout,
+      total,
+      servicePrice,
+    };
+  };
+
+  // Helper to get total provider earning (for quick display)
+  const calculateProviderEarning = (booking: ProviderBooking) => {
+    return calculateProviderEarningBreakdown(booking).total;
+  };
+
+  // Enhanced status badge that shows primary status and details in a popover
+  const getStatusBadgeWithRefund = (booking: ProviderBooking) => {
+    const primaryBadge = getStatusBadge(booking.status);
+    const secondaryBadges: React.ReactNode[] = [];
+
+    // 1. Provider reschedule info (informational only, fee is shown in payout breakdown)
+    const hasCustomerRescheduleFee =
+      booking.rescheduleCount && booking.rescheduleCount > 0;
+
+    // Show provider reschedule badge if provider was the last to reschedule
+    if (booking.rescheduledBy === "provider" && hasCustomerRescheduleFee) {
+      // Customer paid fee, then provider rescheduled (free)
+      secondaryBadges.push(
+        <Badge
+          variant="outline"
+          className="text-[10px] w-full justify-start px-1.5 py-0.5 h-6 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
+          key="provider-reschedule"
+        >
+          <CalendarDays className="h-2.5 w-2.5 shrink-0 mr-1.5" />
+          <span className="truncate">
+            Provider also rescheduled (no extra fee)
+          </span>
+        </Badge>,
+      );
+    } else if (
+      booking.rescheduledBy === "provider" &&
+      !hasCustomerRescheduleFee
+    ) {
+      // Only provider rescheduled, no customer fee
+      secondaryBadges.push(
+        <Badge
+          variant="outline"
+          className="text-[10px] w-full justify-start px-1.5 py-0.5 h-6 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
+          key="provider-reschedule"
+        >
+          <CalendarDays className="h-2.5 w-2.5 shrink-0 mr-1.5" />
+          <span className="truncate">Rescheduled by provider (no fee)</span>
+        </Badge>,
       );
     }
 
-    // For rejected bookings (by provider), show refunded to customer
+    // Show refund badge if customer's reschedule was rejected
+    if (
+      (booking.rescheduleOutcome === "rejected" ||
+        booking.rescheduleOutcome === "cancelled") &&
+      hasCustomerRescheduleFee
+    ) {
+      const refundedCount = booking.rescheduleCount || 1;
+      secondaryBadges.push(
+        <Badge
+          variant="outline"
+          className="text-[10px] w-full justify-start px-1.5 py-0.5 h-6 bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+          key="reschedule-refund"
+        >
+          <RotateCcw className="h-2.5 w-2.5 shrink-0 mr-1.5" />
+          <span className="truncate">
+            ₹{refundedCount * 100} refunded to customer
+          </span>
+        </Badge>,
+      );
+    }
+
+    // 2. Payout breakdown for cancellations/completions/confirmed
+    if (["confirmed", "completed", "cancelled"].includes(booking.status)) {
+      const breakdown = calculateProviderEarningBreakdown(booking);
+
+      // Base earning badge
+      if (breakdown.baseEarning > 0) {
+        const earningLabel =
+          booking.status === "cancelled"
+            ? `Cancellation payout: ₹${breakdown.baseEarning}`
+            : `Earning (95%): ₹${breakdown.baseEarning}`;
+
+        secondaryBadges.push(
+          <Badge
+            variant="outline"
+            className="text-[10px] w-full justify-start px-1.5 py-0.5 h-6 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+            key="base-earning"
+          >
+            <IndianRupee className="h-2.5 w-2.5 shrink-0 mr-1.5" />
+            <span className="truncate">{earningLabel}</span>
+          </Badge>,
+        );
+      }
+
+      // Reschedule fee badge (if any)
+      if (breakdown.rescheduleFee > 0) {
+        secondaryBadges.push(
+          <Badge
+            variant="outline"
+            className="text-[10px] w-full justify-start px-1.5 py-0.5 h-6 bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800"
+            key="reschedule-fee-earning"
+          >
+            <HistoryIcon className="h-2.5 w-2.5 shrink-0 mr-1.5" />
+            <span className="truncate">
+              Reschedule fee: ₹{breakdown.rescheduleFee}
+            </span>
+          </Badge>,
+        );
+      }
+
+      // Total payout badge (if multiple components)
+      if (breakdown.baseEarning > 0 && breakdown.rescheduleFee > 0) {
+        secondaryBadges.push(
+          <Badge
+            variant="outline"
+            className="text-[10px] w-full justify-start px-1.5 py-0.5 h-6 bg-gradient-to-r from-emerald-50 to-purple-50 text-emerald-700 border-emerald-200 dark:from-emerald-900/20 dark:to-purple-900/20 dark:text-emerald-400 dark:border-emerald-800 font-semibold"
+            key="total-payout"
+          >
+            <IndianRupee className="h-2.5 w-2.5 shrink-0 mr-1.5" />
+            <span className="truncate">Total payout: ₹{breakdown.total}</span>
+          </Badge>,
+        );
+      }
+
+      // Zero payout badge
+      if (breakdown.total === 0) {
+        secondaryBadges.push(
+          <Badge
+            variant="outline"
+            className="text-[10px] w-full justify-start px-1.5 py-0.5 h-6 bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"
+            key="zero-payout"
+          >
+            <IndianRupee className="h-2.5 w-2.5 shrink-0 mr-1.5" />
+            <span className="truncate">Your payout: ₹0</span>
+          </Badge>,
+        );
+      }
+    }
+
+    // 3. General Refund to Customer
     if (
       (booking.status === "cancelled" || booking.status === "rejected") &&
-      booking.isRefunded
+      booking.isRefunded &&
+      !secondaryBadges.some((b) => (b as any).key === "reschedule-refund")
     ) {
-      return (
-        <div className="flex flex-col gap-1">
-          {baseBadge}
-          <Badge
-            variant="outline"
-            className="text-xs px-2 py-0 h-6 bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"
-          >
-            <RotateCcw className="h-2.5 w-2.5 mr-1" />
-            Refunded to customer
-          </Badge>
-        </div>
+      secondaryBadges.push(
+        <Badge
+          variant="outline"
+          className="text-[10px] w-full justify-start px-1.5 py-0.5 h-6 bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"
+          key="refund"
+        >
+          <RotateCcw className="h-2.5 w-2.5 shrink-0 mr-1.5" />
+          <span className="truncate">Refunded to customer</span>
+        </Badge>,
       );
     }
 
-    return baseBadge;
+    if (secondaryBadges.length === 0) {
+      return primaryBadge;
+    }
+
+    return (
+      <div
+        className="flex items-center gap-1.5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {primaryBadge}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 rounded-full hover:bg-muted text-muted-foreground p-0 transition-colors"
+              title="Click for details"
+            >
+              <Info className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-60 p-3" align="start">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Booking Details
+              </p>
+              <div className="flex flex-col gap-2">{secondaryBadges}</div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
   };
 
   const formatTime = (timeStr: string) => {
@@ -479,85 +623,8 @@ export default function ProviderBookingsPage() {
   };
 
   const getActionButtons = (booking: ProviderBooking) => {
-    // Use mutation loading states
-    const isAccepting =
-      acceptBooking.isPending && acceptBooking.variables === booking.id;
-    const isRejecting =
-      rejectBooking.isPending && rejectBooking.variables === booking.id;
     const isCompleting =
       completeBooking.isPending && completeBooking.variables === booking.id;
-    const isLoading = isAccepting || isRejecting || isCompleting;
-
-    // Reschedule pending - show approve/decline buttons
-    if (booking.status === "reschedule_pending") {
-      return (
-        <ReschedulePendingActions
-          bookingId={booking.id}
-          rescheduleReason={booking.rescheduleReason || null}
-          newDate={
-            booking.rescheduleBookingDate ||
-            booking.bookingDate ||
-            booking.date ||
-            ""
-          }
-          newTime={formatTime(booking.rescheduleSlotTime || booking.startTime)}
-          previousDate={
-            booking.previousBookingDate
-              ? formatDate(booking.previousBookingDate)
-              : null
-          }
-          previousTime={
-            booking.previousSlotTime
-              ? formatTime(booking.previousSlotTime)
-              : null
-          }
-          onActionComplete={refetch}
-          variant="expanded"
-        />
-      );
-    }
-
-    if (booking.status === "pending") {
-      return (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedBookingId(booking.id);
-              setAcceptDialogOpen(true);
-            }}
-            disabled={isLoading}
-            className="gap-1.5 bg-green-600 hover:bg-green-700"
-          >
-            {isLoading ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <Check className="h-3 w-3" />
-            )}
-            Accept
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedBookingId(booking.id);
-              setRejectDialogOpen(true);
-            }}
-            disabled={isLoading}
-            className="gap-1.5"
-          >
-            {isLoading ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <X className="h-3 w-3" />
-            )}
-            Reject
-          </Button>
-        </div>
-      );
-    }
 
     if (booking.status === "confirmed") {
       return (
@@ -583,27 +650,35 @@ export default function ProviderBookingsPage() {
               e.stopPropagation();
               handleOpenCompletionDialog(booking);
             }}
-            disabled={isLoading}
+            disabled={isCompleting}
             className="gap-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all"
           >
-            {isLoading ? (
+            {isCompleting ? (
               <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
               <Check className="h-3 w-3" />
             )}
             Complete
           </Button>
+          {/* Cancel Booking button for provider */}
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedBookingForCancel(booking);
+              setCancelDialogOpen(true);
+            }}
+            className="gap-1.5"
+          >
+            <X className="h-3 w-3" />
+            Cancel Booking
+          </Button>
         </div>
       );
     }
 
     return null;
-  };
-
-  const getBookingStatus = () => {
-    if (isLoading) return "loading";
-    if (bookings.length === 0) return "empty";
-    return "has-data";
   };
 
   // Handle refresh
@@ -613,8 +688,8 @@ export default function ProviderBookingsPage() {
 
   const filteredBookings = getFilteredBookings();
 
-  // Show skeleton on initial load
-  if (isLoading) {
+  // Show full skeleton only on initial page load
+  if (showFullSkeleton) {
     return <ProviderBookingsSkeleton />;
   }
 
@@ -646,11 +721,9 @@ export default function ProviderBookingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Booking Requests
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight">My Bookings</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage incoming service bookings
+            Manage your confirmed & completed bookings
           </p>
         </div>
         <Button
@@ -683,18 +756,18 @@ export default function ProviderBookingsPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800">
+        <Card className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 border-red-200 dark:border-red-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-yellow-100 dark:bg-yellow-900/30">
-                <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-red-100 dark:bg-red-900/30">
+                <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
-                  {stats.pending}
+                <p className="text-2xl font-bold text-red-900 dark:text-red-100">
+                  {stats.cancelled}
                 </p>
-                <p className="text-xs text-yellow-700/70 dark:text-yellow-400/70">
-                  Pending
+                <p className="text-xs text-red-700/70 dark:text-red-400/70">
+                  Cancelled
                 </p>
               </div>
             </div>
@@ -771,22 +844,8 @@ export default function ProviderBookingsPage() {
             <TabsTrigger value="all" className="whitespace-nowrap">
               All
             </TabsTrigger>
-            <TabsTrigger value="pending" className="whitespace-nowrap">
-              Pending
-            </TabsTrigger>
             <TabsTrigger value="confirmed" className="whitespace-nowrap">
               Confirmed
-            </TabsTrigger>
-            <TabsTrigger
-              value="reschedule_pending"
-              className="whitespace-nowrap"
-            >
-              Reschedule
-              {stats.reschedulePending > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.reschedulePending}
-                </Badge>
-              )}
             </TabsTrigger>
             <TabsTrigger value="completed" className="whitespace-nowrap">
               Completed
@@ -794,41 +853,16 @@ export default function ProviderBookingsPage() {
             <TabsTrigger value="cancelled" className="whitespace-nowrap">
               Cancelled
             </TabsTrigger>
-            <TabsTrigger value="rejected" className="whitespace-nowrap">
-              Rejected
-              {stats.rejected > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.rejected}
-                </Badge>
-              )}
-            </TabsTrigger>
           </TabsList>
         </div>
 
         {/* Desktop: Grid layout tabs */}
         <div className="hidden md:block">
-          <TabsList className="grid w-full max-w-4xl grid-cols-7 h-10">
+          <TabsList className="grid w-full max-w-xl grid-cols-4 h-10">
             <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
             <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
-            <TabsTrigger value="reschedule_pending">
-              Reschedule
-              {stats.reschedulePending > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.reschedulePending}
-                </Badge>
-              )}
-            </TabsTrigger>
             <TabsTrigger value="completed">Completed</TabsTrigger>
             <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-            <TabsTrigger value="rejected">
-              Rejected
-              {stats.rejected > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.rejected}
-                </Badge>
-              )}
-            </TabsTrigger>
           </TabsList>
         </div>
       </Tabs>
@@ -836,11 +870,13 @@ export default function ProviderBookingsPage() {
       {/* Results count */}
       <div className="text-sm text-muted-foreground">
         Showing <span className="font-medium">{filteredBookings.length}</span>{" "}
-        of <span className="font-medium">{bookings.length}</span> bookings
+        of <span className="font-medium">{bookingsData?.pagination?.total || 0}</span> bookings
       </div>
 
       {/* Bookings Table */}
-      {filteredBookings.length === 0 ? (
+      {isLoading ? (
+        <ProviderBookingsTableSkeleton />
+      ) : filteredBookings.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="p-16 text-center">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-50 dark:bg-blue-950/20 mb-4">
@@ -969,9 +1005,17 @@ export default function ProviderBookingsPage() {
 
                       {/* Price Column */}
                       <TableCell className="py-4 px-4 text-right">
-                        <div className="flex items-center gap-0.5 font-semibold text-sm justify-end">
-                          <IndianRupee className="h-3.5 w-3.5 text-foreground" />
-                          <span>{booking.price || 0}</span>
+                        <div className="flex flex-col items-end gap-0.5 font-bold text-sm">
+                          <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground line-through font-normal">
+                            <IndianRupee className="h-2.5 w-2.5" />
+                            <span>{booking.price || 0}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-primary">
+                            <IndianRupee className="h-3.5 w-3.5 shrink-0" />
+                            <span className="font-bold tabular-nums">
+                              {calculateProviderEarning(booking)}
+                            </span>
+                          </div>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1210,51 +1254,29 @@ export default function ProviderBookingsPage() {
 
                             {/* RIGHT COLUMN: Service & Actions */}
                             <div className="space-y-4">
-                              {/* Reschedule Request Info (for reschedule_pending) */}
-                              {booking.status === "reschedule_pending" && (
-                                <div className="bg-purple-50 dark:bg-purple-950/20 rounded-md p-5 border border-purple-200 dark:border-purple-800">
-                                  <div className="flex items-center gap-2 pb-3 border-b border-purple-200 dark:border-purple-800">
-                                    <HistoryIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                                    <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">
-                                      Reschedule Re quest
-                                    </h4>
-                                    <div className="flex items-center gap-2 text-sm">
-                                      <span className="text-muted-foreground">
-                                        {booking.rescheduleOutcome === "pending"
-                                          ? "Requested:"
-                                          : booking.rescheduleOutcome ===
-                                              "accepted"
-                                            ? "Confirmed:"
-                                            : booking.rescheduleOutcome ===
-                                                "rejected"
-                                              ? "Declined (reverted):"
-                                              : "Cancelled (reverted):"}
-                                      </span>
-                                      {/* <span className="font-medium">
-                                        {formatDate(
-                                          booking.bookingDate || booking.date,
-                                        )}{" "}
-                                        at {formatTime(booking.startTime)}
-                                      </span> */}
+                              {/* Previously Rescheduled Info (for confirmed bookings with history) */}
+                              {booking.status === "confirmed" &&
+                                booking.previousBookingDate && (
+                                  <div className="bg-purple-50 dark:bg-purple-950/20 rounded-md p-5 border border-purple-200 dark:border-purple-800">
+                                    <div className="flex items-center gap-2 pb-3 border-b border-purple-200 dark:border-purple-800">
+                                      <HistoryIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                      <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">
+                                        Recently Rescheduled
+                                      </h4>
+                                      <div className="flex items-center gap-2 text-sm">
+                                        <span className="text-muted-foreground whitespace-nowrap">
+                                          Status:
+                                        </span>
+                                        <span className="font-medium text-purple-700 dark:text-purple-300">
+                                          Confirmed
+                                        </span>
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        (Fee paid, schedule updated)
+                                      </div>
                                     </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {booking.rescheduleOutcome ===
-                                        "pending" &&
-                                        "Customer's reschedule request - awaiting your approval"}
-                                      {booking.rescheduleOutcome ===
-                                        "accepted" &&
-                                        "You approved this reschedule request"}
-                                      {booking.rescheduleOutcome ===
-                                        "rejected" &&
-                                        "You declined this request - refunded to customer"}
-                                      {booking.rescheduleOutcome ===
-                                        "cancelled" &&
-                                        "Customer cancelled their reschedule request"}
-                                    </div>
-                                  </div>
-                                  <div className="mt-4 space-y-4">
-                                    {/* Slot Comparison - Previous → New */}
-                                    {booking.previousBookingDate && (
+                                    <div className="mt-4 space-y-4">
+                                      {/* Slot Comparison - Previous → New */}
                                       <div className="bg-white dark:bg-purple-950/40 rounded-md p-3 border border-purple-200 dark:border-purple-700">
                                         <label className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">
                                           Schedule Change
@@ -1286,40 +1308,84 @@ export default function ProviderBookingsPage() {
                                             </div>
                                             <div className="text-sm font-medium text-purple-900 dark:text-purple-100">
                                               {formatDate(
-                                                booking.rescheduleBookingDate ||
-                                                  booking.bookingDate ||
+                                                booking.bookingDate ||
                                                   booking.date,
                                               )}{" "}
                                               at{" "}
                                               {formatTime(
-                                                booking.rescheduleSlotTime ||
-                                                  booking.startTime ||
-                                                  "",
+                                                booking.startTime || "",
                                               )}
                                             </div>
                                           </div>
                                         </div>
                                       </div>
-                                    )}
 
-                                    {/* Reason */}
-                                    {booking.rescheduleReason && (
-                                      <div>
-                                        <label className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">
-                                          Reason
-                                        </label>
-                                        <p className="text-sm text-purple-900 dark:text-purple-100 mt-1 leading-relaxed">
-                                          {booking.rescheduleReason}
-                                        </p>
+                                      {/* Reason */}
+                                      {booking.rescheduleReason && (
+                                        <div>
+                                          <label className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">
+                                            Reason
+                                          </label>
+                                          <p className="text-sm text-purple-900 dark:text-purple-100 mt-1 leading-relaxed">
+                                            {booking.rescheduleReason}
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {/* Fee Info */}
+                                      <div className="flex items-center gap-2 text-xs text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded px-2 py-1">
+                                        <IndianRupee className="h-3 w-3" />
+                                        <span>
+                                          Customer paid ₹100 reschedule fee
+                                        </span>
                                       </div>
-                                    )}
+                                    </div>
+                                  </div>
+                                )}
 
-                                    {/* Fee Info */}
-                                    <div className="flex items-center gap-2 text-xs text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded px-2 py-1">
-                                      <IndianRupee className="h-3 w-3" />
-                                      <span>
-                                        Customer paid ₹100 reschedule fee
-                                      </span>
+                              {/* Cancellation Details (if cancelled) */}
+                              {booking.status === "cancelled" && (
+                                <div className="bg-red-50/50 dark:bg-red-950/20 rounded-md p-5 border border-red-200 dark:border-red-800">
+                                  <div className="flex items-center gap-2 pb-3 border-b border-red-200 dark:border-red-800">
+                                    <XCircle className="h-4 w-4 text-red-600 shadow-sm" />
+                                    <h4 className="font-semibold text-sm text-red-900 dark:text-red-100 uppercase tracking-tight">
+                                      Cancellation Details
+                                    </h4>
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold text-red-800/60 dark:text-red-400/60 uppercase tracking-widest">
+                                        Cancelled By
+                                      </label>
+                                      <div className="flex items-center gap-2">
+                                        <Badge
+                                          variant="outline"
+                                          className="bg-red-100/50 text-red-700 border-red-200 capitalize py-0 px-2 h-5 text-[10px] font-bold"
+                                        >
+                                          {booking.cancelledBy || "System"}
+                                        </Badge>
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold text-red-800/60 dark:text-red-400/60 uppercase tracking-widest">
+                                        Customer Refund
+                                      </label>
+                                      <p className="text-sm font-black text-emerald-700 dark:text-emerald-400">
+                                        Amount: ₹{booking.refundAmount || "0"}
+                                      </p>
+                                    </div>
+
+                                    <div className="space-y-1 sm:col-span-2 pt-2 mt-2 border-t border-red-100/50 dark:border-red-900/30">
+                                      <label className="text-[10px] font-bold text-red-800/60 dark:text-red-400/60 uppercase tracking-widest">
+                                        Reason
+                                      </label>
+                                      <p className="text-sm text-red-900 dark:text-red-100 italic leading-relaxed bg-red-100/30 dark:bg-red-900/20 p-2 rounded-sm border-l-2 border-red-400">
+                                        &quot;
+                                        {booking.cancellationReason ||
+                                          "No reason provided"}
+                                        &quot;
+                                      </p>
                                     </div>
                                   </div>
                                 </div>
@@ -1344,12 +1410,109 @@ export default function ProviderBookingsPage() {
                                   </div>
                                   <div>
                                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                      Price
+                                      Your Earning
                                     </label>
-                                    <p className="font-semibold text-base mt-1 flex items-center gap-1">
-                                      <IndianRupee className="h-4 w-4" />
-                                      {booking.price || 0}
-                                    </p>
+                                    <div className="flex flex-col mt-1">
+                                      <div className="flex items-center gap-1 text-muted-foreground text-xs line-through">
+                                        <IndianRupee className="h-3 w-3" />
+                                        <span>
+                                          {booking.price || 0} (Service Price)
+                                        </span>
+                                      </div>
+
+                                      {/* Earning Breakdown */}
+                                      {(() => {
+                                        const breakdown =
+                                          calculateProviderEarningBreakdown(
+                                            booking,
+                                          );
+                                        return (
+                                          <>
+                                            {/* Base Earning */}
+                                            {breakdown.baseEarning > 0 && (
+                                              <div className="flex items-center gap-1 text-sm text-primary">
+                                                <IndianRupee className="h-4 w-4" />
+                                                <span>
+                                                  {breakdown.baseEarning}
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                  (
+                                                  {booking.status ===
+                                                  "cancelled"
+                                                    ? "Cancellation payout"
+                                                    : "95% of service price"}
+                                                  )
+                                                </span>
+                                              </div>
+                                            )}
+
+                                            {/* Reschedule Fee */}
+                                            {breakdown.rescheduleFee > 0 && (
+                                              <div className="flex items-center gap-1 text-sm text-purple-600 dark:text-purple-400">
+                                                <span className="text-xs">
+                                                  +
+                                                </span>
+                                                <IndianRupee className="h-3.5 w-3.5" />
+                                                <span>
+                                                  {breakdown.rescheduleFee}
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                  (Reschedule fee
+                                                  {booking.rescheduleCount &&
+                                                  booking.rescheduleCount > 1
+                                                    ? ` × ${booking.rescheduleCount}`
+                                                    : ""}
+                                                  )
+                                                </span>
+                                              </div>
+                                            )}
+
+                                            {/* Total (with separator if multiple components) */}
+                                            {breakdown.baseEarning > 0 &&
+                                              breakdown.rescheduleFee > 0 && (
+                                                <div className="flex items-center gap-1 pt-1 mt-1 border-t border-dashed">
+                                                  <span className="text-xs font-semibold text-muted-foreground">
+                                                    Total:
+                                                  </span>
+                                                  <span className="font-bold text-lg text-primary flex items-center gap-1">
+                                                    <IndianRupee className="h-5 w-5" />
+                                                    {breakdown.total}
+                                                  </span>
+                                                </div>
+                                              )}
+
+                                            {/* Single component display */}
+                                            {((breakdown.baseEarning > 0 &&
+                                              breakdown.rescheduleFee === 0) ||
+                                              (breakdown.baseEarning === 0 &&
+                                                breakdown.rescheduleFee >
+                                                  0)) && (
+                                              <p className="font-bold text-lg text-primary flex items-center gap-1">
+                                                <IndianRupee className="h-5 w-5" />
+                                                {breakdown.total}
+                                              </p>
+                                            )}
+
+                                            {/* Zero payout */}
+                                            {breakdown.total === 0 && (
+                                              <p className="font-bold text-lg text-muted-foreground flex items-center gap-1">
+                                                <IndianRupee className="h-5 w-5" />
+                                                ₹0
+                                              </p>
+                                            )}
+
+                                            {/* Footer note */}
+                                            <p className="text-[10px] text-muted-foreground mt-1">
+                                              {booking.status === "cancelled"
+                                                ? "* Based on cancellation policy. Reschedule fees are retained."
+                                                : booking.status === "completed"
+                                                  ? "* 95% of service price after platform fee. Reschedule fees are additional."
+                                                  : "* Estimated earning (95% after platform fee) + reschedule fees."}
+                                            </p>
+                                          </>
+                                        );
+                                      })()}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -1382,7 +1545,8 @@ export default function ProviderBookingsPage() {
                                       </div>
                                       {booking.feedback.comments && (
                                         <p className="text-sm text-muted-foreground italic line-clamp-3">
-                                          "{booking.feedback.comments}"
+                                          &quot;{booking.feedback.comments}
+                                          &quot;
                                         </p>
                                       )}
                                       <p className="text-xs text-muted-foreground mt-2">
@@ -1434,6 +1598,22 @@ export default function ProviderBookingsPage() {
               })}
             </TableBody>
           </Table>
+
+          {/* Pagination */}
+          {bookingsData?.pagination && (
+            <div className="border-t">
+              <DataTablePagination
+                currentPage={bookingsData.pagination.page}
+                totalPages={bookingsData.pagination.totalPages}
+                totalItems={bookingsData.pagination.total}
+                pageSize={bookingsData.pagination.limit}
+                onPageChange={(page) => {
+                  setCurrentPage(page);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -1475,118 +1655,48 @@ export default function ProviderBookingsPage() {
         />
       )}
 
-      {/* Accept Confirmation Dialog */}
-      <AlertDialog open={acceptDialogOpen} onOpenChange={setAcceptDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Accept Booking Request?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will confirm the booking and you will be expected to provide
-              the service at the scheduled time.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={acceptBooking.isPending}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleAccept}
-              disabled={acceptBooking.isPending}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {acceptBooking.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Accepting...
-                </>
-              ) : (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Accept
-                </>
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Reject Confirmation Dialog */}
-      <AlertDialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+      {/* Cancel Booking Dialog (Provider) */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-red-600">
               <XCircle className="h-5 w-5" />
-              Reject Booking Request?
+              Cancel Booking?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This will reject the booking request and the customer will receive
-              a full refund.
+              This will cancel the booking and issue a{" "}
+              <strong>100% full refund</strong> to the customer automatically.
               <br />
               <br />
-              <strong>Note:</strong> Once rejected, the customer cannot rebook
-              the same slot.
+              Please provide a reason for the cancellation:
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="px-6 pb-2">
+            <textarea
+              className="w-full border rounded-md p-3 text-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-red-300"
+              placeholder="e.g. Emergency situation, unable to provide the service..."
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+            />
+          </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={rejectBooking.isPending}>
-              Cancel
+            <AlertDialogCancel disabled={isCancellingBooking}>
+              Go Back
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleReject}
-              disabled={rejectBooking.isPending}
+              onClick={handleCancelByProvider}
+              disabled={isCancellingBooking}
               className="bg-red-600 hover:bg-red-700"
             >
-              {rejectBooking.isPending ? (
+              {isCancellingBooking ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Rejecting...
+                  Cancelling...
                 </>
               ) : (
                 <>
                   <X className="h-4 w-4 mr-2" />
-                  Reject
-                </>
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Complete Confirmation Dialog */}
-      <AlertDialog
-        open={completeDialogOpen}
-        onOpenChange={setCompleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Mark Booking as Complete?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Confirm that you have provided the service and the booking is
-              complete.
-              <br />
-              <br />
-              <strong>Note:</strong> The customer will be able to leave a review
-              and rating after completion.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={completeBooking.isPending}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleComplete}
-              disabled={completeBooking.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {completeBooking.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Completing...
-                </>
-              ) : (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Complete
+                  Cancel Booking
                 </>
               )}
             </AlertDialogAction>

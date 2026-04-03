@@ -36,13 +36,17 @@ export default function CategoriesPage() {
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
-  // Fetch categories using TanStack Query
+  // Fetch categories using TanStack Query with pagination
   const {
-    data: categories = [],
+    data: categoriesData,
     isLoading,
     error,
     refetch,
-  } = useAdminCategories();
+  } = useAdminCategories({ page: currentPage, limit: pageSize });
+
+  // Get categories and pagination from response
+  const categories = categoriesData?.categories || [];
+  const pagination = categoriesData?.pagination;
 
   // Mutations
   const addMutation = useAddCategory();
@@ -111,13 +115,8 @@ export default function CategoriesPage() {
     setCurrentPage(1);
   }, [pageSize]);
 
-  // Calculate pagination
-  const totalPages = Math.ceil(categories.length / pageSize);
-  const paginatedCategories = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return categories.slice(startIndex, endIndex);
-  }, [categories, currentPage, pageSize]);
+  // Calculate total pages (from server pagination or fallback)
+  const totalPages = pagination?.totalPages || Math.ceil(categories.length / pageSize);
 
   if (isLoading) {
     return <AdminCategoriesSkeleton />;
@@ -175,7 +174,7 @@ export default function CategoriesPage() {
 
       {/* Categories List with Pagination */}
       <CategoryList
-        categories={paginatedCategories}
+        categories={categories}
         onDelete={handleDeleteClick}
         onEdit={handleEditClick}
         onAddNew={() => setIsAddDialogOpen(true)}
@@ -185,7 +184,7 @@ export default function CategoriesPage() {
         totalPages={totalPages}
         onPageChange={setCurrentPage}
         pageSize={pageSize}
-        totalItems={categories.length}
+        totalItems={pagination?.total || categories.length}
       />
 
       {/* Add Category Dialog */}

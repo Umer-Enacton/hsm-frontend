@@ -56,17 +56,81 @@ export interface AdminBusiness {
 }
 
 /**
- * Fetch all services for admin
+ * Fetch all services for admin with pagination and filters
  */
-export function useAdminServices() {
-  return useQuery<AdminService[]>({
-    queryKey: [QUERY_KEYS.ADMIN_SERVICES, 'list'],
+export function useAdminServices(params?: {
+  page?: number;
+  limit?: number;
+  status?: 'active' | 'inactive';
+  search?: string;
+}) {
+  const { page = 1, limit = 10, status, search } = params || {};
+
+  return useQuery<{
+    services: AdminService[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }>({
+    queryKey: [QUERY_KEYS.ADMIN_SERVICES, 'list', params || {}],
     queryFn: async () => {
-      const response = await api.get<{ services: AdminService[] }>(API_ENDPOINTS.ADMIN_SERVICES);
-      return response.services || [];
+      const queryParams = new URLSearchParams();
+      queryParams.append('page', page.toString());
+      queryParams.append('limit', limit.toString());
+      if (status) queryParams.append('status', status);
+      if (search) queryParams.append('search', search);
+
+      const response = await api.get<{
+        services: AdminService[];
+        pagination?: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      }>(`${API_ENDPOINTS.ADMIN_SERVICES}?${queryParams.toString()}`);
+
+      return {
+        services: response.services || [],
+        pagination: response.pagination || {
+          page,
+          limit,
+          total: response.services?.length || 0,
+          totalPages: Math.ceil((response.services?.length || 0) / limit),
+        },
+      };
     },
     staleTime: 10 * 60 * 1000, // 10 minutes - services change moderately
     gcTime: 30 * 60 * 1000,
+  });
+}
+
+/**
+ * Fetch service statistics for admin dashboard
+ */
+export function useServiceStats() {
+  return useQuery({
+    queryKey: [QUERY_KEYS.ADMIN_SERVICES, 'stats'],
+    queryFn: async () => {
+      // Fetch all services with a high limit to calculate stats
+      const response = await api.get<{
+        services: AdminService[];
+      }>(`${API_ENDPOINTS.ADMIN_SERVICES}?limit=10000`);
+
+      const allServices = response.services || [];
+      const activeCount = allServices.filter(s => s.isActive).length;
+
+      return {
+        total: allServices.length,
+        active: activeCount,
+        inactive: allServices.length - activeCount,
+      };
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes - stats change periodically
+    gcTime: 5 * 60 * 1000,
   });
 }
 

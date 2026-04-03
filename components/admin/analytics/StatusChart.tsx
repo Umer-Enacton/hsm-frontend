@@ -45,8 +45,8 @@ const formatCurrency = (value: number | null | undefined) => {
 };
 
 // Format status name for display
-const formatStatusName = (status: any) => {
-  if (typeof status !== "string" || !status) return String(status || "");
+const formatStatusName = (status: string | null | undefined) => {
+  if (typeof status !== "string" || !status) return "";
   return status.charAt(0).toUpperCase() + status.slice(1);
 };
 
@@ -59,11 +59,20 @@ const getStatusColor = (status: string) => {
     cancelled: "hsl(0, 84%, 60%)", // Red
     rejected: "hsl(240, 5%, 26%)", // Dark gray
     reschedule_pending: "hsl(267, 88%, 65%)", // Purple
+    refunded: "hsl(280, 60%, 50%)", // Purple
   };
   return colors[status] || "hsl(0, 0%, 50%)";
 };
 
-const CustomTooltip = ({ active, payload }: any) => {
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload: StatusData;
+    fill: string;
+  }>;
+}
+
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -81,7 +90,7 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-export function StatusChart({ data, totalPlatformFees }: StatusChartProps) {
+export function StatusChart({ data }: Omit<StatusChartProps, "totalPlatformFees">) {
   // Process data: only show pending, confirmed, completed
   // Group reschedule_pending with confirmed
   const processedData = useMemo(() => {
@@ -90,13 +99,9 @@ export function StatusChart({ data, totalPlatformFees }: StatusChartProps) {
     data.forEach((item) => {
       const status = item.status;
 
-      // Skip cancelled, rejected, refunded
-      if (status === "cancelled" || status === "rejected" || status === "refunded") {
-        return;
-      }
-
       // Group reschedule_pending with confirmed
-      const targetStatus = status === "reschedule_pending" ? "confirmed" : status;
+      const targetStatus =
+        status === "reschedule_pending" ? "confirmed" : status;
 
       if (!result.has(targetStatus)) {
         result.set(targetStatus, {
@@ -116,19 +121,26 @@ export function StatusChart({ data, totalPlatformFees }: StatusChartProps) {
     });
 
     // Calculate percentages and convert to array
-    const totalCount = Array.from(result.values()).reduce((sum, s) => sum + s.count, 0);
+    const totalCount = Array.from(result.values()).reduce(
+      (sum, s) => sum + s.count,
+      0,
+    );
     const array = Array.from(result.values()).map((item) => ({
       ...item,
-      percentage: totalCount > 0 ? ((item.count / totalCount) * 100).toFixed(1) : "0",
+      percentage:
+        totalCount > 0 ? ((item.count / totalCount) * 100).toFixed(1) : "0",
     }));
 
     // Sort by meaningful order: pending -> confirmed -> completed
-    const order: Record<string, number> = { pending: 1, confirmed: 2, completed: 3 };
-    return array.sort((a, b) => (order[a.status] || 99) - (order[b.status] || 99));
+    const order: Record<string, number> = {
+      pending: 1,
+      confirmed: 2,
+      completed: 3,
+    };
+    return array.sort(
+      (a, b) => (order[a.status] || 99) - (order[b.status] || 99),
+    );
   }, [data]);
-
-  // Calculate new total platform fees from processed data
-  const processedTotalFees = processedData.reduce((sum, s) => sum + s.platformFees, 0);
 
   if (processedData.length === 0) {
     return (
