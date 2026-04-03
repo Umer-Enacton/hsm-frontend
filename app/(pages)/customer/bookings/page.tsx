@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -17,7 +17,6 @@ import {
   Package,
   Building2,
   History,
-  Info,
   RotateCcw,
   Image as ImageIcon,
 } from "lucide-react";
@@ -25,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -34,7 +33,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
@@ -43,12 +41,9 @@ import { BookingHistoryTimeline } from "@/components/customer/bookings/BookingHi
 import { CustomerBookingsSkeleton, CustomerBookingsTableSkeleton } from "@/components/customer/skeletons";
 import { useBookings } from "@/lib/queries/use-bookings";
 import { useService } from "@/lib/queries/use-services";
-import { api } from "@/lib/api";
-import type {
-  CustomerBooking,
-  Address,
-  Slot,
-  ServiceDetails,
+import {
+  type CustomerBooking,
+  BookingStatus,
 } from "@/types/customer";
 import { ImageLightbox, DataTablePagination } from "@/components/common";
 
@@ -60,24 +55,21 @@ interface BookingStats {
   cancelled: number;
 }
 
-// Type for nested service in CustomerBooking
-type BookingService = CustomerBooking["service"];
-
 export default function CustomerBookingsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   // Local state for UI-only concerns (must be declared before hooks that use them)
   const [activeTab, setActiveTab] = useState<
-    "all" | "confirmed" | "completed" | "cancelled"
+    "all" | BookingStatus.CONFIRMED | BookingStatus.COMPLETED | BookingStatus.CANCELLED
   >("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
   const [pendingExpandId, setPendingExpandId] = useState<number | null>(null);
   const [processedInitialParams, setProcessedInitialParams] = useState(false);
 
-  // Show full skeleton only on first render before any data
-  const [showFullSkeleton, setShowFullSkeleton] = useState(true);
+  // States to track navigation/refresh type for refined skeleton display
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // Use React Query for bookings data with status filter
   const {
@@ -92,18 +84,23 @@ export default function CustomerBookingsPage() {
     pagination: { page: currentPage, limit: 10 },
   });
 
+  // Drive skeleton visibility from query state for the initial page load
+  const showFullSkeleton = isInitialLoading && isLoading;
+
   // Fetch overall stats separately (without status filter - always shows total counts)
   const { data: overallBookingsData } = useBookings({
     status: undefined,
     pagination: { page: 1, limit: 1000 }, // Large limit to get all bookings for stats
   });
 
-  // Hide full skeleton once we have data (cached or fresh)
+  // Reset loading flags when data fetching finishes
   useEffect(() => {
-    if (bookingsData) {
-      setShowFullSkeleton(false);
+    if (!isRefreshing && isInitialLoading) {
+      setIsInitialLoading(false);
     }
-  }, [bookingsData]);
+  }, [isRefreshing, isInitialLoading]);
+
+
 
   // Image lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -111,7 +108,7 @@ export default function CustomerBookingsPage() {
 
   // Sync tab to URL
   const updateTab = (newTab: string) => {
-    setActiveTab(newTab as any);
+    setActiveTab(newTab as "all" | BookingStatus.CONFIRMED | BookingStatus.COMPLETED | BookingStatus.CANCELLED);
     setCurrentPage(1); // Reset page when tab changes
     const params = new URLSearchParams(searchParams.toString());
     if (newTab === "all") {
@@ -271,7 +268,6 @@ export default function CustomerBookingsPage() {
 
   const bookings = bookingsData?.bookings || [];
   const overallBookings = overallBookingsData?.bookings || [];
-  const total = bookingsData?.total || 0;
 
   // Find the service ID of the expanded booking
   const expandedBooking = bookings.find((b) => b.id === expandedRowId);
@@ -756,7 +752,7 @@ export default function CustomerBookingsPage() {
                         {provider ? (
                           <div className="space-y-1">
                             <div className="flex items-center gap-1.5">
-                              <Building2 className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
                               <span className="font-medium text-sm line-clamp-1">
                                 {provider.businessName}
                               </span>
@@ -835,7 +831,7 @@ export default function CustomerBookingsPage() {
                                   </div>
                                 </div>
                                 <div className="flex gap-3">
-                                  <Skeleton className="w-20 h-20 rounded-md flex-shrink-0" />
+                                  <Skeleton className="w-20 h-20 rounded-md shrink-0" />
                                   <div className="flex-1 space-y-2">
                                     <Skeleton className="h-3 w-20" />
                                     <Skeleton className="h-2.5 w-full" />
@@ -889,7 +885,7 @@ export default function CustomerBookingsPage() {
                                     <div className="flex gap-3">
                                       {fullServiceDetails?.image ||
                                       service?.imageUrl ? (
-                                        <div className="rounded-md overflow-hidden border flex-shrink-0 relative w-20 h-20">
+                                        <div className="rounded-md overflow-hidden border shrink-0 relative w-20 h-20">
                                           <Image
                                             src={
                                               fullServiceDetails?.image ||
@@ -912,7 +908,7 @@ export default function CustomerBookingsPage() {
                                           />
                                         </div>
                                       ) : (
-                                        <div className="rounded-md w-20 h-20 bg-gradient-to-br from-muted/50 to-muted border flex items-center justify-center flex-shrink-0">
+                                        <div className="rounded-md w-20 h-20 bg-gradient-to-br from-muted/50 to-muted border flex items-center justify-center shrink-0">
                                           <Package className="h-8 w-8 text-muted-foreground/30" />
                                         </div>
                                       )}
@@ -1206,10 +1202,10 @@ export default function CustomerBookingsPage() {
                                         Reason
                                       </label>
                                       <p className="text-sm text-red-900 dark:text-red-100 italic leading-relaxed bg-red-100/30 dark:bg-red-900/20 p-2 rounded-sm border-l-2 border-red-400">
-                                        "
+                                        &quot;
                                         {booking.cancellationReason ||
                                           "No reason provided"}
-                                        "
+                                        &quot;
                                       </p>
                                     </div>
                                   </div>
