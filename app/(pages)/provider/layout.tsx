@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Star,
   CreditCard,
+  Crown,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -29,6 +30,7 @@ const navItems = [
   { label: "Bookings", href: "/provider/bookings", icon: Clock },
   { label: "Reviews", href: "/provider/reviews", icon: Star },
   { label: "Payments", href: "/provider/payments", icon: CreditCard },
+  { label: "Subscription", href: "/provider/subscription", icon: Crown },
   // Profile removed from sidebar - accessible via Header user menu (same as admin)
 ];
 
@@ -39,10 +41,26 @@ export default function ProviderLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+
+  // Function to fetch subscription plan
+  const fetchSubscriptionPlan = async () => {
+    try {
+      const response = await api.get<{
+        message: string;
+        data: { planName?: string } | null;
+      }>(API_ENDPOINTS.PROVIDER_SUBSCRIPTION_CURRENT);
+      if (response?.data?.planName) {
+        setPlanName(response.data.planName);
+      }
+    } catch (err) {
+      console.error("Error fetching subscription plan:", err);
+    }
+  };
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [business, setBusiness] = useState<any>(null);
+  const [planName, setPlanName] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -130,8 +148,11 @@ export default function ProviderLayout({
         }
 
         setIsLoading(false);
-      } catch (err) {
-        console.error("Error in provider layout:", err);
+
+        // Fetch subscription plan for badge
+        fetchSubscriptionPlan();
+      } catch {
+        console.error("Error in provider layout:");
         setError("Authentication error");
         setTimeout(() => {
           router.push("/login");
@@ -211,6 +232,7 @@ export default function ProviderLayout({
           showSearch: true,
           searchPlaceholder: "Search provider...",
           businessVerification: business?.isVerified ?? false,
+          planName,
         }}
       >
         {children}

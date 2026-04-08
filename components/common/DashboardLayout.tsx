@@ -77,7 +77,7 @@ export function DashboardLayout({
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto bg-muted/30">
-          <div className="h-full p-4 md:p-6 max-w-7xl mx-auto">{children}</div>
+          <div className="p-4 md:p-6 pb-24 max-w-7xl mx-auto">{children}</div>
         </main>
 
         {/* Optional footer */}

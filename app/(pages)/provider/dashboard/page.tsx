@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,14 +24,17 @@ import {
 } from "@/lib/queries/use-provider-dashboard";
 import { useProviderBookings } from "@/lib/queries/use-provider-bookings";
 import { useProviderRevenueStats } from "@/lib/queries/use-provider-revenue";
-import { useProviderAnalytics } from "@/lib/queries/use-provider-analytics";
 import { QUERY_KEYS } from "@/lib/queries/query-keys";
 import type { ProviderBooking } from "@/types/provider";
 
 export default function ProviderDashboardPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [userData] = useState(() => getUserData());
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    setUserData(getUserData());
+  }, []);
 
   // TanStack Query hooks - all run in parallel
   const { data: business } = useProviderBusiness(userData?.id);
@@ -40,7 +43,10 @@ export default function ProviderDashboardPage() {
   const { data: services = [] } = useProviderServices(business?.id);
   const { data: revenueStats, isLoading: isLoadingRevenue } =
     useProviderRevenueStats();
-  const { isLoading: isLoadingAnalytics } = useProviderAnalytics();
+
+  // Analytics is handled by AnalyticsSection component - don't call it here
+  // to avoid duplicate queries
+  // Only wait for business and revenue stats to load
 
 
 
@@ -70,7 +76,9 @@ export default function ProviderDashboardPage() {
     };
   }, [bookings, revenueStats, business]);
 
-  const isLoading = !business || isLoadingRevenue || isLoadingAnalytics;
+  // Only wait for business and revenue stats to load
+  // Analytics is handled by AnalyticsSection component separately
+  const isLoading = !business || isLoadingRevenue;
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({
@@ -266,12 +274,12 @@ export default function ProviderDashboardPage() {
       </div>
 
 
-      {/* Earnings Details - Provider's 95% Share */}
+      {/* Earnings Details */}
       <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40 border-green-200 dark:border-green-800">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-300">
             <IndianRupee className="h-5 w-5" />
-            Your Earnings (95% Share)
+            Your Earnings
           </CardTitle>
         </CardHeader>
         <CardContent>

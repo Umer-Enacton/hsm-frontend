@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw, Plus, List, Grid3x3 } from "lucide-react";
+import { RefreshCw, Plus, List, Grid3x3, AlertTriangle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ProviderServicesSkeleton } from "@/components/provider/skeletons";
@@ -16,6 +16,9 @@ import {
 } from "@/lib/queries/use-provider-services";
 import { useProviderBusinessProfile } from "@/lib/queries/use-provider-business-profile";
 import { getUserData } from "@/lib/auth-utils";
+import { api, API_ENDPOINTS } from "@/lib/api";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import type { Service } from "@/types/provider";
 import type { ServiceStats } from "@/lib/provider/services";
 import {
@@ -26,6 +29,12 @@ import {
   ServiceReviews,
 } from "@/components/provider/services";
 
+interface ProviderSubscription {
+  planMaxServices: number;
+  planName: string;
+  status: string;
+}
+
 type ViewMode = "grid" | "list";
 
 export default function ProviderServicesPage() {
@@ -34,6 +43,9 @@ export default function ProviderServicesPage() {
 
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+
+  // Subscription state
+  const [subscription, setSubscription] = useState<ProviderSubscription | null>(null);
 
   // Dialog states
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -64,6 +76,41 @@ export default function ProviderServicesPage() {
   const uploadImageMutation = useUploadServiceImage();
 
   const isLoading = isLoadingBusiness || Boolean(business?.id && isLoadingServices);
+
+  // Fetch provider subscription
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const response = await api.get<{ message: string; data: ProviderSubscription }>(
+          API_ENDPOINTS.PROVIDER_SUBSCRIPTION_CURRENT
+        );
+        if (response?.data) {
+          setSubscription(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching subscription:", error);
+      }
+    };
+
+    if (userData?.id) {
+      fetchSubscription();
+    }
+  }, [userData?.id]);
+
+  // Calculate service limit info
+  const serviceLimitInfo = useMemo(() => {
+    if (!subscription || subscription.planMaxServices < 0) {
+      return { hasLimit: false, remaining: Infinity, percentage: 0, atLimit: false };
+    }
+
+    const current = services.length;
+    const max = subscription.planMaxServices;
+    const remaining = Math.max(0, max - current);
+    const percentage = Math.min(100, (current / max) * 100);
+    const atLimit = current >= max;
+
+    return { hasLimit: true, remaining, percentage, atLimit, current, max };
+  }, [subscription, services.length]);
 
   // Redirect if no business
   if (!isLoadingBusiness && !business) {
@@ -188,6 +235,30 @@ export default function ProviderServicesPage() {
       });
       return;
     }
+
+    // Check service limit
+    if (serviceLimitInfo.atLimit) {
+      toast.error("Service limit reached", {
+        description: `You've reached your ${subscription?.planName} plan limit of ${serviceLimitInfo.max} services. Upgrade to add more.`,
+        action: {
+          label: "Upgrade",
+          onClick: () => router.push("/provider/subscription"),
+        },
+      });
+      return;
+    }
+
+    // Warn if approaching limit
+    if (serviceLimitInfo.hasLimit && serviceLimitInfo.remaining <= 2) {
+      toast.warning(`You can add ${serviceLimitInfo.remaining} more service${serviceLimitInfo.remaining === 1 ? '' : 's'} on your current plan.`, {
+        description: "Consider upgrading to increase your service limit.",
+        action: {
+          label: "View Plans",
+          onClick: () => router.push("/provider/subscription"),
+        },
+      });
+    }
+
     setEditingService(null);
     setIsDialogOpen(true);
   };
@@ -291,13 +362,85 @@ export default function ProviderServicesPage() {
           >
             <List className="h-4 w-4" />
           </Button>
-          <Button onClick={handleOpenCreateDialog} disabled={!business?.isVerified} className="whitespace-nowrap">
+          <Button
+            onClick={handleOpenCreateDialog}
+            disabled={!business?.isVerified || serviceLimitInfo.atLimit}
+            className="whitespace-nowrap"
+          >
             <Plus className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Add Service</span>
             <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>
+
+      {/* Service Limit Warning Banner */}
+      {serviceLimitInfo.hasLimit && (
+        <Alert className={`border-2 ${
+          serviceLimitInfo.atLimit
+            ? "border-red-200 bg-red-50"
+            : serviceLimitInfo.remaining <= 2
+            ? "border-amber-200 bg-amber-50"
+            : "border-blue-200 bg-blue-50"
+        }`}>
+          {serviceLimitInfo.atLimit ? (
+            <AlertCircle className="h-4 w-4 text-red-600" />
+          ) : (
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+          )}
+          <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className={`font-semibold ${
+                serviceLimitInfo.atLimit ? "text-red-800" : "text-amber-800"
+              }`}>
+                {serviceLimitInfo.atLimit
+                  ? "Service Limit Reached"
+                  : `Service Limit: ${serviceLimitInfo.current}/${serviceLimitInfo.max}`}
+              </p>
+              <p className={`text-sm ${
+                serviceLimitInfo.atLimit ? "text-red-700" : "text-amber-700"
+              }`}>
+                {serviceLimitInfo.atLimit
+                  ? `You've reached the maximum number of services on your ${subscription?.planName} plan. Upgrade to add more services.`
+                  : `You can add ${serviceLimitInfo.remaining} more service${serviceLimitInfo.remaining === 1 ? '' : 's'} on your current plan.`}
+              </p>
+            </div>
+            <Button
+              onClick={() => router.push("/provider/subscription")}
+              variant={serviceLimitInfo.atLimit ? "default" : "outline"}
+              size="sm"
+              className={serviceLimitInfo.atLimit
+                ? "bg-red-600 hover:bg-red-700 text-white"
+                : ""
+              }
+            >
+              {serviceLimitInfo.atLimit ? "Upgrade Now" : "View Plans"}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Service Limit Progress Bar (when not at limit) */}
+      {serviceLimitInfo.hasLimit && !serviceLimitInfo.atLimit && (
+        <div className="rounded-lg border bg-muted/50 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Service Usage</span>
+            <span className="text-sm text-muted-foreground">
+              {serviceLimitInfo.current} of {serviceLimitInfo.max} services
+            </span>
+          </div>
+          <Progress
+            value={serviceLimitInfo.percentage}
+            className={`h-2 ${
+              serviceLimitInfo.percentage >= 80
+                ? "[&>div]:bg-red-500"
+                : serviceLimitInfo.percentage >= 60
+                ? "[&>div]:bg-amber-500"
+                : "[&>div]:bg-green-500"
+            }`}
+          />
+        </div>
+      )}
 
       {/* Statistics Cards */}
       <ServiceStatsComponent stats={stats} />

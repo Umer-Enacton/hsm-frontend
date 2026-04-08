@@ -91,6 +91,9 @@ export interface CustomerBooking {
   totalPrice: number;
   bookingDate: string;
   createdAt: string;
+  // Provider earning tracking
+  providerEarning?: number; // Final amount provider earns (in paise)
+  platformFee?: number; // Platform commission amount (in paise)
   // Reschedule tracking fields
   rescheduleCount?: number;
   lastRescheduleFee?: number;

@@ -75,7 +75,9 @@ const getServiceActivityData = (bookings: any[]) => {
   const upcoming = bookings.filter((b) => {
     if (b.status !== "confirmed") return false;
     const bookingDate = parseDate(b.bookingDate || b.date);
-    return bookingDate >= new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return bookingDate >= today;
   }).length;
 
   const cancelled = bookings.filter((b) => b.status === "cancelled").length;
@@ -193,7 +195,9 @@ export default function CustomerDashboardPage() {
       upcomingCount: allBookings.filter((b) => {
         if (b.status !== "confirmed") return false;
         const bookingDate = new Date(b.bookingDate);
-        return bookingDate >= new Date();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return bookingDate >= today;
       }).length,
       avgSpendingPerBooking:
         stats.completedBookings > 0 ? totalSpent / stats.completedBookings : 0,

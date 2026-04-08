@@ -14,8 +14,8 @@ export function AdminBookingsSkeleton() {
       </div>
 
       {/* Stats Cards - matches grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-        {[1, 2, 3, 4, 5].map((i) => (
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
           <Card key={i}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">

@@ -21,7 +21,9 @@ export default function ProviderAvailabilityPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Fetch business profile
-  const { business, isLoading: isLoadingBusiness } = useProviderBusinessProfile(userData?.id);
+  const { business, isLoading: isLoadingBusiness } = useProviderBusinessProfile(
+    userData?.id,
+  );
 
   // Fetch slots using cached hook
   const slotsQuery = useProviderSlots(business?.id);
@@ -55,7 +57,7 @@ export default function ProviderAvailabilityPage() {
         onSuccess: () => {
           setIsDialogOpen(false);
         },
-      }
+      },
     );
   };
 
@@ -71,7 +73,7 @@ export default function ProviderAvailabilityPage() {
         onSuccess: () => {
           // Slot deleted, cache will be invalidated automatically
         },
-      }
+      },
     );
   };
 
@@ -114,7 +116,9 @@ export default function ProviderAvailabilityPage() {
             onClick={handleRefresh}
             variant="outline"
             size="icon"
-            disabled={createSlotMutation.isPending || deleteSlotMutation.isPending}
+            disabled={
+              createSlotMutation.isPending || deleteSlotMutation.isPending
+            }
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
@@ -177,7 +181,7 @@ function SlotCard({
   onDelete: (slotId: number) => void;
 }) {
   return (
-    <Card className="rounded-md ">
+    <Card className="rounded-sm">
       <div className="p-0">
         <div className="flex items-center justify-around gap-0">
           <span className="text-base font-semibold">

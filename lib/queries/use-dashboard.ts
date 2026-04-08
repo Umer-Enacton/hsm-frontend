@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getCustomerBookings, getServices } from "@/lib/customer/api";
 import { QUERY_KEYS } from "./query-keys";
-import type { CustomerBooking, CustomerService } from "@/types/customer";
+
 
 /**
  * Recent bookings on dashboard
@@ -27,11 +27,11 @@ export function useBookingStats() {
   return useQuery({
     queryKey: [QUERY_KEYS.BOOKINGS, "stats"],
     queryFn: async () => {
-      const data = await getCustomerBookings();
+      const data = await getCustomerBookings({ limit: 1000 });
       const bookings = Array.isArray(data?.bookings) ? data.bookings : [];
 
       return {
-        totalBookings: data?.total || 0,
+        totalBookings: data?.pagination?.total || bookings.length,
         confirmedBookings: bookings.filter((b) => b.status === "confirmed").length,
         completedBookings: bookings.filter((b) => b.status === "completed").length,
         cancelledBookings: bookings.filter((b) => b.status === "cancelled").length,

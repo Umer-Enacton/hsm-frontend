@@ -49,6 +49,7 @@ export function useProviderBookings(filters?: {
     refetchOnWindowFocus: true,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes cache
+    retry: false, // Fail immediately on error
   });
 }
 

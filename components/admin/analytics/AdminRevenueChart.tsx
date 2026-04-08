@@ -24,12 +24,15 @@ export interface AdminRevenueChartData {
   revenue: number;
   completed: number;
   cumulativeRevenue?: number;
+  subscriptionFees: number;
 }
 
 export interface AdminRevenueChartProps {
   data: AdminRevenueChartData[];
   period: string;
   totalPlatformFees: number;
+  totalSubscriptionFees: number;
+  totalAdminRevenue: number;
   totalBookings: number;
 }
 
@@ -37,6 +40,8 @@ export function AdminRevenueChart({
   data,
   period,
   totalPlatformFees,
+  totalSubscriptionFees,
+  totalAdminRevenue,
   totalBookings,
 }: AdminRevenueChartProps) {
   // Calculate proper tick values for bookings Y-axis (whole numbers only)
@@ -117,18 +122,18 @@ export function AdminRevenueChart({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <CardTitle className="text-lg sm:text-xl">
-              Platform Revenue & Bookings
+              Admin Revenue & Bookings
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm">
-              Track your 5% platform fee earnings and booking trends for selected period
+              Track your platform fees, subscription revenue, and booking trends
             </CardDescription>
           </div>
           <div className="text-right sm:text-left">
             <div className="text-xl sm:text-2xl font-bold text-green-600">
-              {formatCurrency(totalPlatformFees)}
+              {formatCurrency(totalAdminRevenue)}
             </div>
             <div className="text-[10px] sm:text-xs text-muted-foreground">
-              Your 5% from {actualTotalBookings} booking
+              Platform fees + Subscriptions from {actualTotalBookings} booking
               {actualTotalBookings !== 1 ? "s" : ""} ({period})
             </div>
           </div>
@@ -155,8 +160,8 @@ export function AdminRevenueChart({
                     x2="0"
                     y2="1"
                   >
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1} />
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.5} />
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.05} />
                   </linearGradient>
                   <linearGradient
                     id="colorBookings"
@@ -165,8 +170,18 @@ export function AdminRevenueChart({
                     x2="0"
                     y2="1"
                   >
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6} />
                     <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
+                  </linearGradient>
+                  <linearGradient
+                    id="colorSubscriptionFees"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.6} />
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
@@ -229,16 +244,7 @@ export function AdminRevenueChart({
                     return null;
                   }}
                 />
-                <Area
-                  yAxisId="bookings"
-                  type="monotone"
-                  dataKey="bookings"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  fill="url(#colorBookings)"
-                  fillOpacity={1}
-                  name="Bookings"
-                />
+                {/* Hierarchy: Highest value first (back), Lowest value last (front) */}
                 <Area
                   yAxisId="revenue"
                   type="monotone"
@@ -246,8 +252,28 @@ export function AdminRevenueChart({
                   stroke="#22c55e"
                   strokeWidth={2}
                   fill="url(#colorPlatformFee)"
-                  fillOpacity={1}
+                  fillOpacity={0.4}
                   name="Platform Fees (₹)"
+                />
+                <Area
+                  yAxisId="revenue"
+                  type="monotone"
+                  dataKey="subscriptionFees"
+                  stroke="#ef4444"
+                  strokeWidth={2}
+                  fill="url(#colorSubscriptionFees)"
+                  fillOpacity={0.5}
+                  name="Subscription Fees (₹)"
+                />
+                <Area
+                  yAxisId="bookings"
+                  type="monotone"
+                  dataKey="bookings"
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  fill="url(#colorBookings)"
+                  fillOpacity={0.6}
+                  name="Bookings"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -257,7 +283,11 @@ export function AdminRevenueChart({
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-600"></div>
-              <span className="text-muted-foreground">Platform Fees (5%)</span>
+              <span className="text-muted-foreground">Platform Fees</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-600"></div>
+              <span className="text-muted-foreground">Subscription Fees</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-blue-600"></div>

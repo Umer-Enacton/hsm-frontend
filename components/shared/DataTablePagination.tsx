@@ -50,7 +50,6 @@ export function DataTablePagination({
           className="h-8"
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
-          Previous
         </Button>
 
         <span className="text-sm text-muted-foreground px-2">
@@ -67,7 +66,6 @@ export function DataTablePagination({
           disabled={currentPage === totalPages}
           className="h-8"
         >
-          Next
           <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>

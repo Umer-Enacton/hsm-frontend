@@ -151,6 +151,7 @@ export default function CustomerLayout({
         showSearch={true}
       />
       <main className="container max-w-7xl mx-auto px-4 py-8">
+        <div className="pb-24">{children}</div>
         {children}
       </main>
     </div>

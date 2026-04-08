@@ -25,6 +25,8 @@ interface RevenueResponse {
     totalBookings: number;
     totalRevenue: number;
     platformFees: number;
+    subscriptionFees: number;
+    adminRevenue: number;
     providerPayouts: number;
     completionRate: string;
   };
@@ -34,6 +36,7 @@ interface RevenueResponse {
     revenue: number;
     completed: number;
     cumulativeRevenue: number;
+    subscriptionFees: number;
   }>;
 }
 
@@ -211,6 +214,8 @@ export function AnalyticsSection({ defaultPeriod = "7d", enabled = true }: Analy
               data={revenueData.chartData}
               period={revenueData.period}
               totalPlatformFees={revenueData.summary.platformFees}
+              totalSubscriptionFees={revenueData.summary.subscriptionFees}
+              totalAdminRevenue={revenueData.summary.adminRevenue}
               totalBookings={revenueData.summary.totalBookings}
             />
           )}

@@ -46,8 +46,9 @@ interface DashboardStats {
     pending: number;
   };
   revenue: {
-    totalRevenue: number;
+    adminRevenue: number;
     platformFees: number;
+    subscriptionFees: number;
     paymentCount: number;
   };
   payouts: {
@@ -201,9 +202,9 @@ export default function AdminDashboardPage() {
       {/* Revenue Stats Row */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total Revenue"
-          value={formatCurrency(stats?.revenue.totalRevenue || 0)}
-          change={`total revenue by providers`}
+          title="Admin Revenue"
+          value={formatCurrency(stats?.revenue.adminRevenue || 0)}
+          change={`platform fees + subscriptions`}
           icon={IndianRupee}
           trend="up"
           variant="emerald"
@@ -211,7 +212,7 @@ export default function AdminDashboardPage() {
         <StatCard
           title="Platform Fees"
           value={formatCurrency(stats?.revenue.platformFees || 0)}
-          change={`your earnings`}
+          change={`from bookings`}
           icon={DollarSign}
           trend="up"
           variant="purple"

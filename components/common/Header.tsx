@@ -67,6 +67,7 @@ export interface HeaderProps {
   actions?: React.ReactNode;
   className?: string;
   businessVerification?: boolean; // Business verification status
+  planName?: string; // Current subscription plan name (Free, Pro, Premium)
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────────
@@ -207,9 +208,10 @@ function UserMenu({
   onProfileClick,
   onSettingsClick,
   onLogout,
+  planName,
 }: Pick<
   HeaderProps,
-  "user" | "onProfileClick" | "onSettingsClick" | "onLogout"
+  "user" | "onProfileClick" | "onSettingsClick" | "onLogout" | "planName"
 >) {
   if (!user) return null;
   const initials = user.name
@@ -240,7 +242,10 @@ function UserMenu({
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">{user.name}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium">{user.name}</p>
+              {planName && <PlanBadge planName={planName} />}
+            </div>
             <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
         </DropdownMenuLabel>
@@ -294,6 +299,62 @@ function VerificationBadge({ isVerified }: { isVerified: boolean }) {
   );
 }
 
+// ─── Plan Badge ───────────────────────────────────────────────────────────────────
+
+// Color palette for dynamic plan badges
+const PLAN_COLORS = [
+  { bg: "bg-zinc-100", text: "text-zinc-700", hover: "hover:bg-zinc-200", darkBg: "dark:bg-zinc-800", darkText: "dark:text-zinc-300", border: "border-zinc-200", darkBorder: "dark:border-zinc-700" }, // Free/default
+  { bg: "bg-purple-100", text: "text-purple-700", hover: "hover:bg-purple-200", darkBg: "dark:bg-purple-900/20", darkText: "dark:text-purple-400", border: "border-purple-200", darkBorder: "dark:border-purple-700" }, // Pro
+  { bg: "bg-amber-100", text: "text-amber-700", hover: "hover:bg-amber-200", darkBg: "dark:bg-amber-900/20", darkText: "dark:text-amber-400", border: "border-amber-200", darkBorder: "dark:border-amber-700" }, // Premium
+  { bg: "bg-blue-100", text: "text-blue-700", hover: "hover:bg-blue-200", darkBg: "dark:bg-blue-900/20", darkText: "dark:text-blue-400", border: "border-blue-200", darkBorder: "dark:border-blue-700" },
+  { bg: "bg-green-100", text: "text-green-700", hover: "hover:bg-green-200", darkBg: "dark:bg-green-900/20", darkText: "dark:text-green-400", border: "border-green-200", darkBorder: "dark:border-green-700" },
+  { bg: "bg-rose-100", text: "text-rose-700", hover: "hover:bg-rose-200", darkBg: "dark:bg-rose-900/20", darkText: "dark:text-rose-400", border: "border-rose-200", darkBorder: "dark:border-rose-700" },
+  { bg: "bg-cyan-100", text: "text-cyan-700", hover: "hover:bg-cyan-200", darkBg: "dark:bg-cyan-900/20", darkText: "dark:text-cyan-400", border: "border-cyan-200", darkBorder: "dark:border-cyan-700" },
+  { bg: "bg-orange-100", text: "text-orange-700", hover: "hover:bg-orange-200", darkBg: "dark:bg-orange-900/20", darkText: "dark:text-orange-400", border: "border-orange-200", darkBorder: "dark:border-orange-700" },
+];
+
+// Get consistent color based on plan name (same name always gets same color)
+function getPlanColor(planName: string) {
+  // Known plans get their specific colors
+  const planUpper = planName.toUpperCase();
+  if (planUpper === "FREE") return PLAN_COLORS[0]; // Zinc
+  if (planUpper === "PRO") return PLAN_COLORS[1]; // Purple
+  if (planUpper === "PREMIUM") return PLAN_COLORS[2]; // Amber
+
+  // For unknown plans, use hash to pick consistent color
+  let hash = 0;
+  for (let i = 0; i < planName.length; i++) {
+    hash = planName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % PLAN_COLORS.length;
+  return PLAN_COLORS[index];
+}
+
+function PlanBadge({ planName }: { planName?: string }) {
+  if (!planName) return null;
+
+  const planUpper = planName.toUpperCase();
+  const color = getPlanColor(planName);
+
+  return (
+    <Badge
+      className={cn(
+        "gap-1.5 font-medium",
+        color.bg,
+        color.text,
+        color.hover,
+        color.darkBg,
+        color.darkText,
+        color.border,
+        color.darkBorder
+      )}
+      variant="secondary"
+    >
+      {planUpper}
+    </Badge>
+  );
+}
+
 // ─── Header ──────────────────────────────────────────────────────────────────
 
 export function Header({
@@ -308,6 +369,7 @@ export function Header({
   actions,
   className,
   businessVerification,
+  planName,
 }: HeaderProps) {
   return (
     <header
@@ -347,6 +409,7 @@ export function Header({
             onProfileClick={onProfileClick}
             onSettingsClick={onSettingsClick}
             onLogout={onLogout}
+            planName={planName}
           />
         </div>
       </div>

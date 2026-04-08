@@ -13,10 +13,12 @@ import {
   CreditCard,
   DollarSign,
   Wallet,
+  Loader2,
+  Crown,
+  Users2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { getUserData, isAuthenticated, handleLogout } from "@/lib/auth-utils";
 import { getCurrentProfile } from "@/lib/profile-api";
 import { UserRole, type User } from "@/types/auth";
@@ -32,6 +34,12 @@ const navItems = [
   { label: "Revenue", href: "/admin/revenue", icon: DollarSign },
   { label: "Payments", href: "/admin/payments", icon: CreditCard },
   { label: "Payouts", href: "/admin/payouts", icon: Wallet },
+  { label: "Plans", href: "/admin/subscriptions/plans", icon: Crown },
+  {
+    label: "Subscriptions",
+    href: "/admin/subscriptions/providers",
+    icon: Users2,
+  },
   { label: "Settings", href: "/admin/settings", icon: Settings },
   // Profile removed from sidebar - accessible via Header user menu
 ];
@@ -79,7 +87,7 @@ export default function AdminLayout({
         // Fetch full user profile from backend (includes avatar)
         // Note: Admin users may not have a profile endpoint, so we use token data directly
         // Try to fetch profile but fall back to token data without throwing error
-        const userProfile = await getCurrentProfile().catch((err) => {
+        const userProfile = await getCurrentProfile().catch(() => {
           console.log(
             "Admin profile not available (expected for admin users), using token data",
           );
@@ -103,8 +111,8 @@ export default function AdminLayout({
         }
 
         setIsLoading(false);
-      } catch (err) {
-        console.error("Error in admin layout:", err);
+      } catch {
+        console.error("Error in admin layout:");
         setError("Authentication error");
         setTimeout(() => {
           router.push("/login");

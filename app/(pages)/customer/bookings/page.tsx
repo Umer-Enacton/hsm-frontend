@@ -541,18 +541,18 @@ export default function CustomerBookingsPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800">
+        <Card className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 border-red-200 dark:border-red-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-purple-100 dark:bg-purple-900/30">
-                <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-red-100 dark:bg-red-900/30">
+                <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                  {stats.confirmed}
+                <p className="text-2xl font-bold text-red-900 dark:text-red-100">
+                  {stats.cancelled}
                 </p>
-                <p className="text-xs text-purple-700/70 dark:text-purple-400/70">
-                  Confirmed
+                <p className="text-xs text-red-700/70 dark:text-red-400/70">
+                  Cancelled
                 </p>
               </div>
             </div>

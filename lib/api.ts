@@ -17,8 +17,13 @@ export function getApiBaseUrl(): string {
       return 'https://homefixcare-backend.vercel.app';
     }
 
-    // Local development
+    // Local development (any localhost port)
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8000';
+    }
+
+    // IP-based local access
+    if (hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
       return 'http://localhost:8000';
     }
   }
@@ -28,7 +33,7 @@ export function getApiBaseUrl(): string {
     return process.env.NEXT_PUBLIC_API_BASE_URL;
   }
 
-  // 3. Default fallback
+  // 3. Default fallback (NEVER return undefined)
   return 'http://localhost:8000';
 }
 
@@ -171,6 +176,7 @@ export const API_ENDPOINTS = {
   PROVIDER_ANALYTICS_REVENUE: "/provider/analytics/revenue",
   PROVIDER_ANALYTICS_SERVICES: "/provider/analytics/services",
   PROVIDER_ANALYTICS_STATUS: "/provider/analytics/status",
+  PROVIDER_ANALYTICS_TIME_PATTERNS: "/provider/analytics/time-patterns",
 
   // Provider Revenue
   PROVIDER_REVENUE: "/admin/provider/revenue",
@@ -210,6 +216,37 @@ export const API_ENDPOINTS = {
   ADMIN_UNBLOCK_BUSINESS: (id: string | number) => `/admin/business/${id}/unblock`,
   ADMIN_DEACTIVATE_SERVICE: (id: string | number) => `/admin/services/${id}/deactivate`,
   ADMIN_ACTIVATE_SERVICE: (id: string | number) => `/admin/services/${id}/activate`,
+
+  // Subscription Plans (Admin)
+  SUBSCRIPTION_PLANS: "/subscription/plans",
+  SUBSCRIPTION_PLAN_BY_ID: (id: string | number) => `/subscription/plans/${id}`,
+
+  // Provider Subscriptions
+  PROVIDER_SUBSCRIPTION_CURRENT: "/provider/subscription/current",
+  PROVIDER_SUBSCRIPTION_PURCHASE: "/provider/subscription/purchase",
+  PROVIDER_SUBSCRIPTION_PURCHASE_RAZORPAY: "/provider/subscription/purchase-razorpay", // Razorpay Subscription API (auto-recurring)
+  PROVIDER_SUBSCRIPTION_PURCHASE_LINK: "/provider/subscription/purchase-link", // Razorpay Subscription Links API (hosted page)
+  PROVIDER_SUBSCRIPTION_AUTHORIZE: "/provider/subscription/authorize", // Get subscription details for checkout authorization
+  PROVIDER_SUBSCRIPTION_CANCEL_PENDING: "/provider/subscription/cancel-pending", // Cancel pending subscription when modal closed
+  PROVIDER_SUBSCRIPTION_CANCEL: "/provider/subscription/cancel",
+  PROVIDER_SUBSCRIPTION_TOGGLE_AUTO_RENEW: "/provider/subscription/toggle-auto-renew",
+  PROVIDER_SUBSCRIPTION_UPGRADE: "/provider/subscription/upgrade",
+  PROVIDER_SUBSCRIPTION_CLEANUP: "/provider/subscription/cleanup", // Cleanup abandoned pending subscriptions
+  PROVIDER_SUBSCRIPTION_PAYMENTS: "/provider/subscription/payments",
+  PROVIDER_SUBSCRIPTION_ALL: "/provider/subscription/providers", // Admin: Get all provider subscriptions
+  PROVIDER_SUBSCRIPTION_DEBUG: "/provider/subscription/debug", // Debug endpoint to check local subscriptions
+
+  // Admin Subscription Management
+  ADMIN_PROVIDER_SUBSCRIPTIONS: "/admin/provider-subscriptions",
+  ADMIN_SUBSCRIPTION_CANCEL: (id: string | number) => `/admin/provider-subscriptions/${id}/cancel`,
+  ADMIN_SUBSCRIPTION_TOGGLE_AUTO_RENEW: (id: string | number) => `/admin/provider-subscriptions/${id}/toggle-auto-renew`,
+  ADMIN_SUBSCRIPTION_EXTEND: (id: string | number) => `/admin/provider-subscriptions/${id}/extend`,
+  ADMIN_SUBSCRIPTION_REFUND: (id: string | number) => `/admin/provider-subscriptions/${id}/refund`,
+
+  // TEST ENDPOINTS (for development testing only)
+  TEST_SUBSCRIPTION_AUTHORIZE: "/provider/subscription/test/authorize", // Simulate subscription.authorized webhook
+  TEST_SUBSCRIPTION_RECURRING_CHARGE: "/provider/subscription/test/recurring-charge", // Simulate subscription.charged webhook
+  SUBSCRIPTION_WEBHOOK: "/provider/subscription/webhook",
 } as const;
 
 /**
@@ -253,11 +290,11 @@ export const apiRequest = async <T = any>(
   options: RequestInit = {}
 ): Promise<T> => {
   // Always detect API URL at runtime (not at build time)
-  const apiUrl = getApiBaseUrl();
+  const apiUrl = getApiBaseUrl() || 'http://localhost:8000'; // Safety fallback
   const url = `${apiUrl}${endpoint}`;
 
-  // Debug logging in production
-  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+  // Debug logging for all requests
+  if (typeof window !== 'undefined') {
     console.log('[API Request]', {
       endpoint,
       apiUrl,

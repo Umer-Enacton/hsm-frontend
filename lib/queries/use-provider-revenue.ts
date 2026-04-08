@@ -30,5 +30,6 @@ export function useProviderRevenueStats() {
     },
     staleTime: 10 * 60 * 1000, // 10 minutes - was 1 min, too short!
     gcTime: 30 * 60 * 1000, // 30 minutes cache
+    retry: false, // Fail immediately on error
   });
 }

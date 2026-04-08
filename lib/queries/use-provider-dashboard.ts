@@ -39,6 +39,7 @@ export function useProviderServices(businessId?: number) {
     enabled: !!businessId,
     staleTime: 10 * 60 * 1000, // 10 minutes - services change moderately
     gcTime: 30 * 60 * 1000, // 30 minutes cache
+    retry: false, // Fail immediately on error
   });
 }
 
@@ -55,6 +56,7 @@ export function useProviderDashboardBookings() {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - bookings can change status
     gcTime: 15 * 60 * 1000, // 15 minutes cache
+    retry: false, // Fail immediately on error
   });
 }
 

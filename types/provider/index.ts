@@ -197,6 +197,9 @@ export interface ProviderBooking {
     comments?: string;
     createdAt: string;
   };
+  // Provider earning tracking
+  providerEarning?: number; // Final amount provider earns (in paise) - includes base earning + reschedule fees
+  platformFee?: number; // Platform commission amount (in paise)
   // Reschedule-related fields
   rescheduleCount?: number;
   lastRescheduleFee?: number; // Last reschedule fee charged (in paise)
