@@ -10,6 +10,7 @@ export interface TokenPayload {
   email: string;
   roleId: UserRole;
   name?: string;  // Optional: might not be in JWT token
+  phone?: string; // Optional: might not be in JWT token
   iat?: number;
   exp?: number;
 }
@@ -222,6 +223,8 @@ export function redirectBasedOnRole(): string {
       return "/provider/dashboard";
     case UserRole.CUSTOMER:
       return "/customer";
+    case UserRole.STAFF:
+      return "/staff/dashboard";
     default:
       return "/";
   }

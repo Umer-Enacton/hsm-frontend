@@ -16,6 +16,7 @@ import {
   invalidateNotificationQueries,
 } from "./query-invalidation";
 import type { ProviderBooking } from "@/types/provider";
+import { API_ENDPOINTS } from "@/lib/api";
 
 // ============================================================================
 // QUERIES - With proper caching to stop constant refetching
@@ -275,6 +276,95 @@ export function useUploadCompletionPhotos() {
   });
 }
 
+/**
+ * Get available staff for a booking
+ */
+export function useAvailableStaff(params?: {
+  slotId?: number;
+  date?: string;
+}) {
+  const api = require("@/lib/api").api;
+
+  return useQuery({
+    queryKey: ["available-staff", params],
+    queryFn: async () => {
+      // Construct query string manually since api.get doesn't handle params option
+      const queryParams = new URLSearchParams();
+      if (params?.slotId) queryParams.append('slotId', params.slotId.toString());
+      if (params?.date) queryParams.append('date', params.date);
+      const queryString = queryParams.toString();
+
+      const response = await api.get(
+        queryString ? `${API_ENDPOINTS.BOOKING_AVAILABLE_STAFF}?${queryString}` : API_ENDPOINTS.BOOKING_AVAILABLE_STAFF
+      );
+      return response.data || [];
+    },
+    enabled: !!(params?.slotId && params?.date),
+    staleTime: 2 * 60 * 1000, // 2 minutes - staff availability can change
+    retry: false,
+  });
+}
+
+/**
+ * Assign booking to staff
+ */
+export function useAssignBookingToStaff() {
+  const queryClient = useQueryClient();
+  const api = require("@/lib/api").api;
+
+  return useMutation({
+    mutationFn: ({
+      bookingId,
+      staffId,
+      earningType,
+      commissionPercent,
+      fixedAmount,
+    }: {
+      bookingId: number;
+      staffId: number;
+      earningType: "commission" | "fixed";
+      commissionPercent?: number;
+      fixedAmount?: number;
+    }) =>
+      api.post(API_ENDPOINTS.BOOKING_ASSIGN_STAFF(bookingId), {
+        staffId,
+        earningType,
+        commissionPercent: earningType === "commission" ? commissionPercent : undefined,
+        fixedAmount: earningType === "fixed" ? fixedAmount : undefined,
+      }),
+    onSuccess: () => {
+      invalidateBookingQueries(queryClient);
+      invalidateNotificationQueries(queryClient);
+      toast.success("Staff assigned successfully");
+    },
+    onError: (error: any) => {
+      console.error("Error assigning staff:", error);
+      toast.error(error.message || "Failed to assign staff");
+    },
+  });
+}
+
+/**
+ * Unassign booking from staff
+ */
+export function useUnassignBookingFromStaff() {
+  const queryClient = useQueryClient();
+  const api = require("@/lib/api").api;
+
+  return useMutation({
+    mutationFn: (bookingId: number) =>
+      api.post(API_ENDPOINTS.BOOKING_UNASSIGN_STAFF(bookingId)),
+    onSuccess: () => {
+      invalidateBookingQueries(queryClient);
+      toast.success("Staff unassigned successfully");
+    },
+    onError: (error: any) => {
+      console.error("Error unassigning staff:", error);
+      toast.error(error.message || "Failed to unassign staff");
+    },
+  });
+}
+
 // ============================================================================
 // UTILITIES
 // ============================================================================
@@ -289,5 +379,6 @@ export function useBookingStats(bookings: ProviderBooking[]) {
     confirmed: bookings.filter((b) => b.status === "confirmed").length,
     completed: bookings.filter((b) => b.status === "completed").length,
     cancelled: bookings.filter((b) => b.status === "cancelled").length,
+    missed: bookings.filter((b) => b.status === "missed").length,
   };
 }

@@ -152,8 +152,13 @@ export function ReviewButton({
                   value={comments}
                   onChange={(e) => setComments(e.target.value)}
                   rows={4}
+                  maxLength={500}
+                  showCount
                   className="resize-none"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Share your experience with this service (max 500 characters)
+                </p>
               </div>
             </div>
 
@@ -261,8 +266,13 @@ export function ReviewButton({
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
                 rows={4}
+                maxLength={500}
+                showCount
                 className="resize-none"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Share your experience with this service (max 500 characters)
+              </p>
             </div>
           </div>
 

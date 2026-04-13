@@ -17,11 +17,14 @@ interface RevenueResponse {
     totalRevenue: number;
     totalCompleted: number;
     completionRate: string;
+    rescheduleRevenue?: number;
   };
   chartData: Array<{
     date: string;
     bookings: number;
     revenue: number;
+    rescheduleRevenue?: number;
+    totalRevenue?: number;
     completed: number;
     cumulativeRevenue: number;
   }>;

@@ -6,7 +6,7 @@ import type { NextRequest } from "next/server";
  *
  * This middleware:
  * 1. Checks for authentication token in cookies
- * 2. Verifies user role from localStorage (client-side) or token
+ * 2. Verifies user role from JWT token
  * 3. Protects routes based on user roles
  * 4. Redirects unauthenticated users to login
  * 5. Redirects authenticated users away from auth pages
@@ -17,6 +17,7 @@ export enum UserRole {
   CUSTOMER = 1,
   PROVIDER = 2,
   ADMIN = 3,
+  STAFF = 4,
 }
 
 // Route configuration
@@ -29,44 +30,88 @@ const PROTECTED_ROUTES = {
       "/admin/users",
       "/admin/profile",
       "/admin/business",
+      "/admin/business/",
       "/admin/services",
+      "/admin/services/",
       "/admin/bookings",
+      "/admin/revenue",
+      "/admin/payouts",
+      "/admin/settings",
+      "/admin/subscriptions",
+      "/admin/cron-jobs",
+      "/admin/payments",
     ],
     allowedRoles: [UserRole.ADMIN],
   },
   // Provider routes - require PROVIDER role
   provider: {
-    paths: ["/provider"],
+    paths: [
+      "/provider/dashboard",
+      "/provider/business",
+      "/provider/services",
+      "/provider/availability",
+      "/provider/bookings",
+      "/provider/staff",
+      "/provider/staff/",
+      "/provider/staff-payouts",
+      "/provider/reviews",
+      "/provider/subscription",
+      "/provider/payments",
+      "/provider/profile",
+    ],
     allowedRoles: [UserRole.PROVIDER],
   },
   // Customer routes - require CUSTOMER role
   customer: {
-    paths: ["/customer"],
+    paths: [
+      "/customer",
+      "/customer/services",
+      "/customer/services/",
+      "/customer/bookings",
+      "/customer/profile",
+    ],
     allowedRoles: [UserRole.CUSTOMER],
+  },
+  // Staff routes - require STAFF role
+  staff: {
+    paths: [
+      "/staff/dashboard",
+      "/staff/bookings",
+      "/staff/leave",
+      "/staff/profile",
+      "/staff/earnings",
+      "/staff/payment-details",
+    ],
+    allowedRoles: [UserRole.STAFF],
   },
 };
 
 // Public routes that should redirect authenticated users
 const AUTH_ROUTES = ["/login", "/register", "/forgot-password"];
 
+// Routes that don't need auth
+const PUBLIC_ROUTES = [
+  "/",
+  "/onboarding",
+  "/privacy",
+  "/terms",
+  "/unauthorized",
+];
+
 /**
  * Verify JWT token (basic verification without secret)
- * In production, you might want to verify against backend
  */
 function verifyToken(token: string): { valid: boolean; payload?: any } {
   try {
-    // Split JWT into parts
     const parts = token.split(".");
     if (parts.length !== 3) {
       return { valid: false };
     }
 
-    // Decode payload (base64url)
     const payload = JSON.parse(
       Buffer.from(parts[1], "base64url").toString("utf-8")
     );
 
-    // Check expiration
     if (payload.exp && payload.exp < Date.now() / 1000) {
       return { valid: false };
     }
@@ -82,9 +127,7 @@ function verifyToken(token: string): { valid: boolean; payload?: any } {
  */
 function pathMatches(currentPath: string, paths: string[]): boolean {
   return paths.some((path) => {
-    // Exact match
     if (currentPath === path) return true;
-    // Prefix match for nested routes
     if (currentPath.startsWith(path + "/")) return true;
     return false;
   });
@@ -96,31 +139,27 @@ function pathMatches(currentPath: string, paths: string[]): boolean {
 function getUserRoleFromToken(token: string): UserRole | null {
   const { valid, payload } = verifyToken(token);
   if (!valid || !payload) return null;
-
-  // The backend stores roleId in the JWT
   return payload.roleId || null;
 }
 
 /**
- * Middleware main function
+ * Proxy main function
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Get token from both cookie and Authorization header
-  const cookieToken = request.cookies.get("token")?.value;
-  const authHeader = request.headers.get("authorization");
-  const headerToken = authHeader?.replace("Bearer ", "") || "";
-
-  // Prefer header token (from localStorage) over cookie
-  const token = headerToken || cookieToken;
-
-  // Debug logging (only in development)
-  if (process.env.NODE_ENV === "development") {
-    console.log("[Middleware] Path:", pathname);
-    console.log("[Middleware] Cookie token exists:", !!cookieToken);
-    console.log("[Middleware] Header token exists:", !!headerToken);
+  // Skip middleware for static files and API routes
+  if (
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/_next/") ||
+    pathname.startsWith("/static/") ||
+    pathname.includes(".")
+  ) {
+    return NextResponse.next();
   }
+
+  // Get token from cookie
+  const token = request.cookies.get("token")?.value;
 
   // Check if user is authenticated
   const isAuthenticated = Boolean(token && verifyToken(token).valid);
@@ -128,8 +167,9 @@ export function middleware(request: NextRequest) {
   // Get user role if authenticated
   const userRole = isAuthenticated && token ? getUserRoleFromToken(token) : null;
 
-  if (process.env.NODE_ENV === "development" && isAuthenticated) {
-    console.log("[Middleware] User Role:", userRole);
+  // Debug logging (only in development)
+  if (process.env.NODE_ENV === "development") {
+    console.log("[Middleware] Path:", pathname, "| Auth:", isAuthenticated, "| Role:", userRole);
   }
 
   // Scenario 0: Handle root path "/"
@@ -137,7 +177,6 @@ export function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
 
     if (isAuthenticated && userRole) {
-      // Redirect authenticated users to their dashboard
       switch (userRole) {
         case UserRole.ADMIN:
           url.pathname = "/admin/dashboard";
@@ -148,15 +187,22 @@ export function middleware(request: NextRequest) {
         case UserRole.CUSTOMER:
           url.pathname = "/customer";
           break;
+        case UserRole.STAFF:
+          url.pathname = "/staff/dashboard";
+          break;
         default:
           url.pathname = "/login";
       }
     } else {
-      // Redirect unauthenticated users to login
       url.pathname = "/login";
     }
 
     return NextResponse.redirect(url);
+  }
+
+  // Allow access to public routes without auth
+  if (PUBLIC_ROUTES.some(route => pathname === route || pathname.startsWith(route + "/"))) {
+    return NextResponse.next();
   }
 
   // Scenario 1: User is NOT authenticated
@@ -166,13 +212,11 @@ export function middleware(request: NextRequest) {
       if (pathMatches(pathname, routeGroup.paths)) {
         const url = request.nextUrl.clone();
         url.pathname = "/login";
-        // Add redirect URL to query params for post-login redirect
         url.searchParams.set("redirect", pathname);
         return NextResponse.redirect(url);
       }
     }
 
-    // Allow access to auth pages and public pages
     return NextResponse.next();
   }
 
@@ -181,7 +225,6 @@ export function middleware(request: NextRequest) {
   if (AUTH_ROUTES.includes(pathname)) {
     const url = request.nextUrl.clone();
 
-    // Redirect to appropriate dashboard based on role
     switch (userRole) {
       case UserRole.ADMIN:
         url.pathname = "/admin/dashboard";
@@ -192,12 +235,11 @@ export function middleware(request: NextRequest) {
       case UserRole.CUSTOMER:
         url.pathname = "/customer";
         break;
+      case UserRole.STAFF:
+        url.pathname = "/staff/dashboard";
+        break;
       default:
-        // If role is null or unrecognized, try to get from token payload
-        const tokenPayload = token ? verifyToken(token).payload : null;
-        console.log("[Middleware] Unrecognized role, token payload:", tokenPayload);
-        // Default to admin dashboard for now (you can change this)
-        url.pathname = "/admin/dashboard";
+        url.pathname = "/login";
     }
 
     return NextResponse.redirect(url);
@@ -206,19 +248,18 @@ export function middleware(request: NextRequest) {
   // Scenario 3: Check role-based access for protected routes
   for (const [routeName, routeConfig] of Object.entries(PROTECTED_ROUTES)) {
     if (pathMatches(pathname, routeConfig.paths)) {
-      // User doesn't have required role
       if (!userRole || !routeConfig.allowedRoles.includes(userRole)) {
         const url = request.nextUrl.clone();
 
-        // Redirect to unauthorized page or appropriate dashboard
         if (userRole === UserRole.CUSTOMER) {
-          url.pathname = "/customer/home";
+          url.pathname = "/customer";
         } else if (userRole === UserRole.PROVIDER) {
           url.pathname = "/provider/dashboard";
         } else if (userRole === UserRole.ADMIN) {
           url.pathname = "/admin/dashboard";
+        } else if (userRole === UserRole.STAFF) {
+          url.pathname = "/staff/dashboard";
         } else {
-          // If no valid role, redirect to unauthorized page
           url.pathname = "/unauthorized";
         }
 
@@ -227,13 +268,11 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Scenario 4: Allow access to public routes
   return NextResponse.next();
 }
 
 /**
- * Configure which routes the middleware should run on
- * Exclude static files, API routes, and Next.js internals
+ * Configure which routes the proxy should run on
  */
 export const config = {
   matcher: [

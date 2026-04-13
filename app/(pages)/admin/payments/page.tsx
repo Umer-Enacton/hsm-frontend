@@ -107,13 +107,55 @@ export default function AdminPaymentsPage() {
 
   const handleSave = async () => {
     if (paymentType === "upi") {
-      if (!upiId || !upiId.includes("@")) {
-        toast.error("Please enter a valid UPI ID");
+      // UPI validation: must have exactly one @
+      const trimmedUpi = upiId.trim().toLowerCase();
+
+      if (!trimmedUpi) {
+        toast.error("Please enter a UPI ID");
+        return;
+      }
+
+      if (!trimmedUpi.includes("@")) {
+        toast.error("UPI ID must contain exactly one @ symbol (e.g., name@upi)");
+        return;
+      }
+
+      if (trimmedUpi.split("@").length !== 2) {
+        toast.error("Invalid UPI ID format (e.g., name@upi)");
+        return;
+      }
+
+      // Check for valid parts
+      const [beforeAt, afterAt] = trimmedUpi.split("@");
+      if (beforeAt.length < 2 || afterAt.length < 2) {
+        toast.error("Invalid UPI ID format (e.g., name@upi)");
         return;
       }
     } else {
       if (!bankAccount || !ifscCode || !accountHolderName) {
         toast.error("Please fill all bank details");
+        return;
+      }
+
+      // Validate bank account: 10-16 digits
+      if (!/^\d{10,16}$/.test(bankAccount)) {
+        toast.error("Account number must be 10-16 digits");
+        return;
+      }
+
+      // Validate IFSC: 11 characters (4 letters + 0 + 6 digits)
+      if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode)) {
+        toast.error("Invalid IFSC code (e.g., HDFC0001234)");
+        return;
+      }
+
+      // Validate account holder name
+      if (accountHolderName.trim().length < 2) {
+        toast.error("Account holder name must be at least 2 characters");
+        return;
+      }
+      if (accountHolderName.length > 50) {
+        toast.error("Account holder name cannot exceed 50 characters");
         return;
       }
     }
@@ -390,12 +432,18 @@ export default function AdminPaymentsPage() {
                     id="upi"
                     placeholder="yourname@upi"
                     value={upiId}
-                    onChange={(e) => setUpiId(e.target.value)}
+                    onChange={(e) => {
+                      // UPI validation: lowercase, alphanumeric + dots/hyphens/underscore
+                      let value = e.target.value.toLowerCase().trim();
+                      value = value.replace(/[^a-z0-9.\-_@]/g, "");
+                      setUpiId(value);
+                    }}
                     className="pl-10"
+                    maxLength={50}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Enter your UPI ID (e.g., merchant@paytm, name@okhdfcbank)
+                  Format: name@upi (e.g., merchant@paytm, john@okhdfcbank)
                 </p>
               </div>
             ) : (
@@ -407,17 +455,30 @@ export default function AdminPaymentsPage() {
                     placeholder="Account holder name as per bank records"
                     value={accountHolderName}
                     onChange={(e) => setAccountHolderName(e.target.value)}
+                    maxLength={50}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Max 50 characters
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="bankAccount">Account Number *</Label>
                   <Input
                     id="bankAccount"
-                    placeholder="Bank account number"
+                    placeholder="Bank account number (10-16 digits)"
                     value={bankAccount}
-                    onChange={(e) => setBankAccount(e.target.value)}
+                    onChange={(e) => {
+                      // Only digits allowed
+                      const value = e.target.value.replace(/[^\d]/g, "");
+                      setBankAccount(value);
+                    }}
                     className="font-mono"
+                    minLength={10}
+                    maxLength={16}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Enter 10-16 digit account number
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="ifsc">IFSC Code *</Label>
@@ -425,9 +486,18 @@ export default function AdminPaymentsPage() {
                     id="ifsc"
                     placeholder="IFSC code (e.g., HDFC0001234)"
                     value={ifscCode}
-                    onChange={(e) => setIfscCode(e.target.value.toUpperCase())}
+                    onChange={(e) => {
+                      // IFSC: 11 characters, uppercase
+                      const value = e.target.value.toUpperCase().trim();
+                      setIfscCode(value);
+                    }}
                     className="font-mono uppercase"
+                    minLength={11}
+                    maxLength={11}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    11 characters (e.g., HDFC0001234)
+                  </p>
                 </div>
               </>
             )}

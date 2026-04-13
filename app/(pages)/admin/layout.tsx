@@ -16,12 +16,13 @@ import {
   Loader2,
   Crown,
   Users2,
+  Clock,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getUserData, isAuthenticated, handleLogout } from "@/lib/auth-utils";
+import { getUserData, handleLogout } from "@/lib/auth-utils";
 import { getCurrentProfile } from "@/lib/profile-api";
-import { UserRole, type User } from "@/types/auth";
+import { type User } from "@/types/auth";
 
 // Navigation items for the admin sidebar
 const navItems = [
@@ -40,6 +41,7 @@ const navItems = [
     href: "/admin/subscriptions/providers",
     icon: Users2,
   },
+  { label: "Schedule Jobs", href: "/admin/cron-jobs", icon: Clock },
   { label: "Settings", href: "/admin/settings", icon: Settings },
   // Profile removed from sidebar - accessible via Header user menu
 ];
@@ -52,57 +54,31 @@ export default function AdminLayout({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        // Check if user is authenticated
-        if (!isAuthenticated()) {
-          console.log("Not authenticated, redirecting to login");
-          router.push("/login");
-          return;
-        }
-
-        // Get user data from token
+        // Get user data from token (middleware already verified auth)
         const userData = getUserData();
-        console.log("User data from token:", userData);
-
         if (!userData) {
-          console.log("No user data found, redirecting to login");
-          router.push("/login");
-          return;
-        }
-
-        // Check if user has admin role
-        if (userData.roleId !== UserRole.ADMIN) {
-          console.log("Not an admin user, roleId:", userData.roleId);
-          setError("Access denied: Admin access required");
-          setTimeout(() => {
-            router.push("/unauthorized");
-          }, 2000);
+          setIsLoading(false);
           return;
         }
 
         // Fetch full user profile from backend (includes avatar)
         // Note: Admin users may not have a profile endpoint, so we use token data directly
-        // Try to fetch profile but fall back to token data without throwing error
         const userProfile = await getCurrentProfile().catch(() => {
-          console.log(
-            "Admin profile not available (expected for admin users), using token data",
-          );
+          console.log("Admin profile not available, using token data");
           return null;
         });
 
         if (userProfile) {
-          console.log("Fetched user profile:", userProfile);
           setUser(userProfile);
         } else {
           // Use token data for admin users
           setUser({
             id: userData.id,
-            name:
-              userData.name || userData.email?.split("@")[0] || "Admin User",
+            name: userData.name || userData.email?.split("@")[0] || "Admin User",
             email: userData.email || "admin@hsm.com",
             phone: "",
             roleId: userData.roleId,
@@ -111,12 +87,9 @@ export default function AdminLayout({
         }
 
         setIsLoading(false);
-      } catch {
-        console.error("Error in admin layout:");
-        setError("Authentication error");
-        setTimeout(() => {
-          router.push("/login");
-        }, 2000);
+      } catch (error) {
+        console.error("Error in admin layout:", error);
+        setIsLoading(false);
       }
     };
 
@@ -124,7 +97,6 @@ export default function AdminLayout({
 
     // Listen for profile update events
     const handleProfileUpdate = () => {
-      console.log("Profile updated event received, refreshing user data");
       loadUserData();
     };
 
@@ -133,7 +105,7 @@ export default function AdminLayout({
     return () => {
       window.removeEventListener("profile-updated", handleProfileUpdate);
     };
-  }, [router]);
+  }, []);
 
   const onLogout = async () => {
     try {
@@ -153,24 +125,12 @@ export default function AdminLayout({
     router.push("/admin/settings");
   };
 
-  // Show loading state while checking auth
+  // Show loading state while loading user data
   if (isLoading) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-sm text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4">
-        <div className="text-center">
-          <p className="text-lg font-semibold text-destructive">{error}</p>
-          <p className="text-sm text-muted-foreground">Redirecting...</p>
-        </div>
       </div>
     );
   }
@@ -196,6 +156,14 @@ export default function AdminLayout({
         showSearch: true,
         searchPlaceholder: "Search admin...",
       }}
+      footer={{
+        appName: "HomeFixCare",
+        links: [
+          { label: "Privacy Policy", href: "/admin/privacy" },
+          { label: "Terms & Conditions", href: "/admin/terms" },
+        ],
+      }}
+      showFooter={true}
     >
       {children}
     </DashboardLayout>

@@ -89,6 +89,7 @@ interface Subscription {
   autoRenew: boolean;
   cancelAtPeriodEnd: boolean;
   razorpaySubscriptionId: string | null;
+  isTrial: boolean;
   usage?: {
     currentMonthBookings: number;
     maxBookings: number | null;
@@ -102,15 +103,15 @@ interface PricingCardProps {
   isActive: boolean;
   isTrialEligible: boolean;
   subscription: Subscription | null;
-  billingCycle: "monthly" | "yearly"; // New prop for billing cycle
-  onPurchase: (
-    planId: number,
-    billingCycle: "monthly" | "yearly",
-    startTrial?: boolean,
-  ) => void;
+  billingCycle: "monthly" | "yearly";
   onCancel: () => void;
   onToggleAutoRenew: () => void;
-  onBuyNow?: (plan: Plan, billingCycle: "monthly" | "yearly") => void; // Updated signature
+  onBuyNow?: (plan: Plan, billingCycle: "monthly" | "yearly") => void;
+  onStartTrial?: (planId: number) => void;
+  // Upgrade props
+  isUpgrade?: boolean;
+  isDowngrade?: boolean;
+  onUpgrade?: (planId: number) => void;
 }
 
 function PricingCard({
@@ -119,10 +120,13 @@ function PricingCard({
   isTrialEligible,
   subscription,
   billingCycle,
-  onPurchase,
   onCancel,
   onToggleAutoRenew,
   onBuyNow,
+  onStartTrial,
+  isUpgrade = false,
+  isDowngrade = false,
+  onUpgrade,
 }: PricingCardProps) {
   const isInTrial =
     subscription?.status === "trial" && subscription?.trialEndDate;
@@ -367,6 +371,11 @@ function PricingCard({
               </p>
             )}
           </div>
+        ) : isDowngrade ? (
+          // Hide button for downgrades - temporarily disabled
+          <div className="text-center text-sm text-zinc-400 dark:text-zinc-600 italic py-2 w-full">
+            Downgrades temporarily disabled
+          </div>
         ) : plan.monthlyPrice === 0 ? (
           <div className="text-center text-sm text-zinc-500 dark:text-zinc-500 italic py-2 w-full">
             Included by default
@@ -375,17 +384,23 @@ function PricingCard({
           <div className="flex flex-col gap-3 w-full">
             {hasTrial && isTrialEligible && (
               <Button
-                onClick={() => onPurchase(plan.id, "monthly", true)}
+                onClick={() => onStartTrial?.(plan.id)}
                 className="w-full bg-zinc-900 dark:bg-[#353535] text-white hover:bg-zinc-800 dark:hover:bg-[#404040] border border-transparent dark:border-zinc-700 shadow-md dark:shadow-none"
               >
                 Start free trial
               </Button>
             )}
             <Button
-              onClick={() => onBuyNow?.(plan, billingCycle)}
+              onClick={() => {
+                if (isUpgrade && onUpgrade) {
+                  onUpgrade(plan.id);
+                } else {
+                  onBuyNow?.(plan, billingCycle);
+                }
+              }}
               className="w-full bg-zinc-900 dark:bg-[#353535] text-white hover:bg-zinc-800 dark:hover:bg-[#404040] border border-transparent dark:border-zinc-700 shadow-md dark:shadow-none"
             >
-              Buy now
+              {isUpgrade ? "Upgrade" : "Buy now"}
             </Button>
           </div>
         )}
@@ -510,8 +525,10 @@ export default function ProviderSubscriptionPage() {
   // Determine if eligible for trial (Free plan users or no subscription yet)
   const isTrialEligible = useMemo(() => {
     if (!subscription) return true; // No subscription yet - will have Free plan auto-assigned
+    // Check if already used trial (subscription.isTrial field or past trial_ended status)
+    const hasUsedTrial = subscription.isTrial || subscription.status === "trial_ended";
     const planName = subscription.planName?.toUpperCase() || "";
-    return planName === "FREE"; // Only Free plan users can start trial
+    return planName === "FREE" && !hasUsedTrial; // Only Free plan users who haven't used trial can start trial
   }, [subscription]);
 
   // Get Pro and Premium plans for first-time users
@@ -530,9 +547,26 @@ export default function ProviderSubscriptionPage() {
     return subscription.planName.toUpperCase() === "FREE";
   }, [subscription]);
 
-  // Handle start trial
+  // Handle start trial (old method - now redirects to new endpoint)
   const handleStartTrial = async (planId: number) => {
-    await handlePurchase(planId, "monthly", true); // Explicitly pass true for trial
+    await handleStartTrialClick(planId);
+  };
+
+  // Handle start trial click - calls new /start-trial endpoint
+  const handleStartTrialClick = async (planId: number) => {
+    setPurchasing(true);
+    try {
+      const response = await api.post<{ message: string; data: any }>(
+        API_ENDPOINTS.PROVIDER_SUBSCRIPTION_START_TRIAL,
+        { planId }
+      );
+      toast.success(response.data?.message || "Free trial started successfully!");
+      fetchData();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to start trial");
+    } finally {
+      setPurchasing(false);
+    }
   };
 
   // Handle buy now click - directly purchase with selected billing cycle from tabs
@@ -600,49 +634,6 @@ export default function ProviderSubscriptionPage() {
     setSubscriptionToAuthorize(null);
   };
 
-  // Handle purchase
-  const handlePurchase = async (
-    planId: number,
-    billingCycle: "monthly" | "yearly",
-    startTrial?: boolean,
-  ) => {
-    setPurchasing(true);
-
-    try {
-      // Use payment link flow (creates subscription only after payment)
-      const endpoint = API_ENDPOINTS.PROVIDER_SUBSCRIPTION_PURCHASE;
-
-      const response = await api.post<any>(endpoint, {
-        planId,
-        billingCycle,
-        startTrial,
-      });
-
-      console.log("🛒 Purchase response:", response);
-
-      // Handle redirect URL (payment link checkout)
-      // Backend returns: { message, data: { redirectUrl, ... } }
-      if (response.data?.redirectUrl) {
-        if (response.data.redirectUrl.startsWith("http")) {
-          // Razorpay payment link - redirect to payment page
-          window.location.href = response.data.redirectUrl;
-          return;
-        } else {
-          // Internal redirect
-          router.push(response.data.redirectUrl);
-        }
-      } else {
-        toast.success("Subscription updated successfully");
-        fetchData();
-      }
-    } catch (error: any) {
-      console.error("Error purchasing subscription:", error);
-      toast.error(error?.message || "Failed to purchase subscription");
-    } finally {
-      setPurchasing(false);
-    }
-  };
-
   // Handle cancel
   const handleCancel = async () => {
     setActionLoading("cancel");
@@ -680,6 +671,26 @@ export default function ProviderSubscriptionPage() {
     } catch (error: any) {
       console.error("Error toggling auto-renewal:", error);
       toast.error(error?.message || "Failed to update auto-renewal");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Handle plan upgrade (using Razorpay native proration)
+  const handleUpgradePlan = async (newPlanId: number) => {
+    setActionLoading("upgrade");
+
+    try {
+      const response = await api.put<{ message: string; data: any }>(
+        API_ENDPOINTS.PROVIDER_SUBSCRIPTION_UPGRADE,
+        { newPlanId }
+      );
+
+      toast.success(response.message || "Plan upgraded successfully!");
+      fetchData();
+    } catch (error: any) {
+      console.error("Error upgrading plan:", error);
+      toast.error(error?.message || "Failed to upgrade plan");
     } finally {
       setActionLoading(null);
     }
@@ -778,6 +789,28 @@ export default function ProviderSubscriptionPage() {
           const planTrialEligible =
             isTrialEligible && planHasTrial && !isActive;
 
+          // Calculate upgrade/downgrade status (only for users with active subscription)
+          // A plan is an "upgrade" if its price is higher than the current active plan
+          // A plan is a "downgrade" if its price is lower than the current active plan
+          let isUpgrade = false;
+          let isDowngrade = false;
+
+          if (subscription && subscription.status === "active" && !isActive) {
+            // Get current plan price based on billing cycle
+            const currentPlanPrice = billingCycle === "yearly"
+              ? subscription.planYearlyPrice
+              : subscription.planMonthlyPrice;
+
+            // Get new plan price based on billing cycle
+            const newPlanPrice = billingCycle === "yearly"
+              ? plan.yearlyPrice
+              : plan.monthlyPrice;
+
+            // Determine if upgrade or downgrade
+            isUpgrade = newPlanPrice > currentPlanPrice;
+            isDowngrade = newPlanPrice < currentPlanPrice;
+          }
+
           return (
             <PricingCard
               key={plan.id}
@@ -786,10 +819,13 @@ export default function ProviderSubscriptionPage() {
               isTrialEligible={planTrialEligible}
               subscription={subscription}
               billingCycle={billingCycle}
-              onPurchase={handlePurchase}
               onCancel={handleCancel}
               onToggleAutoRenew={handleToggleAutoRenew}
               onBuyNow={handleBuyNowClick}
+              onStartTrial={handleStartTrialClick}
+              isUpgrade={isUpgrade}
+              isDowngrade={isDowngrade}
+              onUpgrade={handleUpgradePlan}
             />
           );
         })}

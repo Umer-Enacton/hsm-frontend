@@ -57,13 +57,10 @@ export interface ServiceDetails extends CustomerService {
  */
 export enum BookingStatus {
   PENDING = "pending",
-  PAYMENT_PENDING = "payment_pending",
   CONFIRMED = "confirmed",
-  RESCHEDULE_PENDING = "reschedule_pending", // Customer rescheduled, waiting provider approval
   COMPLETED = "completed",
   CANCELLED = "cancelled",
-  REJECTED = "rejected", // Provider rejected the booking
-  REFUNDED = "refunded",
+  MISSED = "missed", // Booking time passed without completion
 }
 
 /**
@@ -80,13 +77,10 @@ export interface CustomerBooking {
   status:
     | BookingStatus
     | "pending"
-    | "payment_pending"
     | "confirmed"
-    | "reschedule_pending"
     | "completed"
     | "cancelled"
-    | "rejected"
-    | "refunded";
+    | "missed";
   paymentStatus?: "pending" | "initiated" | "paid" | "failed" | "refunded";
   totalPrice: number;
   bookingDate: string;

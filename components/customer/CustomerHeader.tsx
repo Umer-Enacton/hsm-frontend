@@ -93,8 +93,8 @@ export function CustomerHeader({
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto flex h-16 items-center gap-4 px-4">
           <div className="flex flex-1 items-center gap-4">
-            {/* Logo */}
-            <Link href="/customer" className="flex items-center space-x-2">
+            {/* Logo - Desktop */}
+            <Link href="/customer" className="hidden md:flex items-center space-x-2">
               <div className="flex h-8 w-8 items-center justify-center overflow-hidden">
                 <Image
                   src="/homefixcareicon-removebg-preview-removebg-preview.png"
@@ -104,10 +104,30 @@ export function CustomerHeader({
                   className="h-8 w-8 object-cover"
                 />
               </div>
-              <span className="hidden font-bold sm:inline-block">
+              <span className="font-bold">
                 HomeFixCare
               </span>
             </Link>
+
+            {/* Logo - Mobile */}
+            <button 
+              className="flex md:hidden items-center space-x-2 cursor-pointer p-0 bg-transparent border-none"
+              onClick={() => setMobileMenuOpen(prev => !prev)}
+              type="button"
+            >
+              <div className="flex h-8 w-8 items-center justify-center overflow-hidden">
+                <Image
+                  src="/homefixcareicon-removebg-preview-removebg-preview.png"
+                  alt="HomeFixCare"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 object-cover"
+                />
+              </div>
+              <span className="hidden sm:inline-block font-bold">
+                HomeFixCare
+              </span>
+            </button>
 
             {/* Desktop Navigation Links */}
             <nav className="hidden md:flex items-center gap-1">

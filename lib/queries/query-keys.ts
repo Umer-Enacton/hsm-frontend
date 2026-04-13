@@ -19,6 +19,7 @@ export const QUERY_KEYS = {
   REVIEWS: "reviews",
   FEEDBACK: "feedback",
   USERS: "users",
+  STAFF_PAYOUTS: "staff_payouts",
 
   // Provider specific base keys
   PROVIDER_BOOKINGS: "provider_bookings",
@@ -28,6 +29,7 @@ export const QUERY_KEYS = {
   PROVIDER_REVENUE: "provider_revenue",
   PROVIDER_ANALYTICS: "provider_analytics",
   PROVIDER_REVIEWS: "provider_reviews",
+  PROVIDER_STAFF: "provider_staff",
 
   // Admin specific base keys
   ADMIN_ANALYTICS: "admin_analytics",

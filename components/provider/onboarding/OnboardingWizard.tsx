@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -15,7 +15,128 @@ import {
 import { Stage1BusinessDetails } from "./stages/Stage1BusinessDetails";
 import { Stage2WorkingHours } from "./stages/Stage2WorkingHours";
 import { Stage3SlotGeneration } from "./stages/Stage3SlotGeneration";
+import { Stage4PaymentDetails } from "./stages/Stage4PaymentDetails";
 import { toast } from "sonner";
+import { api, API_ENDPOINTS } from "@/lib/api";
+
+// LocalStorage key for persisting onboarding progress
+const ONBOARDING_STORAGE_KEY = "provider_onboarding_progress";
+
+// Storage interface for localStorage
+interface StoredOnboardingProgress {
+  currentStage: OnboardingStage;
+  onboardingData: Partial<OnboardingData>;
+  timestamp: number;
+}
+
+// Helper to save progress to localStorage
+const saveProgress = (
+  currentStage: OnboardingStage,
+  onboardingData: Partial<OnboardingData>,
+) => {
+  try {
+    const dataToStore: StoredOnboardingProgress = {
+      currentStage,
+      onboardingData: {
+        ...onboardingData,
+        // Don't store File objects (logo, coverImage) as they can't be serialized
+        businessDetails: onboardingData.businessDetails ? {
+          ...onboardingData.businessDetails,
+          logo: null,
+          coverImage: null,
+        } : undefined,
+      },
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(dataToStore));
+  } catch (error) {
+    console.warn("Failed to save onboarding progress:", error);
+  }
+};
+
+// Helper to load progress from localStorage
+const loadProgress = (): StoredOnboardingProgress | null => {
+  try {
+    const stored = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as StoredOnboardingProgress;
+      // Only restore if data is less than 7 days old
+      const weekInMs = 7 * 24 * 60 * 60 * 1000;
+      if (Date.now() - parsed.timestamp < weekInMs) {
+        return parsed;
+      }
+      // Clear expired data
+      localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+    }
+  } catch (error) {
+    console.warn("Failed to load onboarding progress:", error);
+  }
+  return null;
+};
+
+// Helper to clear progress from localStorage
+const clearProgress = () => {
+  try {
+    localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+  } catch (error) {
+    console.warn("Failed to clear onboarding progress:", error);
+  }
+};
+
+// Confetti animation helper (simple CSS-based confetti)
+const triggerConfetti = () => {
+  const colors = [
+    "#8b5cf6", // purple
+    "#ec4899", // pink
+    "#f59e0b", // amber
+    "#10b981", // emerald
+    "#3b82f6", // blue
+  ];
+
+  const createConfettiPiece = () => {
+    const confetti = document.createElement("div");
+    confetti.style.cssText = `
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      left: ${Math.random() * 100}vw;
+      top: -10px;
+      z-index: 9999;
+      border-radius: ${Math.random() > 0.5 ? "50%" : "0"};
+      pointer-events: none;
+      animation: confetti-fall ${2 + Math.random() * 2}s linear forwards;
+    `;
+    document.body.appendChild(confetti);
+
+    // Add keyframes if not exists
+    if (!document.getElementById("confetti-keyframes")) {
+      const style = document.createElement("style");
+      style.id = "confetti-keyframes";
+      style.textContent = `
+        @keyframes confetti-fall {
+          0% {
+            transform: translateY(0) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(100vh) rotate(${720 + Math.random() * 360}deg);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Remove after animation
+    setTimeout(() => confetti.remove(), 4000);
+  };
+
+  // Create multiple confetti pieces
+  for (let i = 0; i < 150; i++) {
+    setTimeout(createConfettiPiece, i * 20);
+  }
+};
 
 interface OnboardingWizardProps {
   initialStage?: OnboardingStage;
@@ -47,6 +168,12 @@ const STAGES = [
     description: "Configure your booking slots",
     isRequired: true,
   },
+  {
+    id: OnboardingStage.PAYMENT_DETAILS,
+    title: "Payment Details",
+    description: "Add payment methods to receive earnings",
+    isRequired: true,
+  },
 ];
 
 export function OnboardingWizard({
@@ -56,53 +183,119 @@ export function OnboardingWizard({
   onCancel,
   onStageChange,
 }: OnboardingWizardProps) {
-  const [currentStage, setCurrentStage] =
-    useState<OnboardingStage>(initialStage);
-  const [isCompleting, setIsCompleting] = useState(false);
-  const [onboardingData, setOnboardingData] = useState<OnboardingData>({
-    businessDetails: existingData?.businessDetails || {
-      name: "",
-      description: "",
-      categoryId: 0,
-      category: "",
-      businessPhone: "",
-      state: "",
-      city: "",
-      website: "",
-      logo: null,
-      coverImage: null,
-    },
-    workingHours: existingData?.workingHours || {
-      startTime: "09:00",
-      endTime: "18:00",
-    },
-    breakTime: existingData?.breakTime,
-    slotInterval: existingData?.slotInterval || 30,
+  // State for payment details (from backend)
+  const [paymentDetails, setPaymentDetails] = useState<any[]>([]);
+  const [isLoadingPaymentDetails, setIsLoadingPaymentDetails] = useState(false);
+
+  // Try to load saved progress from localStorage
+  const savedProgress = useRef<StoredOnboardingProgress | null>(null);
+
+  useEffect(() => {
+    savedProgress.current = loadProgress();
+  }, []);
+
+  const [currentStage, setCurrentStage] = useState<OnboardingStage>(() => {
+    // Use saved stage if available and valid, otherwise use initialStage
+    const saved = savedProgress.current;
+    if (saved && saved.currentStage >= OnboardingStage.BUSINESS_DETAILS &&
+        saved.currentStage <= OnboardingStage.PAYMENT_DETAILS) {
+      return saved.currentStage;
+    }
+    return initialStage;
   });
+
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [onboardingData, setOnboardingData] = useState<OnboardingData>(() => {
+    // Initialize with saved data or existingData
+    const saved = savedProgress.current;
+    const baseData = existingData || {};
+    const savedBusiness = saved?.onboardingData.businessDetails;
+    const baseBusiness = baseData.businessDetails;
+
+    return {
+      businessDetails: {
+        name: (savedBusiness?.name || baseBusiness?.name || "") as string,
+        description: (savedBusiness?.description || baseBusiness?.description || "") as string,
+        categoryId: (savedBusiness?.categoryId || baseBusiness?.categoryId || 0) as number,
+        category: (savedBusiness?.category || baseBusiness?.category || "") as string,
+        businessPhone: (savedBusiness?.businessPhone || baseBusiness?.businessPhone || "") as string,
+        state: (savedBusiness?.state || baseBusiness?.state || "") as string,
+        city: (savedBusiness?.city || baseBusiness?.city || "") as string,
+        website: (savedBusiness?.website || baseBusiness?.website || "") as string,
+        logo: null,
+        coverImage: null,
+      },
+      workingHours: {
+        startTime: (saved?.onboardingData.workingHours?.startTime || baseData.workingHours?.startTime || "09:00") as string,
+        endTime: (saved?.onboardingData.workingHours?.endTime || baseData.workingHours?.endTime || "18:00") as string,
+      },
+      breakTime: saved?.onboardingData.breakTime || baseData.breakTime,
+      slotInterval: saved?.onboardingData.slotInterval || baseData.slotInterval || 30,
+      hasPaymentDetails: saved?.onboardingData.hasPaymentDetails || baseData.hasPaymentDetails || false,
+    };
+  });
+
+  // Fetch payment details on mount
+  useEffect(() => {
+    const fetchPaymentDetails = async () => {
+      try {
+        setIsLoadingPaymentDetails(true);
+        const response: any = await api.get(API_ENDPOINTS.PAYMENT_DETAILS);
+        setPaymentDetails(response.details || []);
+        // Update onboardingData if has active payment method
+        if (response.details && response.details.length > 0) {
+          const hasActive = response.details.some((d: any) => d.isActive);
+          if (hasActive) {
+            setOnboardingData((prev) => ({ ...prev, hasPaymentDetails: true }));
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch payment details:", error);
+      } finally {
+        setIsLoadingPaymentDetails(false);
+      }
+    };
+    fetchPaymentDetails();
+  }, []);
 
   const currentStageIndex = STAGES.findIndex((s) => s.id === currentStage);
   const progress = ((currentStageIndex + 1) / STAGES.length) * 100;
 
+  // Save progress whenever stage or data changes
+  useEffect(() => {
+    if (!isCompleting) {
+      saveProgress(currentStage, onboardingData);
+    }
+  }, [currentStage, onboardingData, isCompleting]);
+
   const handleStageData = useCallback(
     (stageData: any) => {
       setOnboardingData((prev) => {
+        let updated: OnboardingData;
         switch (currentStage) {
           case OnboardingStage.BUSINESS_DETAILS:
-            return { ...prev, businessDetails: stageData };
+            updated = { ...prev, businessDetails: stageData };
+            break;
           case OnboardingStage.WORKING_HOURS:
-            return { ...prev, ...stageData };
+            updated = { ...prev, workingHours: stageData.workingHours, breakTime: stageData.breakTime };
+            break;
           case OnboardingStage.SLOT_GENERATION:
-            return { ...prev, slotInterval: stageData };
+            updated = { ...prev, slotInterval: stageData };
+            break;
+          case OnboardingStage.PAYMENT_DETAILS:
+            updated = { ...prev, hasPaymentDetails: stageData.hasPaymentDetails };
+            break;
           default:
-            return prev;
+            updated = prev;
         }
+        return updated;
       });
     },
     [currentStage],
   );
 
   const handleNext = () => {
-    if (currentStage < OnboardingStage.SLOT_GENERATION) {
+    if (currentStage < OnboardingStage.PAYMENT_DETAILS) {
       const nextStage = (currentStage + 1) as OnboardingStage;
       setCurrentStage(nextStage);
       // Notify parent of stage change
@@ -122,7 +315,7 @@ export function OnboardingWizard({
   };
 
   const handleComplete = async () => {
-    // Validate required stages
+    // Validate all required stages
     if (!onboardingData.businessDetails.name) {
       toast.error("Business name is required");
       setCurrentStage(OnboardingStage.BUSINESS_DETAILS);
@@ -144,6 +337,7 @@ export function OnboardingWizard({
       return;
     }
 
+    // Stage 2 validation: Working hours
     if (
       !onboardingData.workingHours.startTime ||
       !onboardingData.workingHours.endTime
@@ -153,15 +347,38 @@ export function OnboardingWizard({
       return;
     }
 
+    // Validate that end time is after start time
+    const startMins = parseInt(onboardingData.workingHours.startTime.split(":")[0]) * 60 +
+                      parseInt(onboardingData.workingHours.startTime.split(":")[1]);
+    const endMins = parseInt(onboardingData.workingHours.endTime.split(":")[0]) * 60 +
+                    parseInt(onboardingData.workingHours.endTime.split(":")[1]);
+    if (endMins <= startMins) {
+      toast.error("End time must be after start time");
+      setCurrentStage(OnboardingStage.WORKING_HOURS);
+      return;
+    }
+
+    // Stage 3 validation: Slot interval
     if (!onboardingData.slotInterval || onboardingData.slotInterval <= 0) {
       toast.error("Please select a slot interval");
       setCurrentStage(OnboardingStage.SLOT_GENERATION);
       return;
     }
 
+    // Stage 4 validation: Payment details
+    if (!onboardingData.hasPaymentDetails) {
+      toast.error("Please add at least one payment method");
+      setCurrentStage(OnboardingStage.PAYMENT_DETAILS);
+      return;
+    }
+
     setIsCompleting(true);
     try {
       await onComplete(onboardingData);
+      // Trigger confetti on success
+      triggerConfetti();
+      // Clear saved progress after successful completion
+      clearProgress();
     } catch (error) {
       setIsCompleting(false);
     }
@@ -184,12 +401,14 @@ export function OnboardingWizard({
         );
       case OnboardingStage.SLOT_GENERATION:
         return onboardingData.slotInterval > 0;
+      case OnboardingStage.PAYMENT_DETAILS:
+        return onboardingData.hasPaymentDetails === true;
       default:
         return false;
     }
   };
 
-  const isLastStage = currentStage === OnboardingStage.SLOT_GENERATION;
+  const isLastStage = currentStage === OnboardingStage.PAYMENT_DETAILS;
 
   return (
     <div className="mx-auto max-w-4xl relative">
@@ -297,6 +516,13 @@ export function OnboardingWizard({
             breakTime={onboardingData.breakTime}
             initialSlotInterval={onboardingData.slotInterval}
             onNext={handleStageData}
+          />
+        )}
+
+        {currentStage === OnboardingStage.PAYMENT_DETAILS && (
+          <Stage4PaymentDetails
+            onNext={handleStageData}
+            existingPaymentDetails={paymentDetails}
           />
         )}
       </Card>

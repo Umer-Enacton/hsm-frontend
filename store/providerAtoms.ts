@@ -34,11 +34,27 @@ export interface UnblockedBusinessNotification {
   unblockedAt: string | null;
 }
 
+// Missing payment details notification state
+export interface MissingPaymentDetailsNotification {
+  type: 'missing_payment_details';
+  businessId: number;
+  businessName: string;
+}
+
+// Pending verification notification state
+export interface PendingVerificationNotification {
+  type: 'pending_verification';
+  businessId: number;
+  businessName: string;
+}
+
 export type ProviderNotification =
   | BlockedBusinessNotification
   | DeactivatedServiceNotification
   | ReactivatedServiceNotification
   | UnblockedBusinessNotification
+  | MissingPaymentDetailsNotification
+  | PendingVerificationNotification
   | null;
 
 // Support multiple simultaneous notifications

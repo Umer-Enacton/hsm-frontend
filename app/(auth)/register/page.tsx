@@ -227,6 +227,9 @@ const RegisterPage = () => {
                       })
                     }
                     disabled={isLoading}
+                    maxLength={50}
+                    validateAs="name"
+                    showCount
                   />
                 </div>
                 <p className="text-xs text-muted-foreground/70">Enter your full name</p>
@@ -259,21 +262,20 @@ const RegisterPage = () => {
                     type="tel"
                     placeholder="9876543210"
                     className="pl-10"
-                    maxLength={10}
+                    validateAs="phone"
                     value={formData.phone}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "");
-                      setFormData({ ...formData, phone: value });
+                      setFormData({ ...formData, phone: e.target.value });
                     }}
                     disabled={isLoading}
                   />
                   {formData.phone.length === 10 &&
                     validatePhone(formData.phone) && (
-                      <Check className="absolute right-3 top-3 h-4 w-4 text-green-500" />
+                      <Check className="absolute right-8 top-3 h-4 w-4 text-green-500" />
                     )}
                   {formData.phone.length === 10 &&
                     !validatePhone(formData.phone) && (
-                      <X className="absolute right-3 top-3 h-4 w-4 text-red-500" />
+                      <X className="absolute right-8 top-3 h-4 w-4 text-red-500" />
                     )}
                 </div>
                 <p className="text-xs text-muted-foreground/70">

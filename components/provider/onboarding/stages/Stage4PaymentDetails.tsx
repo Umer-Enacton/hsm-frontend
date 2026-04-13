@@ -27,9 +27,7 @@ export function Stage4PaymentDetails({
   existingPaymentDetails = [],
 }: Stage4PaymentDetailsProps) {
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"list" | "upi" | "bank">(
-    existingPaymentDetails.length > 0 ? "list" : "upi",
-  );
+  const [activeTab, setActiveTab] = useState<"upi" | "bank">("upi");
   const [paymentDetails, setPaymentDetails] = useState<any[]>(
     existingPaymentDetails,
   );
@@ -70,8 +68,28 @@ export function Stage4PaymentDetails({
   };
 
   const handleSaveUPI = async () => {
-    if (!upiId || !upiId.includes("@")) {
-      toast.error("Please enter a valid UPI ID");
+    // UPI validation: must have exactly one @
+    const trimmedUpi = upiId.trim().toLowerCase();
+
+    if (!trimmedUpi) {
+      toast.error("Please enter a UPI ID");
+      return;
+    }
+
+    if (!trimmedUpi.includes("@")) {
+      toast.error("UPI ID must contain exactly one @ symbol (e.g., name@upi)");
+      return;
+    }
+
+    if (trimmedUpi.split("@").length !== 2) {
+      toast.error("Invalid UPI ID format (e.g., name@upi)");
+      return;
+    }
+
+    // Check for valid parts
+    const [beforeAt, afterAt] = trimmedUpi.split("@");
+    if (beforeAt.length < 2 || afterAt.length < 2) {
+      toast.error("Invalid UPI ID format (e.g., name@upi)");
       return;
     }
 
@@ -79,12 +97,11 @@ export function Stage4PaymentDetails({
       setLoading(true);
       await api.post(API_ENDPOINTS.PAYMENT_DETAILS, {
         paymentType: "upi",
-        upiId,
+        upiId: trimmedUpi,
       });
 
       toast.success("UPI ID saved successfully");
       setUpiId("");
-      setActiveTab("list");
       fetchPaymentDetails();
     } catch (error: any) {
       console.error("Error saving UPI ID:", error);
@@ -113,7 +130,6 @@ export function Stage4PaymentDetails({
       setBankAccount("");
       setIfscCode("");
       setAccountHolderName("");
-      setActiveTab("list");
       fetchPaymentDetails();
     } catch (error: any) {
       console.error("Error saving bank details:", error);
@@ -209,12 +225,6 @@ export function Stage4PaymentDetails({
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
         <TabsList className="bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-950 dark:to-emerald-950 w-full">
           <TabsTrigger
-            value="list"
-            className="flex-1 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800"
-          >
-            Saved Methods ({paymentDetails.length})
-          </TabsTrigger>
-          <TabsTrigger
             value="upi"
             className="flex-1 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800"
           >
@@ -230,136 +240,32 @@ export function Stage4PaymentDetails({
           </TabsTrigger>
         </TabsList>
 
-        {/* List of saved payment methods */}
-        <TabsContent value="list" className="mt-4">
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin h-8 w-8 border-4 border-green-600 border-t-transparent rounded-full" />
-            </div>
-          ) : paymentDetails.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-muted rounded-md">
-              <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-2">
-                No payment methods added yet
-              </p>
-              <p className="text-sm text-muted-foreground mb-4">
-                Add a UPI ID or bank account to start receiving bookings
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => setActiveTab("upi")}
-                className="border-green-500 text-green-600 hover:bg-green-50"
-              >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Add a payment method
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {paymentDetails.map((detail) => (
-                <div
-                  key={detail.id}
-                  className={`p-4 rounded-md border-2 transition-all ${
-                    detail.isActive
-                      ? "border-green-500 bg-green-50 dark:bg-green-950/40 shadow-lg"
-                      : "border-muted"
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white">
-                        {detail.paymentType === "upi" ? (
-                          <IndianRupee className="h-5 w-5" />
-                        ) : (
-                          <Building className="h-5 w-5" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-semibold">
-                          {detail.paymentType === "upi"
-                            ? "UPI ID"
-                            : "Bank Account"}
-                        </div>
-                        {detail.isActive && (
-                          <Badge className="bg-green-100 text-green-700 mt-1">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Active
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      {!detail.isActive && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSetActive(detail.id)}
-                          className="border-green-500 text-green-600 hover:bg-green-50"
-                        >
-                          Set Active
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleDelete(detail.id)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="mt-3 text-sm">
-                    {detail.paymentType === "upi" ? (
-                      <div>
-                        <span className="text-muted-foreground">UPI ID:</span>
-                        <p className="font-mono font-medium">{detail.upiId}</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <span className="text-muted-foreground">
-                            Account:
-                          </span>
-                          <p className="font-mono font-medium">
-                            {detail.bankAccount}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">IFSC:</span>
-                          <p className="font-mono font-medium">
-                            {detail.ifscCode}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
         {/* Add UPI ID */}
         <TabsContent value="upi" className="mt-4">
           <div className="space-y-4 p-4 border rounded-md">
             <div>
-              <Label htmlFor="upi">UPI ID</Label>
+              <Label htmlFor="upi">UPI ID *</Label>
               <Input
                 id="upi"
                 placeholder="yourname@upi"
                 value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
+                onChange={(e) => {
+                  // UPI validation: exactly one @, lowercase, trim spaces
+                  let value = e.target.value.toLowerCase().trim();
+                  // Remove any characters except letters, digits, dots, hyphens, underscore, and @
+                  value = value.replace(/[^a-z0-9.\-_@]/g, "");
+                  setUpiId(value);
+                }}
                 className="mt-2"
+                maxLength={50}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Enter your UPI ID (e.g., merchant@paytm, name@okhdfcbank,
-                name@upi)
+                Format: name@upi (e.g., merchant@paytm, john@okhdfcbank)
               </p>
             </div>
             <Button
               onClick={handleSaveUPI}
-              disabled={loading}
+              disabled={loading || !upiId || !upiId.includes("@")}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
             >
               {loading ? "Saving..." : "Save UPI ID"}
@@ -371,38 +277,59 @@ export function Stage4PaymentDetails({
         <TabsContent value="bank" className="mt-4">
           <div className="space-y-4 p-4 border rounded-md">
             <div>
-              <Label htmlFor="accountHolder">Account Holder Name</Label>
+              <Label htmlFor="accountHolder">Account Holder Name *</Label>
               <Input
                 id="accountHolder"
                 placeholder="Account holder name as per bank records"
                 value={accountHolderName}
                 onChange={(e) => setAccountHolderName(e.target.value)}
                 className="mt-2"
+                validateAs="name"
+                maxLength={50}
               />
             </div>
             <div>
-              <Label htmlFor="bankAccount">Account Number</Label>
+              <Label htmlFor="bankAccount">Account Number *</Label>
               <Input
                 id="bankAccount"
-                placeholder="Bank account number"
+                type="tel"
+                placeholder="Bank account number (10-16 digits)"
                 value={bankAccount}
-                onChange={(e) => setBankAccount(e.target.value)}
+                onChange={(e) => {
+                  // Only digits allowed
+                  const value = e.target.value.replace(/[^\d]/g, "");
+                  setBankAccount(value);
+                }}
                 className="mt-2"
+                minLength={10}
+                maxLength={16}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Enter 10-16 digit account number (digits only)
+              </p>
             </div>
             <div>
-              <Label htmlFor="ifsc">IFSC Code</Label>
+              <Label htmlFor="ifsc">IFSC Code *</Label>
               <Input
                 id="ifsc"
                 placeholder="IFSC code (e.g., HDFC0001234)"
                 value={ifscCode}
-                onChange={(e) => setIfscCode(e.target.value.toUpperCase())}
-                className="mt-2"
+                onChange={(e) => {
+                  // IFSC: 11 characters, 4 letters + 0 + 6 digits, uppercase
+                  const value = e.target.value.toUpperCase().trim();
+                  setIfscCode(value);
+                }}
+                className="mt-2 uppercase"
+                minLength={11}
+                maxLength={11}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                11 characters (e.g., HDFC0001234)
+              </p>
             </div>
             <Button
               onClick={handleSaveBank}
-              disabled={loading}
+              disabled={loading || !bankAccount || !ifscCode || !accountHolderName}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
             >
               {loading ? "Saving..." : "Save Bank Details"}
@@ -410,24 +337,6 @@ export function Stage4PaymentDetails({
           </div>
         </TabsContent>
       </Tabs>
-
-      {/* Continue button - only enabled when has active payment method */}
-      <div className="flex justify-end pt-4 border-t">
-        <Button
-          onClick={() => onNext({ hasPaymentDetails: true })}
-          disabled={!hasActivePaymentMethod}
-          className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-        >
-          {hasActivePaymentMethod ? (
-            <>
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Continue to Dashboard
-            </>
-          ) : (
-            <>Add Payment Method to Continue</>
-          )}
-        </Button>
-      </div>
     </div>
   );
 }

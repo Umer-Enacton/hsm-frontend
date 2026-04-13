@@ -28,6 +28,9 @@ import {
   X,
   Star,
   Wallet,
+  User,
+  Briefcase,
+  Percent,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -73,6 +76,7 @@ import {
 } from "@/lib/queries/use-provider-bookings";
 import { ProviderRescheduleDialog } from "@/components/provider/bookings/ProviderRescheduleDialog";
 import { ServiceCompletionDialog } from "@/components/provider/bookings/ServiceCompletionDialog";
+import { AssignStaffDialog } from "@/components/provider/bookings/AssignStaffDialog";
 import { ImageLightbox, DataTablePagination } from "@/components/common";
 import { BookingHistoryTimeline } from "@/components/customer/bookings/BookingHistoryTimeline";
 import {
@@ -93,7 +97,7 @@ export default function ProviderBookingsPage() {
 
   // Tab state
   const [activeTab, setActiveTab] = useState<
-    "all" | "confirmed" | "completed" | "cancelled"
+    "all" | "confirmed" | "completed" | "cancelled" | "missed"
   >("all");
 
   // TanStack Query hooks
@@ -165,6 +169,11 @@ export default function ProviderBookingsPage() {
   const [selectedBookingForCompletion, setSelectedBookingForCompletion] =
     useState<ProviderBooking | null>(null);
 
+  // Assign staff dialog state
+  const [assignStaffDialogOpen, setAssignStaffDialogOpen] = useState(false);
+  const [selectedBookingForAssignStaff, setSelectedBookingForAssignStaff] =
+    useState<ProviderBooking | null>(null);
+
   // Image lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
@@ -197,7 +206,11 @@ export default function ProviderBookingsPage() {
       });
 
       // Switch to the tab based on booking's status
-      if (["confirmed", "completed", "cancelled"].includes(bookingStatus)) {
+      if (
+        ["confirmed", "completed", "cancelled", "missed"].includes(
+          bookingStatus,
+        )
+      ) {
         updateTab(bookingStatus);
         // Store for expansion after tab switch
         setPendingExpandId(bookingId);
@@ -340,18 +353,21 @@ export default function ProviderBookingsPage() {
         "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400",
       cancelled:
         "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400",
+      missed:
+        "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400",
     };
 
     const icons: Record<string, React.ReactNode> = {
       confirmed: <CheckCircle className="h-3 w-3" />,
       completed: <CheckCircle className="h-3 w-3" />,
       cancelled: <XCircle className="h-3 w-3" />,
+      missed: <Clock className="h-3 w-3" />,
     };
 
     // Format status text for display
     const formatStatusText = (s: string) => {
       const statusMap: Record<string, string> = {
-        reschedule_pending: "Reschedule Pending",
+        missed: "Delayed",
       };
       return (
         statusMap[s] ||
@@ -394,15 +410,27 @@ export default function ProviderBookingsPage() {
         rescheduleFee = (booking.rescheduleCount || 0) * 100;
       }
 
-      const baseEarning = totalEarning - rescheduleFee;
+      // Calculate staff earning deduction (if staff assigned and earning set)
+      let staffEarning = 0;
+      if (
+        booking.assignedStaffId &&
+        booking.staffEarning !== undefined &&
+        booking.staffEarning !== null
+      ) {
+        staffEarning = Number(booking.staffEarning) / 100; // Convert paise to rupees
+      }
+
+      // backend providerEarning is base earning (service price - platform fee), reschedule fee is added separately
+      const baseEarning = totalEarning - staffEarning;
 
       return {
         baseEarning,
         rescheduleFee,
+        staffEarning,
         cancellationPayout: booking.providerPayoutAmount
           ? Number(booking.providerPayoutAmount)
           : 0,
-        total: totalEarning,
+        total: baseEarning + rescheduleFee, // NET earning after staff deduction, including reschedule fee
         servicePrice,
       };
     }
@@ -411,6 +439,16 @@ export default function ProviderBookingsPage() {
     let baseEarning = 0;
     let rescheduleFee = 0;
     let cancellationPayout = 0;
+    let staffEarning = 0;
+
+    // Calculate staff earning for fallback path
+    if (
+      booking.assignedStaffId &&
+      booking.staffEarning !== undefined &&
+      booking.staffEarning !== null
+    ) {
+      staffEarning = Number(booking.staffEarning) / 100;
+    }
 
     const hasCustomerRescheduleFee =
       booking.rescheduleCount && booking.rescheduleCount > 0;
@@ -428,20 +466,21 @@ export default function ProviderBookingsPage() {
       booking.providerPayoutAmount !== null
     ) {
       cancellationPayout = Number(booking.providerPayoutAmount);
-      baseEarning = cancellationPayout;
+      baseEarning = cancellationPayout - staffEarning;
     } else if (booking.status === "cancelled") {
       baseEarning = 0;
     } else {
       // Fallback for old bookings without providerEarning set
       // New bookings have providerEarning from backend based on provider's plan
-      baseEarning = Math.round(servicePrice * 0.95); // Assumes Premium (95%)
+      baseEarning = Math.round(servicePrice * 0.95) - staffEarning; // Assumes Premium (95%)
     }
 
-    const total = baseEarning + rescheduleFee;
+    const total = baseEarning + rescheduleFee; // NET earning = base + reschedule, staff already deducted from base
 
     return {
       baseEarning,
       rescheduleFee,
+      staffEarning,
       cancellationPayout,
       total,
       servicePrice,
@@ -449,12 +488,23 @@ export default function ProviderBookingsPage() {
   };
 
   // Helper to get total provider earning (for quick display)
+  // Returns NET earning after staff deduction
   const calculateProviderEarning = (booking: ProviderBooking) => {
-    // Use backend-calculated value if available, otherwise fallback
-    return booking.providerEarning !== undefined &&
+    // Use backend-calculated value if available
+    if (
+      booking.providerEarning !== undefined &&
       booking.providerEarning !== null
-      ? Number(booking.providerEarning) / 100
-      : calculateProviderEarningBreakdown(booking).total;
+    ) {
+      const totalEarning = Number(booking.providerEarning) / 100; // Convert paise to rupees
+      // Subtract staff earning to get net provider earning
+      const staffDeduction =
+        booking.staffEarning !== undefined && booking.staffEarning !== null
+          ? Number(booking.staffEarning) / 100
+          : 0;
+      return Math.max(0, totalEarning - staffDeduction);
+    }
+    // Fallback to breakdown calculation
+    return calculateProviderEarningBreakdown(booking).total;
   };
 
   // Enhanced status badge that shows primary status and details in a popover
@@ -609,7 +659,7 @@ export default function ProviderBookingsPage() {
 
     // 3. General Refund to Customer
     if (
-      (booking.status === "cancelled" || booking.status === "rejected") &&
+      booking.status === "cancelled" &&
       booking.isRefunded &&
       !secondaryBadges.some((b) => (b as any).key === "reschedule-refund")
     ) {
@@ -651,7 +701,62 @@ export default function ProviderBookingsPage() {
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Quick Summary
               </p>
-              <div className="flex flex-col gap-2">{secondaryBadges}</div>
+              {/* Earning Summary */}
+              {(() => {
+                const breakdown = calculateProviderEarningBreakdown(booking);
+                return (
+                  <div className="space-y-1.5 rounded-md bg-muted/50 p-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Earning</span>
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                        ₹{breakdown.baseEarning}
+                      </span>
+                    </div>
+                    {booking.platformFee && booking.platformFee > 0 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Platform fee
+                        </span>
+                        <span className="font-medium text-orange-700 dark:text-orange-400">
+                          -₹{Number(booking.platformFee) / 100}
+                        </span>
+                      </div>
+                    )}
+                    {breakdown.rescheduleFee > 0 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Reschedule fee
+                        </span>
+                        <span className="font-medium text-purple-700 dark:text-purple-400">
+                          +₹{breakdown.rescheduleFee}
+                        </span>
+                      </div>
+                    )}
+                    {breakdown.staffEarning > 0 && booking.assignedStaffId && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Staff earning
+                        </span>
+                        <span className="font-medium text-blue-700 dark:text-blue-400">
+                          -₹{breakdown.staffEarning}
+                        </span>
+                      </div>
+                    )}
+                    {breakdown.total !== breakdown.baseEarning && (
+                      <div className="flex items-center justify-between text-sm pt-1 border-t border-border">
+                        <span className="text-muted-foreground">Total</span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                          ₹{breakdown.total.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+              {/* Additional Badges */}
+              {secondaryBadges.length > 0 && (
+                <div className="flex flex-col gap-2">{secondaryBadges}</div>
+              )}
             </div>
           </PopoverContent>
         </Popover>
@@ -690,7 +795,23 @@ export default function ProviderBookingsPage() {
 
     if (booking.status === "confirmed") {
       return (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {/* Assign Staff button - only if no staff assigned */}
+          {!booking.assignedStaffId && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedBookingForAssignStaff(booking);
+                setAssignStaffDialogOpen(true);
+              }}
+              className="gap-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 border-purple-200 text-purple-700"
+            >
+              <Briefcase className="h-3 w-3" />
+              Assign Staff
+            </Button>
+          )}
           {/* Reschedule button */}
           <Button
             size="sm"
@@ -799,7 +920,7 @@ export default function ProviderBookingsPage() {
       </div>
 
       {/* Statistics */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -871,33 +992,27 @@ export default function ProviderBookingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-orange-100 dark:bg-orange-900/30">
+                <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                  {stats.missed}
+                </p>
+                <p className="text-xs text-orange-700/70 dark:text-orange-400/70">
+                  Delayed
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Payment Details Warning */}
-      {business && !business.hasPaymentDetails && (
-        <Alert
-          variant="destructive"
-          className="border-orange-500 bg-orange-50 dark:bg-orange-950/40"
-        >
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1">
-                <strong className="block mb-1">Payment Details Required</strong>
-                You must add payment details (UPI ID or Bank Account) to receive
-                bookings and earnings. Without payment details, customers cannot
-                book your services.
-              </div>
-              <Link href="/provider/payments">
-                <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
-                  Add Payment Details
-                </Button>
-              </Link>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* Status Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => updateTab(v)}>
         {/* Mobile: Horizontal scrollable tabs */}
@@ -915,16 +1030,20 @@ export default function ProviderBookingsPage() {
             <TabsTrigger value="cancelled" className="whitespace-nowrap">
               Cancelled
             </TabsTrigger>
+            <TabsTrigger value="missed" className="whitespace-nowrap">
+              Delayed
+            </TabsTrigger>
           </TabsList>
         </div>
 
         {/* Desktop: Grid layout tabs */}
         <div className="hidden md:block">
-          <TabsList className="grid w-full max-w-xl grid-cols-4 h-10">
+          <TabsList className="grid w-full max-w-xl grid-cols-5 h-10">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
             <TabsTrigger value="completed">Completed</TabsTrigger>
             <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+            <TabsTrigger value="missed">Delayed</TabsTrigger>
           </TabsList>
         </div>
       </Tabs>
@@ -1079,10 +1198,9 @@ export default function ProviderBookingsPage() {
                           <div className="flex items-center gap-1 text-primary">
                             <IndianRupee className="h-3.5 w-3.5 shrink-0" />
                             <span className="font-bold tabular-nums">
-                              {booking.providerEarning !== undefined &&
-                              booking.providerEarning !== null
-                                ? Number(booking.providerEarning) / 100
-                                : calculateProviderEarning(booking)}
+                              {calculateProviderEarningBreakdown(
+                                booking,
+                              ).total.toFixed(2)}
                             </span>
                           </div>
                         </div>
@@ -1438,6 +1556,74 @@ export default function ProviderBookingsPage() {
                                   )}
                                 </div>
                               )}
+
+                              {/* Staff Assignment (if assigned) */}
+                              {booking.assignedStaffId && (
+                                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 rounded-md p-5 border border-purple-200 dark:border-purple-800">
+                                  <div className="flex items-center gap-2 pb-3 border-b border-purple-200 dark:border-purple-800">
+                                    <Briefcase className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                    <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">
+                                      Staff Assignment
+                                    </h4>
+                                  </div>
+                                  <div className="space-y-3 mt-4">
+                                    <div>
+                                      <label className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">
+                                        Assigned Staff
+                                      </label>
+                                      <p className="font-semibold text-base mt-1 text-purple-900 dark:text-purple-100">
+                                        {booking.assignedStaffName ||
+                                          "Staff member"}
+                                      </p>
+                                    </div>
+                                    {booking.staffEarningType && (
+                                      <div>
+                                        <label className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">
+                                          Earning Type
+                                        </label>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          {booking.staffEarningType ===
+                                          "commission" ? (
+                                            <>
+                                              <Percent className="h-4 w-4 text-purple-600" />
+                                              <span className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                                                {booking.staffCommissionPercent ||
+                                                  10}
+                                                % commission
+                                              </span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <IndianRupee className="h-4 w-4 text-purple-600" />
+                                              <span className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                                                ₹
+                                                {(
+                                                  (booking.staffFixedAmount ||
+                                                    0) / 100
+                                                ).toFixed(2)}{" "}
+                                                fixed
+                                              </span>
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {booking.staffEarning && (
+                                      <div>
+                                        <label className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">
+                                          Staff Earning
+                                        </label>
+                                        <p className="font-semibold text-base mt-1 text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                                          <IndianRupee className="h-4 w-4" />
+                                          {(
+                                            (booking.staffEarning || 0) / 100
+                                          ).toFixed(2)}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             {/* RIGHT COLUMN: Service & Actions */}
@@ -1504,7 +1690,7 @@ export default function ProviderBookingsPage() {
                                               calculateProviderEarningBreakdown(
                                                 booking,
                                               );
-                                            return breakdown.total;
+                                            return breakdown.total.toFixed(2);
                                           })()}
                                         </p>
                                       </div>
@@ -1600,6 +1786,35 @@ export default function ProviderBookingsPage() {
                                         return null;
                                       })()}
 
+                                      {/* Staff Earning Deduction (if staff assigned) */}
+                                      {(() => {
+                                        const breakdown =
+                                          calculateProviderEarningBreakdown(
+                                            booking,
+                                          );
+                                        if (
+                                          breakdown.staffEarning > 0 &&
+                                          booking.assignedStaffId
+                                        ) {
+                                          return (
+                                            <div className="flex items-center justify-between text-sm text-blue-600 dark:text-blue-400">
+                                              <span>
+                                                Staff Earning{" "}
+                                                {booking.assignedStaffName
+                                                  ? `(${booking.assignedStaffName})`
+                                                  : ""}
+                                              </span>
+                                              <span className="flex items-center gap-1">
+                                                -
+                                                <IndianRupee className="h-3 w-3" />
+                                                {breakdown.staffEarning}
+                                              </span>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      })()}
+
                                       {/* Your Share */}
                                       <div className="flex items-center justify-between text-sm font-semibold text-emerald-700 dark:text-emerald-300 pt-2 border-t border-emerald-200 dark:border-emerald-700">
                                         <span>Your Share</span>
@@ -1610,7 +1825,7 @@ export default function ProviderBookingsPage() {
                                               calculateProviderEarningBreakdown(
                                                 booking,
                                               );
-                                            return breakdown.total;
+                                            return breakdown.total.toFixed(2);
                                           })()}
                                         </span>
                                       </div>
@@ -1761,6 +1976,23 @@ export default function ProviderBookingsPage() {
             startTime: selectedBookingForCompletion.startTime,
           }}
           onSuccess={handleCompletionSuccess}
+        />
+      )}
+
+      {/* Assign Staff Dialog */}
+      {selectedBookingForAssignStaff && (
+        <AssignStaffDialog
+          open={assignStaffDialogOpen}
+          onOpenChange={setAssignStaffDialogOpen}
+          bookingId={selectedBookingForAssignStaff.id}
+          bookingDate={
+            selectedBookingForAssignStaff.bookingDate ||
+            selectedBookingForAssignStaff.date
+          }
+          slotId={selectedBookingForAssignStaff.slotId}
+          servicePrice={Number(selectedBookingForAssignStaff.price || 0)}
+          providerEarning={selectedBookingForAssignStaff.providerEarning || 0}
+          onSuccess={refetch}
         />
       )}
 

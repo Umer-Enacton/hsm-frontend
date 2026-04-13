@@ -5,14 +5,15 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
-import { Clock, Coffee, Sun, Moon } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Clock, Coffee, Sun, Moon, AlertCircle } from "lucide-react";
 import { WorkingHours, BreakTime } from "@/types/provider";
 import { cn } from "@/lib/utils";
 
 interface Stage2WorkingHoursProps {
   initialWorkingHours?: WorkingHours;
   initialBreakTime?: BreakTime;
-  onNext: (data: { workingHours: WorkingHours; breakTime?: BreakTime }) => void;
+  onNext: (data: { workingHours: WorkingHours; breakTime?: BreakTime; isValid?: boolean }) => void;
 }
 
 export function Stage2WorkingHours({
@@ -29,11 +30,27 @@ export function Stage2WorkingHours({
 
   const defaultBreakTime: BreakTime = { startTime: "13:00", endTime: "14:00" };
   const lastNotifiedDataRef = useRef<string>("");
+  const [validationError, setValidationError] = useState<string>("");
 
   useEffect(() => {
+    // Validate: end time must be after start time
+    const startMins = timeToMinutes(workingHours.startTime);
+    const endMins = timeToMinutes(workingHours.endTime);
+
+    let isValid = true;
+    let error = "";
+
+    if (endMins <= startMins) {
+      isValid = false;
+      error = "End time must be after start time";
+    }
+
+    setValidationError(error);
+
     const data = {
       workingHours,
       breakTime: hasBreak ? breakTime || defaultBreakTime : undefined,
+      isValid,
     };
     const dataString = JSON.stringify(data);
 
@@ -155,6 +172,14 @@ export function Stage2WorkingHours({
           Set your general working hours that apply to all days
         </p>
       </div>
+
+      {/* Validation Error Alert */}
+      {validationError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{validationError}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Working Hours Card */}
       <Card className="p-6">

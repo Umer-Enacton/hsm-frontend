@@ -127,6 +127,12 @@ export const API_ENDPOINTS = {
   VERIFY_COMPLETION_OTP: (id: string | number) => `/booking/${id}/complete-verify`,
   RESEND_COMPLETION_OTP: (id: string | number) => `/booking/${id}/complete-resend`,
   UPLOAD_COMPLETION_PHOTOS: (id: string | number) => `/booking/${id}/completion-photos`,
+  // Staff assignment
+  BOOKING_ASSIGN_STAFF: (id: string | number) => `/booking/${id}/assign-staff`,
+  BOOKING_UNASSIGN_STAFF: (id: string | number) => `/booking/${id}/unassign-staff`,
+  BOOKING_AVAILABLE_STAFF: "/booking/available-staff",
+  BOOKING_STAFF_MY_BOOKINGS: "/bookings/staff/my-bookings",
+  BOOKING_COMPLETE_WITH_PAYOUT: (id: string | number) => `/booking/${id}/complete-with-payout`,
   PROVIDER_RESCHEDULE_SETTINGS: "/booking/provider/settings",
   PROVIDER_RESCHEDULE_SETTINGS_BY_BUSINESS: (businessId: string | number) =>
     `/booking/provider/settings/${businessId}`,
@@ -160,6 +166,16 @@ export const API_ENDPOINTS = {
   // Admin Settings & Dashboard
   ADMIN_DASHBOARD_STATS: "/admin/dashboard/stats",
   ADMIN_SETTINGS: "/admin/settings",
+  ADMIN_CANCELLATION_POLICY: "/admin/settings/cancellation-policy",
+  PRIVACY_POLICY_ACTIVE: "/privacy-policies/active",
+  ADMIN_PRIVACY_POLICIES: "/privacy-policies/versions",
+  ADMIN_PRIVACY_POLICY_BY_ID: (id: string | number) => `/privacy-policies/versions/${id}`,
+  ADMIN_PRIVACY_POLICY_ACTIVATE: (id: string | number) => `/privacy-policies/${id}/activate`,
+  // Terms & Conditions
+  TERMS_ACTIVE: "/terms-conditions/active",
+  ADMIN_TERMS_VERSIONS: "/terms-conditions/versions",
+  ADMIN_TERMS_BY_ID: (id: string | number) => `/terms-conditions/versions/${id}`,
+  ADMIN_TERMS_ACTIVATE: (id: string | number) => `/terms-conditions/${id}/activate`,
   ADMIN_REVENUE: "/admin/revenue",
   ADMIN_PAYOUTS: "/admin/payouts",
   ADMIN_PAYOUTS_BY_PROVIDER: "/admin/payouts/by-provider",
@@ -178,7 +194,8 @@ export const API_ENDPOINTS = {
   PROVIDER_ANALYTICS_STATUS: "/provider/analytics/status",
   PROVIDER_ANALYTICS_TIME_PATTERNS: "/provider/analytics/time-patterns",
 
-  // Provider Revenue
+  // Provider Revenue (provider's own earnings)
+  // Note: This route is in admin.route.js but accessible by providers
   PROVIDER_REVENUE: "/admin/provider/revenue",
 
   // Payment
@@ -223,10 +240,9 @@ export const API_ENDPOINTS = {
 
   // Provider Subscriptions
   PROVIDER_SUBSCRIPTION_CURRENT: "/provider/subscription/current",
-  PROVIDER_SUBSCRIPTION_PURCHASE: "/provider/subscription/purchase",
-  PROVIDER_SUBSCRIPTION_PURCHASE_RAZORPAY: "/provider/subscription/purchase-razorpay", // Razorpay Subscription API (auto-recurring)
   PROVIDER_SUBSCRIPTION_PURCHASE_LINK: "/provider/subscription/purchase-link", // Razorpay Subscription Links API (hosted page)
   PROVIDER_SUBSCRIPTION_AUTHORIZE: "/provider/subscription/authorize", // Get subscription details for checkout authorization
+  PROVIDER_SUBSCRIPTION_START_TRIAL: "/provider/subscription/start-trial", // Start free trial (database-level, no Razorpay)
   PROVIDER_SUBSCRIPTION_CANCEL_PENDING: "/provider/subscription/cancel-pending", // Cancel pending subscription when modal closed
   PROVIDER_SUBSCRIPTION_CANCEL: "/provider/subscription/cancel",
   PROVIDER_SUBSCRIPTION_TOGGLE_AUTO_RENEW: "/provider/subscription/toggle-auto-renew",
@@ -234,7 +250,6 @@ export const API_ENDPOINTS = {
   PROVIDER_SUBSCRIPTION_CLEANUP: "/provider/subscription/cleanup", // Cleanup abandoned pending subscriptions
   PROVIDER_SUBSCRIPTION_PAYMENTS: "/provider/subscription/payments",
   PROVIDER_SUBSCRIPTION_ALL: "/provider/subscription/providers", // Admin: Get all provider subscriptions
-  PROVIDER_SUBSCRIPTION_DEBUG: "/provider/subscription/debug", // Debug endpoint to check local subscriptions
 
   // Admin Subscription Management
   ADMIN_PROVIDER_SUBSCRIPTIONS: "/admin/provider-subscriptions",
@@ -243,10 +258,40 @@ export const API_ENDPOINTS = {
   ADMIN_SUBSCRIPTION_EXTEND: (id: string | number) => `/admin/provider-subscriptions/${id}/extend`,
   ADMIN_SUBSCRIPTION_REFUND: (id: string | number) => `/admin/provider-subscriptions/${id}/refund`,
 
-  // TEST ENDPOINTS (for development testing only)
-  TEST_SUBSCRIPTION_AUTHORIZE: "/provider/subscription/test/authorize", // Simulate subscription.authorized webhook
-  TEST_SUBSCRIPTION_RECURRING_CHARGE: "/provider/subscription/test/recurring-charge", // Simulate subscription.charged webhook
-  SUBSCRIPTION_WEBHOOK: "/provider/subscription/webhook",
+  // Admin Cron Job Management
+  ADMIN_CRON_JOBS: "/admin/cron-jobs/jobs",
+  ADMIN_CRON_JOB_BY_ID: (id: string | number) => `/admin/cron-jobs/jobs/${id}`,
+  ADMIN_CRON_JOB_TRIGGER: (id: string | number) => `/admin/cron-jobs/jobs/${id}/trigger`,
+  ADMIN_CRON_JOB_LOGS: (id: string | number) => `/admin/cron-jobs/jobs/${id}/logs`,
+  ADMIN_CRON_STATS: "/admin/cron-jobs/stats",
+  ADMIN_CRON_JOB_SYNC: (id: string | number) => `/admin/cron-jobs/jobs/${id}/sync`,
+  ADMIN_CRON_JOBS_SYNC_ALL: "/admin/cron-jobs/jobs/sync-all",
+  ADMIN_CRON_SYNC_STATUS: "/admin/cron-jobs/jobs/sync-status",
+
+  // Staff Management (Provider)
+  STAFF: "/staff",
+  STAFF_ME: "/staff/me",
+  STAFF_BY_ID: (id: string | number) => `/staff/${id}`,
+  STAFF_AVAILABLE: "/staff/available",
+  STAFF_UPDATE_STATUS: (id: string | number) => `/staff/${id}/status`,
+
+  // Staff Leave Management
+  STAFF_LEAVE: "/staff-leave",
+  STAFF_LEAVE_BUSINESS: "/staff-leave/business",
+  STAFF_LEAVE_ON_LEAVE: "/staff-leave/on-leave",
+  STAFF_LEAVE_MY_LEAVE: "/staff-leave/my-leave",
+  STAFF_LEAVE_APPROVE: (id: string | number) => `/staff-leave/${id}/approve`,
+  STAFF_LEAVE_REJECT: (id: string | number) => `/staff-leave/${id}/reject`,
+  STAFF_LEAVE_CANCEL: (id: string | number) => `/staff-leave/${id}/cancel`,
+
+  // Staff Payouts
+  STAFF_PAYOUTS_MY_EARNINGS: "/staff-payouts/my-earnings",
+  STAFF_PAYOUTS_MY_PAYOUTS: "/staff-payouts/my-payouts",
+  STAFF_PAYOUTS_BUSINESS: "/staff-payouts/business",
+  STAFF_PAYOUTS_SUMMARY: "/staff-payouts/summary",
+  STAFF_PAYOUTS_PROCESS: "/staff-payouts/process",
+  STAFF_PAYOUTS_PROVIDER_SUMMARY: "/staff-payouts/provider-summary",
+  STAFF_PAYOUTS_PROVIDER_PROCESS: "/staff-payouts/provider-process",
 } as const;
 
 /**

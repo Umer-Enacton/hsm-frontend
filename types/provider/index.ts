@@ -229,6 +229,13 @@ export interface ProviderBooking {
   afterPhotoUrl?: string | null;
   completionNotes?: string | null;
   actualCompletionTime?: string | null;
+  // Staff assignment fields
+  assignedStaffId?: number | null;
+  assignedStaffName?: string | null;
+  staffEarningType?: "commission" | "fixed" | null;
+  staffCommissionPercent?: number | null;
+  staffFixedAmount?: number | null;
+  staffEarning?: number | null; // Calculated earning in paise
 }
 
 /**
@@ -237,10 +244,9 @@ export interface ProviderBooking {
 export enum BookingStatus {
   PENDING = "pending",
   CONFIRMED = "confirmed",
-  RESCHEDULE_PENDING = "reschedule_pending",
   COMPLETED = "completed",
   CANCELLED = "cancelled",
-  REJECTED = "rejected",
+  MISSED = "missed", // Booking time passed without completion
 }
 
 /**

@@ -36,6 +36,8 @@ import { useTheme } from "next-themes";
 import { useNotifications } from "@/lib/queries/use-notifications";
 import { formatDistanceToNow } from "date-fns";
 import { usePathname, useRouter } from "next/navigation";
+import { getUserData, getUserRole } from "@/lib/auth-utils";
+import { UserRole } from "@/types/auth";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -68,6 +70,7 @@ export interface HeaderProps {
   className?: string;
   businessVerification?: boolean; // Business verification status
   planName?: string; // Current subscription plan name (Free, Pro, Premium)
+  onMobileMenuToggle?: () => void;
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────────
@@ -94,8 +97,33 @@ function NotificationsMenu() {
     }
 
     // Get booking info from notification
-    const actionUrl = notification.data?.actionUrl;
+    let actionUrl = notification.data?.actionUrl;
     const bookingId = notification.data?.bookingId;
+    const policyType = notification.data?.policyType;
+
+    // Get user role for role-based redirects
+    const roleId = getUserRole();
+    const rolePrefix = roleId === UserRole.ADMIN ? "/admin" : roleId === UserRole.PROVIDER ? "/provider" : roleId === UserRole.STAFF ? "/staff" : "/customer";
+
+    // Fallback for policy update notifications - use role-based paths
+    if (!actionUrl && policyType === "cancellation") {
+      actionUrl = `${rolePrefix}/terms`;
+    } else if (!actionUrl && policyType === "privacy") {
+      actionUrl = `${rolePrefix}/privacy`;
+    } else if (!actionUrl && policyType === "terms") {
+      actionUrl = `${rolePrefix}/terms`;
+    }
+
+    // If actionUrl is relative, prepend role prefix
+    if (actionUrl && !actionUrl.startsWith("http")) {
+      const url = new URL(actionUrl, window.location.origin);
+      const pathname = url.pathname;
+
+      // Check if it's a policy page (privacy or terms at root)
+      if (pathname === "/privacy" || pathname === "/terms") {
+        actionUrl = `${rolePrefix}${pathname}`;
+      }
+    }
 
     if (!actionUrl) return;
 
@@ -370,6 +398,7 @@ export function Header({
   className,
   businessVerification,
   planName,
+  onMobileMenuToggle,
 }: HeaderProps) {
   return (
     <header
@@ -379,7 +408,11 @@ export function Header({
       )}
     >
       {/* Mobile Logo */}
-      <div className="flex items-center md:hidden shrink-0">
+      <button 
+        className="flex items-center md:hidden shrink-0 cursor-pointer p-0 bg-transparent border-none"
+        onClick={onMobileMenuToggle}
+        title="Toggle Menu"
+      >
         <Image
           src="/homefixcareicon-removebg-preview-removebg-preview.png"
           alt="HomeFixCare Logo"
@@ -387,7 +420,7 @@ export function Header({
           height={32}
           className="h-8 w-8 object-cover"
         />
-      </div>
+      </button>
 
       {title && (
         <h1 className="text-base font-semibold tracking-tight md:text-lg">

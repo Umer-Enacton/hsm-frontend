@@ -276,6 +276,7 @@ const ForgotPasswordPage = () => {
                       type="email"
                       placeholder="you@example.com"
                       className="pl-10"
+                      validateAs="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       disabled={isLoading}
@@ -507,6 +508,13 @@ const ForgotPasswordPage = () => {
             </CardFooter>
           )}
         </Card>
+
+        {/* Privacy Policy Footer */}
+        <div className="mt-6 text-center text-xs text-muted-foreground/60">
+          <Link href="/privacy" className="hover:underline">
+            Privacy Policy
+          </Link>
+        </div>
       </div>
     </div>
   );

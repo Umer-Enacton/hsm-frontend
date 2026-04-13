@@ -77,6 +77,7 @@ export function UserFilters({
             <SelectItem value="1">Customer</SelectItem>
             <SelectItem value="2">Provider</SelectItem>
             <SelectItem value="3">Admin</SelectItem>
+            <SelectItem value="4">Staff</SelectItem>
           </SelectContent>
         </Select>
 

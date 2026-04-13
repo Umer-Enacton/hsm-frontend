@@ -74,14 +74,37 @@ function NavLink({
   item,
   collapsed,
   onClick,
+  allNavItems,
 }: {
   item: NavItem;
   collapsed: boolean;
   onClick?: () => void;
+  allNavItems?: NavItem[];
 }) {
   const pathname = usePathname();
-  const isActive =
-    pathname === item.href || pathname.startsWith(item.href + "/");
+
+  // Check if this item should be active
+  // An item is active if pathname exactly matches OR pathname starts with this item's href
+  // BUT we need to ensure we don't match parent routes when a child route exists
+  const isActive = (() => {
+    // Exact match
+    if (pathname === item.href) return true;
+
+    // Check if pathname starts with this item's href + "/"
+    if (pathname.startsWith(item.href + "/")) {
+      // Check if there's another nav item that is a more specific match (child route)
+      const hasMoreSpecificMatch = allNavItems?.some((otherItem) => {
+        if (otherItem.href === item.href) return false; // Skip self
+        // Check if another item's href is a prefix of pathname
+        return pathname.startsWith(otherItem.href + "/") || pathname === otherItem.href;
+      });
+      // Only active if there's no more specific match
+      return !hasMoreSpecificMatch;
+    }
+
+    return false;
+  })();
+
   const Icon = item.icon;
 
   const content = (
@@ -205,6 +228,7 @@ export function Sidebar({
                 item={item}
                 collapsed={collapsed}
                 onClick={onMobileClose}
+                allNavItems={navItems}
               />
             ))}
           </nav>
@@ -226,6 +250,7 @@ export function Sidebar({
                   item={item}
                   collapsed={collapsed}
                   onClick={onMobileClose}
+                  allNavItems={bottomItems}
                 />
               ))}
             </nav>

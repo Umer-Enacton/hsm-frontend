@@ -158,6 +158,8 @@ export function EditProfileModal({
                 placeholder="Enter your full name"
                 required
                 disabled={isLoading}
+                validateAs="name"
+                maxLength={50}
               />
             </div>
 
@@ -171,10 +173,14 @@ export function EditProfileModal({
                 onChange={(e) =>
                   setFormData({ ...formData, phone: e.target.value })
                 }
-                placeholder="Enter your phone number"
+                placeholder="Enter 10 digit number"
                 required
                 disabled={isLoading}
+                validateAs="phone"
               />
+              <p className="text-xs text-muted-foreground">
+                10 digits starting with 6, 7, 8, or 9
+              </p>
             </div>
 
             {/* Email (Read-only) */}

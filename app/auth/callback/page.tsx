@@ -44,6 +44,7 @@ function CallbackHandler() {
             [UserRole.CUSTOMER]: "/customer",
             [UserRole.PROVIDER]: "/onboarding",
             [UserRole.ADMIN]: "/admin/dashboard",
+            [UserRole.STAFF]: "/staff/dashboard",
           };
 
           const targetPath = roleRedirectMap[response.user.roleId as UserRole] || "/";
@@ -57,6 +58,7 @@ function CallbackHandler() {
             [UserRole.CUSTOMER]: "/customer",
             [UserRole.PROVIDER]: "/provider/dashboard",
             [UserRole.ADMIN]: "/admin/dashboard",
+            [UserRole.STAFF]: "/staff/dashboard",
           };
 
           const redirectPath = roleRedirectMap[response.user.roleId as UserRole] || "/";

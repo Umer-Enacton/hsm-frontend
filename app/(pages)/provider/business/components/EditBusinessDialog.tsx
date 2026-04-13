@@ -321,8 +321,12 @@ export function EditBusinessDialog({
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange("phone", e.target.value)}
-                placeholder="e.g., +92 300 1234567"
+                placeholder="9876543210"
+                validateAs="phone"
               />
+              <p className="text-xs text-muted-foreground">
+                10 digits starting with 6-9
+              </p>
             </div>
 
             {/* Email */}
@@ -332,9 +336,12 @@ export function EditBusinessDialog({
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-                placeholder="e.g., contact@quickfix.com"
+                disabled
+                className="bg-muted cursor-not-allowed"
               />
+              <p className="text-xs text-muted-foreground">
+                Email cannot be changed. Contact support if needed.
+              </p>
             </div>
 
             {/* State & City Selection */}

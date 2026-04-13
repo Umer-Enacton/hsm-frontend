@@ -21,9 +21,9 @@ export function ProviderBookingsSkeleton() {
         <Skeleton className="h-9 w-9 rounded-md" />
       </div>
 
-      {/* Statistics - 4 Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
+      {/* Statistics - 5 Cards */}
+      <div className="grid gap-4 md:grid-cols-5">
+        {[1, 2, 3, 4, 5].map((i) => (
           <Card key={i}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">

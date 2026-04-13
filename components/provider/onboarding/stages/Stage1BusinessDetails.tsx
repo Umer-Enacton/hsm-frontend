@@ -4,10 +4,11 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ImageUpload } from "@/components/common/ImageUpload";
 import { StateCityPicker } from "@/components/common/StateCityPicker";
 import { Badge } from "@/components/ui/badge";
-import { Building2, MapPin, Phone, Mail, Globe, Loader2 } from "lucide-react";
+import { Building2, MapPin, Phone, Mail, Globe, Loader2, AlertCircle } from "lucide-react";
 import { getCitiesByState } from "@/lib/data/india-locations";
 import { api, API_ENDPOINTS } from "@/lib/api";
 
@@ -35,6 +36,21 @@ interface Stage1BusinessDetailsProps {
   onNext: (data: BusinessDetailsData) => void;
 }
 
+// Indian phone number validation: 10 digits, starts with 6-9
+const validateIndianPhone = (phone: string): { isValid: boolean; error?: string } => {
+  if (!phone) {
+    return { isValid: true }; // Empty is valid (optional field)
+  }
+  const digitsOnly = phone.replace(/\D/g, '');
+  if (digitsOnly.length !== 10) {
+    return { isValid: false, error: "Phone number must be 10 digits" };
+  }
+  if (!/^[6-9]/.test(digitsOnly)) {
+    return { isValid: false, error: "Phone number must start with 6-9" };
+  }
+  return { isValid: true };
+};
+
 export function Stage1BusinessDetails({
   initialData,
   onNext,
@@ -59,6 +75,9 @@ export function Stage1BusinessDetails({
     initialData?.categoryId || 0,
   );
 
+  // Validation error state
+  const [phoneError, setPhoneError] = useState<string>("");
+
   // Fetch categories on mount
   useEffect(() => {
     const fetchCategories = async () => {
@@ -82,19 +101,31 @@ export function Stage1BusinessDetails({
 
   // Notify parent when data is valid and has changed
   useEffect(() => {
+    const phoneValidation = validateIndianPhone(formData.businessPhone || "");
+
+    // Update phone error state
+    if (formData.businessPhone && !phoneValidation.isValid) {
+      setPhoneError(phoneValidation.error || "");
+    } else {
+      setPhoneError("");
+    }
+
     const dataString = JSON.stringify({
       name: formData.name,
       categoryId: formData.categoryId,
       state: formData.state,
       city: formData.city,
+      businessPhone: formData.businessPhone,
     });
 
     // Only notify if data is valid AND has actually changed
+    // Phone is optional, so we only validate it if provided
     if (
       formData.name &&
       formData.categoryId > 0 &&
       formData.state &&
       formData.city &&
+      phoneValidation.isValid &&
       dataString !== lastNotifiedDataRef.current
     ) {
       lastNotifiedDataRef.current = dataString;
@@ -105,6 +136,7 @@ export function Stage1BusinessDetails({
     formData.categoryId,
     formData.state,
     formData.city,
+    formData.businessPhone,
     formData.category,
     onNext,
   ]);
@@ -124,6 +156,21 @@ export function Stage1BusinessDetails({
     value: string | File | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Handle phone change with validation
+  const handlePhoneChange = (value: string) => {
+    // Only allow digits
+    const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
+    handleChange("businessPhone", digitsOnly);
+
+    // Validate immediately
+    if (digitsOnly) {
+      const validation = validateIndianPhone(digitsOnly);
+      setPhoneError(validation.isValid ? "" : (validation.error || ""));
+    } else {
+      setPhoneError("");
+    }
   };
 
   // Handle state change with city validation
@@ -251,18 +298,27 @@ export function Stage1BusinessDetails({
       <div className="space-y-3">
         <Label htmlFor="businessPhone" className="flex items-center gap-2">
           <Phone className="h-4 w-4" />
-          Business Phone (Optional)
+          Business Phone
         </Label>
         <Input
           id="businessPhone"
           type="tel"
-          placeholder="+92 300 1234567"
+          placeholder="9876543210"
           value={formData.businessPhone}
-          onChange={(e) => handleChange("businessPhone", e.target.value)}
+          onChange={(e) => handlePhoneChange(e.target.value)}
+          maxLength={10}
+          className={phoneError ? "border-destructive" : ""}
         />
-        <p className="text-xs text-muted-foreground">
-          Different from your personal phone? Add a business contact number
-        </p>
+        {phoneError ? (
+          <Alert variant="destructive" className="py-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-sm">{phoneError}</AlertDescription>
+          </Alert>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            10 digits starting with 6-9 (e.g., 9876543210)
+          </p>
+        )}
       </div>
 
       {/* Location */}

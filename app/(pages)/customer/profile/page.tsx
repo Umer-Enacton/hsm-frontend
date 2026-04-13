@@ -73,6 +73,14 @@ export default function CustomerProfilePage() {
     state: "",
     zipCode: "",
   });
+  const [addressErrors, setAddressErrors] = useState({
+    street: "",
+    zipCode: "",
+  });
+  const [addressTouched, setAddressTouched] = useState({
+    street: false,
+    zipCode: false,
+  });
 
   // React Query hooks
   const { data: user, isLoading: isLoadingProfile, error } = useProfile();
@@ -146,6 +154,9 @@ export default function CustomerProfilePage() {
         zipCode: "",
       });
     }
+    // Reset errors and touched states
+    setAddressErrors({ street: "", zipCode: "" });
+    setAddressTouched({ street: false, zipCode: false });
     setIsAddressDialogOpen(true);
   };
 
@@ -163,6 +174,35 @@ export default function CustomerProfilePage() {
 
   const handleSaveAddress = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Mark all fields as touched
+    setAddressTouched({ street: true, zipCode: true });
+
+    // Validate
+    const errors = {
+      street: "",
+      zipCode: "",
+    };
+
+    // Validate street address
+    if (!addressForm.street.trim()) {
+      errors.street = "Street address is required";
+    } else if (addressForm.street.trim().length > 200) {
+      errors.street = "Street address cannot exceed 200 characters";
+    }
+
+    // Validate zip code (India PIN code: 6 digits)
+    if (!addressForm.zipCode) {
+      errors.zipCode = "Zip code is required";
+    } else if (!/^\d{6}$/.test(addressForm.zipCode)) {
+      errors.zipCode = "Zip code must be 6 digits";
+    }
+
+    setAddressErrors(errors);
+
+    if (errors.street || errors.zipCode) {
+      return;
+    }
 
     if (editingAddress) {
       updateAddressMutation.mutate({
@@ -521,11 +561,35 @@ export default function CustomerProfilePage() {
                 <Input
                   placeholder="House no., building, street area"
                   value={addressForm.street}
-                  onChange={(e) =>
-                    setAddressForm({ ...addressForm, street: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setAddressForm({ ...addressForm, street: e.target.value });
+                    if (addressTouched.street) {
+                      const trimmed = e.target.value.trim();
+                      setAddressErrors((prev) => ({
+                        ...prev,
+                        street: !trimmed ? "Street address is required" :
+                          trimmed.length > 200 ? "Street address cannot exceed 200 characters" : "",
+                      }));
+                    }
+                  }}
+                  onBlur={() => {
+                    setAddressTouched((prev) => ({ ...prev, street: true }));
+                    const trimmed = addressForm.street.trim();
+                    setAddressErrors((prev) => ({
+                      ...prev,
+                      street: !trimmed ? "Street address is required" :
+                        trimmed.length > 200 ? "Street address cannot exceed 200 characters" : "",
+                    }));
+                  }}
+                  className={addressTouched.street && addressErrors.street ? "border-destructive" : ""}
                   required
                 />
+                {addressTouched.street && addressErrors.street && (
+                  <p className="text-xs text-destructive">{addressErrors.street}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {addressForm.street.length}/200 characters
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -580,13 +644,36 @@ export default function CustomerProfilePage() {
               <div className="space-y-2">
                 <Label>Zip Code *</Label>
                 <Input
-                  placeholder="Enter zip code"
+                  placeholder="Enter 6-digit zip code"
                   value={addressForm.zipCode}
-                  onChange={(e) =>
-                    setAddressForm({ ...addressForm, zipCode: e.target.value })
-                  }
+                  onChange={(e) => {
+                    // Only digits allowed, max 6
+                    const value = e.target.value.replace(/[^\d]/g, "").slice(0, 6);
+                    setAddressForm({ ...addressForm, zipCode: value });
+                    if (addressTouched.zipCode) {
+                      setAddressErrors((prev) => ({
+                        ...prev,
+                        zipCode: value.length !== 6 ? "Zip code must be 6 digits" : "",
+                      }));
+                    }
+                  }}
+                  onBlur={() => {
+                    setAddressTouched((prev) => ({ ...prev, zipCode: true }));
+                    setAddressErrors((prev) => ({
+                      ...prev,
+                      zipCode: addressForm.zipCode.length !== 6 ? "Zip code must be 6 digits" : "",
+                    }));
+                  }}
+                  className={addressTouched.zipCode && addressErrors.zipCode ? "border-destructive" : ""}
+                  maxLength={6}
                   required
                 />
+                {addressTouched.zipCode && addressErrors.zipCode && (
+                  <p className="text-xs text-destructive">{addressErrors.zipCode}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  6 digits (India PIN code)
+                </p>
               </div>
             </div>
 

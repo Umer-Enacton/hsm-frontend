@@ -125,6 +125,7 @@ function LoginForm() {
             [UserRole.CUSTOMER]: "/customer",
             [UserRole.PROVIDER]: "/provider/dashboard",
             [UserRole.ADMIN]: "/admin/dashboard",
+            [UserRole.STAFF]: "/staff/dashboard",
           };
 
           const redirectPath = roleRedirectMap[data.user.roleId] || "/";
@@ -183,6 +184,7 @@ function LoginForm() {
                     type="email"
                     placeholder="you@example.com"
                     className="pl-10"
+                    validateAs="email"
                     value={loginData.email}
                     onChange={(e) =>
                       setLoginData({ ...loginData, email: e.target.value })

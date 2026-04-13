@@ -9,7 +9,8 @@ type StatCardVariant =
   | "emerald"
   | "purple"
   | "red"
-  | "orange";
+  | "orange"
+  | "cyan";
 
 const variantStyles: Record<
   StatCardVariant,
@@ -22,40 +23,46 @@ const variantStyles: Record<
     value: "",
   },
   blue: {
-    card: "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800",
+    card: "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800",
     title: "text-blue-700 dark:text-blue-400",
     icon: "text-blue-500 dark:text-blue-400",
     value: "text-blue-900 dark:text-blue-100",
   },
   yellow: {
-    card: "bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800",
+    card: "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800",
     title: "text-yellow-700 dark:text-yellow-400",
     icon: "text-yellow-500 dark:text-yellow-400",
     value: "text-yellow-900 dark:text-yellow-100",
   },
   emerald: {
-    card: "bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800",
+    card: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800",
     title: "text-emerald-700 dark:text-emerald-400",
     icon: "text-emerald-500 dark:text-emerald-400",
     value: "text-emerald-900 dark:text-emerald-100",
   },
   purple: {
-    card: "bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800",
+    card: "bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800",
     title: "text-purple-700 dark:text-purple-400",
     icon: "text-purple-500 dark:text-purple-400",
     value: "text-purple-900 dark:text-purple-100",
   },
   red: {
-    card: "bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 border-red-200 dark:border-red-800",
-    title: "text-red-700 dark:text-red-400",
-    icon: "text-red-500 dark:text-red-400",
-    value: "text-red-900 dark:text-red-100",
+    card: "bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800",
+    title: "text-rose-700 dark:text-rose-400",
+    icon: "text-rose-500 dark:text-rose-400",
+    value: "text-rose-900 dark:text-rose-100",
   },
   orange: {
-    card: "bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800",
+    card: "bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800",
     title: "text-orange-700 dark:text-orange-400",
     icon: "text-orange-500 dark:text-orange-400",
     value: "text-orange-900 dark:text-orange-100",
+  },
+  cyan: {
+    card: "bg-cyan-50 dark:bg-cyan-950/20 border-cyan-200 dark:border-cyan-800",
+    title: "text-cyan-700 dark:text-cyan-400",
+    icon: "text-cyan-500 dark:text-cyan-400",
+    value: "text-cyan-900 dark:text-cyan-100",
   },
 };
 

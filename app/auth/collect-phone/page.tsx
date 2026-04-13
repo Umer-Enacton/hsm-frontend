@@ -96,13 +96,12 @@ function PhoneCollectionForm() {
                     type="tel"
                     placeholder="9876543210"
                     className="pl-10 pr-10"
+                    validateAs="phone"
                     value={phone}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "");
-                      setPhone(value);
+                      setPhone(e.target.value);
                     }}
                     disabled={isLoading}
-                    maxLength={10}
                     autoFocus
                     required
                   />

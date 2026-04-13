@@ -73,7 +73,12 @@ export function DashboardLayout({
       {/* Main area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        {header && <Header {...header} />}
+        {header && (
+          <Header
+            {...header}
+            onMobileMenuToggle={() => setIsMobileOpen((prev) => !prev)}
+          />
+        )}
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto bg-muted/30">
@@ -81,7 +86,7 @@ export function DashboardLayout({
         </main>
 
         {/* Optional footer */}
-        {showFooter && footer && <Footer compact {...footer} />}
+        {<Footer compact {...footer} />}
       </div>
     </div>
   );

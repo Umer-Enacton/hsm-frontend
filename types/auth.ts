@@ -10,6 +10,7 @@ export enum UserRole {
   CUSTOMER = 1,
   PROVIDER = 2,
   ADMIN = 3,
+  STAFF = 4, // Service provider staff/workers
 }
 
 /**
@@ -34,6 +35,7 @@ export interface TokenPayload {
   name: string;
   email: string;
   roleId: UserRole;
+  phone?: string;
   iat?: number;
   exp?: number;
 }

@@ -7,19 +7,23 @@ import {
   Briefcase,
   Clock,
   Calendar,
+  CalendarClock,
   MessageSquare,
   Star,
   CreditCard,
   Crown,
+  Users,
+  Wallet,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { getUserData, isAuthenticated, handleLogout } from "@/lib/auth-utils";
+import { getUserData, handleLogout } from "@/lib/auth-utils";
 import { getCurrentProfile } from "@/lib/profile-api";
-import { UserRole, type User } from "@/types/auth";
+import { type User } from "@/types/auth";
 import { getProviderBusiness } from "@/lib/provider/api";
 import { api, API_ENDPOINTS } from "@/lib/api";
+import { ProviderNotificationModal } from "@/components/provider/ProviderNotificationModal";
 
 // Navigation items for the provider sidebar
 const navItems = [
@@ -28,6 +32,9 @@ const navItems = [
   { label: "Services", href: "/provider/services", icon: MessageSquare },
   { label: "Availability", href: "/provider/availability", icon: Calendar },
   { label: "Bookings", href: "/provider/bookings", icon: Clock },
+  { label: "Staff", href: "/provider/staff", icon: Users },
+  { label: "Leave Management", href: "/provider/staff/leave", icon: CalendarClock },
+  { label: "Staff Payouts", href: "/provider/staff-payouts", icon: Wallet },
   { label: "Reviews", href: "/provider/reviews", icon: Star },
   { label: "Payments", href: "/provider/payments", icon: CreditCard },
   { label: "Subscription", href: "/provider/subscription", icon: Crown },
@@ -65,48 +72,22 @@ export default function ProviderLayout({
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        // Check if user is authenticated
-        if (!isAuthenticated()) {
-          console.log("Not authenticated, redirecting to login");
-          router.push("/login");
-          return;
-        }
-
-        // Get user data from token
+        // Get user data from token (middleware already verified auth)
         const userData = getUserData();
-        console.log("User data from token:", userData);
-
         if (!userData) {
-          console.log("No user data found, redirecting to login");
-          router.push("/login");
-          return;
-        }
-
-        // Check if user has provider role
-        if (userData.roleId !== UserRole.PROVIDER) {
-          console.log("Not a provider user, roleId:", userData.roleId);
-          setError("Access denied: Provider access required");
-          setTimeout(() => {
-            router.push("/unauthorized");
-          }, 2000);
+          setIsLoading(false);
           return;
         }
 
         // Fetch full user profile from backend (includes avatar)
         try {
           const userProfile = await getCurrentProfile();
-          console.log("Fetched user profile:", userProfile);
           setUser(userProfile);
         } catch (profileError) {
-          console.error(
-            "Failed to fetch profile, using token data:",
-            profileError,
-          );
-          // Fallback to token data if profile fetch fails
+          console.error("Failed to fetch profile, using token data:", profileError);
           setUser({
             id: userData.id,
-            name:
-              userData.name || userData.email?.split("@")[0] || "Provider User",
+            name: userData.name || userData.email?.split("@")[0] || "Provider User",
             email: userData.email || "provider@hsm.com",
             phone: "",
             roleId: userData.roleId,
@@ -116,7 +97,6 @@ export default function ProviderLayout({
 
         // Check if provider has completed onboarding
         // Skip onboarding check if already on onboarding page or payments page
-        // Only redirect to onboarding if NO business exists
         if (
           !pathname?.includes("/onboarding") &&
           !pathname?.includes("/payments")
@@ -124,24 +104,14 @@ export default function ProviderLayout({
           try {
             const businessData = await getProviderBusiness(userData.id);
 
-            // If no business exists, redirect to onboarding
             if (!businessData) {
-              console.log(
-                "No business profile found, redirecting to onboarding",
-              );
               router.push("/onboarding");
               return;
             }
 
-            // Store business data for verification status
             setBusiness(businessData);
-
-            // Business exists - continue to dashboard
-            // Payment details check is now handled on the dashboard itself with a warning banner
-            console.log("Business profile found, continuing to dashboard");
           } catch (businessError) {
             console.error("Error checking business profile:", businessError);
-            // If error fetching business (404), redirect to onboarding
             router.push("/onboarding");
             return;
           }
@@ -151,12 +121,9 @@ export default function ProviderLayout({
 
         // Fetch subscription plan for badge
         fetchSubscriptionPlan();
-      } catch {
-        console.error("Error in provider layout:");
-        setError("Authentication error");
-        setTimeout(() => {
-          router.push("/login");
-        }, 2000);
+      } catch (error) {
+        console.error("Error in provider layout:", error);
+        setIsLoading(false);
       }
     };
 
@@ -164,7 +131,6 @@ export default function ProviderLayout({
 
     // Listen for profile update events
     const handleProfileUpdate = () => {
-      console.log("Profile updated event received, refreshing user data");
       loadUserData();
     };
 
@@ -234,9 +200,20 @@ export default function ProviderLayout({
           businessVerification: business?.isVerified ?? false,
           planName,
         }}
+        footer={{
+          appName: "HomeFixCare",
+          links: [
+            { label: "Privacy Policy", href: "/provider/privacy" },
+            { label: "Terms & Conditions", href: "/provider/terms" },
+          ],
+        }}
+        showFooter={true}
       >
         {children}
       </DashboardLayout>
+
+      {/* Global Notification Modal */}
+      <ProviderNotificationModal />
     </>
   );
 }

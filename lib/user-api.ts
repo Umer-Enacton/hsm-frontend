@@ -192,6 +192,8 @@ export const getRoleLabel = (roleId: number): string => {
       return "Provider";
     case 3:
       return "Admin";
+    case 4:
+      return "Staff";
     default:
       return "Unknown";
   }
@@ -210,6 +212,8 @@ export const getRoleColor = (roleId: number): string => {
       return "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800";
     case 3:
       return "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800";
+    case 4:
+      return "bg-cyan-100 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400 dark:border-cyan-800";
     default:
       return "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
   }

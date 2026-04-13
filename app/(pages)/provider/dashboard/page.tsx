@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { VerificationAlert } from "@/components/provider/shared/VerificationAlert";
 import { ProviderDashboardSkeleton } from "@/components/provider/skeletons/ProviderDashboardSkeleton";
 import { AnalyticsSection } from "@/components/provider/analytics";
 import {
@@ -149,38 +148,6 @@ export default function ProviderDashboardPage() {
           Refresh
         </Button>
       </div>
-
-      {/* Verification Alert - only show if NOT verified */}
-      {business && !business.isVerified && (
-        <VerificationAlert isVerified={false} businessName={business.name} />
-      )}
-
-      {/* Payment Details Warning - only show if no payment details */}
-      {business && !business.hasPaymentDetails && (
-        <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/40 dark:border-orange-800">
-          <CardContent className="pt-6">
-            <div className="flex gap-3">
-              <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
-              <div className="text-sm text-orange-800 dark:text-orange-300 flex-1">
-                <p className="font-medium mb-1">Payment Details Required</p>
-                <p className="text-orange-700 dark:text-orange-400">
-                  You must add payment details (UPI ID or Bank Account) to
-                  receive bookings and earnings. Without payment details,
-                  customers cannot book your services.
-                </p>
-              </div>
-              <Button
-                size="sm"
-                onClick={() => router.push("/provider/payments")}
-                className="bg-orange-600 hover:bg-orange-700"
-              >
-                Add Payment Details
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

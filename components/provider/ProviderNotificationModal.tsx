@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { X, AlertTriangle, Ban, CheckCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { X, AlertTriangle, Ban, CheckCircle, CreditCard } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 export function ProviderNotificationModal() {
   const [notifications, setNotifications] = useAtom(providerNotificationsAtom);
   const [dismissed, setDismissed] = useAtom(notificationDismissedAtom);
+  const router = useRouter();
 
   // Query to check provider status - auto-refreshes every 30 seconds
   const { data: statusData } = useQuery({
@@ -34,6 +36,9 @@ export function ProviderNotificationModal() {
       (statusData.deactivatedServices || []).map((s: any) => s.id),
     );
     const businessIsBlocked = statusData.business?.isBlocked;
+    const businessHasPaymentDetails = statusData.business?.hasPaymentDetails;
+    const businessIsVerified = statusData.business?.isVerified;
+    const businessExists = statusData.business;
 
     // Check for blocked business
     if (businessIsBlocked) {
@@ -51,6 +56,34 @@ export function ProviderNotificationModal() {
             statusData.business.blockedReason ||
             "Violation of platform policies",
           blockedAt: statusData.business.blockedAt,
+        });
+      }
+    }
+
+    // Check for pending verification (only if not blocked)
+    if (businessExists && !businessIsBlocked && !businessIsVerified) {
+      const key = `verification_${statusData.business.id}`;
+      if (!dismissed.has(key)) {
+        newNotifications.push({
+          type: "pending_verification",
+          businessId: statusData.business.id,
+          businessName: statusData.business.businessName || "Your business",
+        });
+      }
+    }
+
+    // Check for missing payment details (only if business exists and not blocked)
+    if (
+      statusData.business &&
+      !businessIsBlocked &&
+      !businessHasPaymentDetails
+    ) {
+      const key = `payment_details_${statusData.business.id}`;
+      if (!dismissed.has(key)) {
+        newNotifications.push({
+          type: "missing_payment_details",
+          businessId: statusData.business.id,
+          businessName: statusData.business.businessName || "Your business",
         });
       }
     }
@@ -82,14 +115,27 @@ export function ProviderNotificationModal() {
     const notification = notifications[indexToDismiss];
     if (!notification) return;
 
-    const key =
-      notification.type === "blocked_business"
-        ? `blocked_${notification.businessId}`
-        : notification.type === "unblocked_business"
-          ? `unblocked_${notification.businessId}`
-          : notification.type === "deactivated_service"
-            ? `service_${notification.serviceId}`
-            : `service_${notification.serviceId}`;
+    let key: string;
+    switch (notification.type) {
+      case "blocked_business":
+        key = `blocked_${notification.businessId}`;
+        break;
+      case "unblocked_business":
+        key = `unblocked_${notification.businessId}`;
+        break;
+      case "pending_verification":
+        key = `verification_${notification.businessId}`;
+        break;
+      case "missing_payment_details":
+        key = `payment_details_${notification.businessId}`;
+        break;
+      case "deactivated_service":
+      case "reactivated_service":
+        key = `service_${notification.serviceId}`;
+        break;
+      default:
+        key = `unknown_${indexToDismiss}`;
+    }
 
     const newDismissed = new Set(dismissed);
     newDismissed.add(key);
@@ -105,6 +151,8 @@ export function ProviderNotificationModal() {
     const isUnblockedBusiness = notification.type === "unblocked_business";
     const isDeactivatedService = notification.type === "deactivated_service";
     const isReactivatedService = notification.type === "reactivated_service";
+    const isMissingPaymentDetails = notification.type === "missing_payment_details";
+    const isPendingVerification = notification.type === "pending_verification";
 
     const title = isBlockedBusiness
       ? "Business Blocked"
@@ -112,7 +160,11 @@ export function ProviderNotificationModal() {
         ? "Business Unblocked"
         : isDeactivatedService
           ? "Service Deactivated"
-          : "Service Reactivated";
+          : isReactivatedService
+            ? "Service Reactivated"
+            : isMissingPaymentDetails
+              ? "Payment Details Required"
+              : "Pending Verification";
 
     const message = isBlockedBusiness
       ? `Your business "${notification.businessName}" has been blocked by admin.`
@@ -120,7 +172,11 @@ export function ProviderNotificationModal() {
         ? `Your business "${notification.businessName}" has been unblocked.`
         : isDeactivatedService
           ? `Service "${notification.serviceName}" has been deactivated by admin.`
-          : `Service "${notification.serviceName}" has been reactivated by admin.`;
+          : isReactivatedService
+            ? `Service "${notification.serviceName}" has been reactivated by admin.`
+            : isMissingPaymentDetails
+              ? "Add payment details to receive bookings and earnings."
+              : `Your business "${notification.businessName}" is pending verification by admin.`;
 
     const reason = notification.reason || "No reason provided";
 
@@ -138,6 +194,30 @@ export function ProviderNotificationModal() {
             reasonText: "text-green-800 dark:text-green-400",
             icon: CheckCircle,
           }
+        : isPendingVerification
+          ? {
+              cardBorder:
+                "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/50",
+              iconColor: "text-blue-600 dark:text-blue-400",
+              titleColor: "text-blue-800 dark:text-blue-300",
+              messageColor: "text-blue-700 dark:text-blue-300",
+              reasonBg: "bg-blue-100 dark:bg-blue-900/30",
+              reasonTitle: "text-blue-900 dark:text-blue-200",
+              reasonText: "text-blue-800 dark:text-blue-400",
+              icon: AlertTriangle,
+            }
+        : isMissingPaymentDetails
+          ? {
+              cardBorder:
+                "border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/50",
+              iconColor: "text-orange-600 dark:text-orange-400",
+              titleColor: "text-orange-800 dark:text-orange-300",
+              messageColor: "text-orange-700 dark:text-orange-300",
+              reasonBg: "bg-orange-100 dark:bg-orange-900/30",
+              reasonTitle: "text-orange-900 dark:text-orange-200",
+              reasonText: "text-orange-800 dark:text-orange-400",
+              icon: CreditCard,
+            }
         : {
             cardBorder:
               "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/50",
@@ -184,18 +264,43 @@ export function ProviderNotificationModal() {
                 {message}
               </p>
 
-              <div className={`${colorScheme.reasonBg} rounded-md p-2`}>
-                <p
-                  className={`text-xs font-medium ${colorScheme.reasonTitle} mb-0.5`}
-                >
-                  Reason:
-                </p>
-                <p
-                  className={`text-xs ${colorScheme.reasonText} break-words line-clamp-3`}
-                >
-                  {reason}
-                </p>
-              </div>
+              {/* Show action button for missing payment details */}
+              {isMissingPaymentDetails && (
+                <div className="mt-2">
+                  <Button
+                    size="sm"
+                    onClick={() => router.push("/provider/payments")}
+                    className={`w-full ${colorScheme.iconColor} bg-current hover:opacity-90`}
+                  >
+                    Add Payment Details
+                  </Button>
+                </div>
+              )}
+
+              {/* Show info for pending verification */}
+              {isPendingVerification && (
+                <div className={`${colorScheme.reasonBg} rounded-md p-2`}>
+                  <p className={`text-xs ${colorScheme.reasonText}`}>
+                    You will be notified once verified. This usually takes 1-2 business days.
+                  </p>
+                </div>
+              )}
+
+              {/* Show reason for blocked/deactivated notifications */}
+              {(isBlockedBusiness || isDeactivatedService) && (
+                <div className={`${colorScheme.reasonBg} rounded-md p-2`}>
+                  <p
+                    className={`text-xs font-medium ${colorScheme.reasonTitle} mb-0.5`}
+                  >
+                    Reason:
+                  </p>
+                  <p
+                    className={`text-xs ${colorScheme.reasonText} break-words line-clamp-3`}
+                  >
+                    {reason}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

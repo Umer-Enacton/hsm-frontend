@@ -455,6 +455,8 @@ export function ServiceCompletionDialog({
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}
+                    maxLength={300}
+                    showCount
                   />
                 </div>
 

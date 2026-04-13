@@ -53,6 +53,7 @@ interface BookingStats {
   confirmed: number;
   completed: number;
   cancelled: number;
+  missed: number;
 }
 
 export default function CustomerBookingsPage() {
@@ -61,7 +62,7 @@ export default function CustomerBookingsPage() {
 
   // Local state for UI-only concerns (must be declared before hooks that use them)
   const [activeTab, setActiveTab] = useState<
-    "all" | BookingStatus.CONFIRMED | BookingStatus.COMPLETED | BookingStatus.CANCELLED
+    "all" | BookingStatus.CONFIRMED | BookingStatus.COMPLETED | BookingStatus.CANCELLED | BookingStatus.MISSED
   >("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
@@ -108,7 +109,7 @@ export default function CustomerBookingsPage() {
 
   // Sync tab to URL
   const updateTab = (newTab: string) => {
-    setActiveTab(newTab as "all" | BookingStatus.CONFIRMED | BookingStatus.COMPLETED | BookingStatus.CANCELLED);
+    setActiveTab(newTab as "all" | BookingStatus.CONFIRMED | BookingStatus.COMPLETED | BookingStatus.CANCELLED | BookingStatus.MISSED);
     setCurrentPage(1); // Reset page when tab changes
     const params = new URLSearchParams(searchParams.toString());
     if (newTab === "all") {
@@ -139,7 +140,7 @@ export default function CustomerBookingsPage() {
         bookingStatus,
       });
 
-      if (["confirmed", "completed", "cancelled"].includes(bookingStatus)) {
+      if (["confirmed", "completed", "cancelled", "missed"].includes(bookingStatus)) {
         if (activeTab === bookingStatus) {
           // Already on correct tab, expand directly
           console.log(
@@ -284,6 +285,7 @@ export default function CustomerBookingsPage() {
     confirmed: overallBookings.filter((b) => b.status === "confirmed").length,
     completed: overallBookings.filter((b) => b.status === "completed").length,
     cancelled: overallBookings.filter((b) => b.status === "cancelled").length,
+    missed: overallBookings.filter((b) => b.status === "missed").length,
   };
 
   // Refresh function using query invalidation
@@ -304,19 +306,21 @@ export default function CustomerBookingsPage() {
         "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
       cancelled:
         "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
+      missed:
+        "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800",
     };
 
     const icons: Record<string, React.ReactNode> = {
       confirmed: <Calendar className="h-3 w-3" />,
       completed: <Calendar className="h-3 w-3" />,
       cancelled: <XCircle className="h-3 w-3" />,
+      missed: <Clock className="h-3 w-3" />,
     };
 
     // Format status text for display
     const formatStatusText = (s: string) => {
       const statusMap: Record<string, string> = {
-        reschedule_pending: "Reschedule Pending",
-        payment_pending: "Payment Pending",
+        missed: "Delayed",
       };
       return (
         statusMap[s] ||
@@ -377,11 +381,8 @@ export default function CustomerBookingsPage() {
       }
     }
 
-    // Show refund indicator for cancelled or rejected bookings that were refunded
-    if (
-      (booking.status === "cancelled" || booking.status === "rejected") &&
-      booking.isRefunded
-    ) {
+    // Show refund indicator for cancelled bookings that were refunded
+    if (booking.status === "cancelled" && booking.isRefunded) {
       // Get refund amount from booking.refundAmount or default to totalPrice
       const refundAmount = booking.refundAmount || booking.totalPrice;
       // Convert from paise to rupees if needed (check if amount looks like paise)
@@ -615,12 +616,20 @@ export default function CustomerBookingsPage() {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="missed" className="whitespace-nowrap">
+              Delayed
+              {stats.missed > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.missed}
+                </Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
         </div>
 
         {/* Desktop: Grid layout tabs */}
         <div className="hidden md:block">
-          <TabsList className="grid w-full max-w-2xl grid-cols-4 h-10">
+          <TabsList className="grid w-full max-w-2xl grid-cols-5 h-10">
             <TabsTrigger value="all">
               All
               {stats.total > 0 && (
@@ -650,6 +659,14 @@ export default function CustomerBookingsPage() {
               {stats.cancelled > 0 && (
                 <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                   {stats.cancelled}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="missed">
+              Delayed
+              {stats.missed > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {stats.missed}
                 </Badge>
               )}
             </TabsTrigger>

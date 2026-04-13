@@ -66,14 +66,14 @@ export function ServicesChart({ data, totalBookings }: ServicesChartProps) {
       <CardContent>
         <div className="w-full overflow-x-auto">
           <div className="min-w-[280px]">
-            <ChartContainer config={chartConfig} className="h-[250px]">
+            <ChartContainer config={chartConfig} className="h-[250px] w-full">
               <BarChart
                 accessibilityLayer
                 data={topServices}
                 layout="vertical"
                 margin={{
                   left: 0,
-                  right: 0,
+                  right: 20,
                   top: 5,
                   bottom: 5,
                 }}
@@ -87,6 +87,7 @@ export function ServicesChart({ data, totalBookings }: ServicesChartProps) {
                   type="number"
                   tickLine={false}
                   axisLine={false}
+                  allowDecimals={false}
                   className="text-muted-foreground"
                   tick={{ fontSize: 10 }}
                 />
@@ -96,7 +97,7 @@ export function ServicesChart({ data, totalBookings }: ServicesChartProps) {
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
-                  width={80}
+                  width={60}
                   className="text-muted-foreground text-xs"
                   tickFormatter={(value) =>
                     value.length > 10 ? `${value.slice(0, 10)}...` : value
@@ -105,7 +106,8 @@ export function ServicesChart({ data, totalBookings }: ServicesChartProps) {
                 <ChartTooltip cursor={true} content={<ChartTooltipContent />} />
                 <Bar
                   dataKey="bookingCount"
-                  fill="var(--color-bookings)"
+                  fill="#C084FC"
+                  barSize={30}
                   radius={4}
                 />
               </BarChart>

@@ -121,6 +121,30 @@ interface PlanFormData {
   benefits: string;
 }
 
+interface FormErrors {
+  name?: string;
+  description?: string;
+  monthlyPrice?: string;
+  yearlyPrice?: string;
+  trialDays?: string;
+  platformFeePercentage?: string;
+  maxServices?: string;
+  maxBookingsPerMonth?: string;
+  benefits?: string;
+}
+
+interface TouchedFields {
+  name?: boolean;
+  description?: boolean;
+  monthlyPrice?: boolean;
+  yearlyPrice?: boolean;
+  trialDays?: boolean;
+  platformFeePercentage?: boolean;
+  maxServices?: boolean;
+  maxBookingsPerMonth?: boolean;
+  benefits?: boolean;
+}
+
 interface DeletePlanState {
   isOpen: boolean;
   plan: Plan | null;
@@ -160,6 +184,82 @@ export default function AdminSubscriptionPlansPage() {
   });
 
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [touchedFields, setTouchedFields] = useState<TouchedFields>({});
+
+  // Validation functions
+  const validateField = (field: keyof PlanFormData, value: string): string | undefined => {
+    switch (field) {
+      case "name":
+        const trimmedName = value.trim();
+        if (!trimmedName) return "Plan name is required";
+        if (trimmedName.length < 3) return "Plan name must be at least 3 characters";
+        if (trimmedName.length > 50) return "Plan name cannot exceed 50 characters";
+        return undefined;
+      case "description":
+        if (value && value.length > 500) return "Description cannot exceed 500 characters";
+        return undefined;
+      case "monthlyPrice":
+        const monthlyPrice = Number(value);
+        if (!value || isNaN(monthlyPrice)) return "Monthly price is required";
+        if (monthlyPrice < 0) return "Price cannot be negative";
+        if (monthlyPrice > 100000) return "Price seems unrealistic (max ₹100,000)";
+        return undefined;
+      case "yearlyPrice":
+        const yearlyPrice = Number(value);
+        if (!value || isNaN(yearlyPrice)) return "Yearly price is required";
+        if (yearlyPrice < 0) return "Price cannot be negative";
+        if (yearlyPrice > 1000000) return "Price seems unrealistic (max ₹1,000,000)";
+        return undefined;
+      case "trialDays":
+        const trialDays = Number(value);
+        if (value && (isNaN(trialDays) || trialDays < 0)) return "Trial days must be positive";
+        if (trialDays > 365) return "Trial days cannot exceed 365";
+        return undefined;
+      case "platformFeePercentage":
+        const platformFee = Number(value);
+        if (!value || isNaN(platformFee)) return "Platform fee is required";
+        if (platformFee < 0) return "Platform fee cannot be negative";
+        if (platformFee > 100) return "Platform fee cannot exceed 100%";
+        return undefined;
+      case "maxServices":
+        const maxServices = Number(value);
+        if (value && (isNaN(maxServices) || maxServices < -1)) return "Must be -1 or greater";
+        if (maxServices > 1000 && maxServices !== -1) return "Max services cannot exceed 1000";
+        return undefined;
+      case "maxBookingsPerMonth":
+        const maxBookings = Number(value);
+        if (value && (isNaN(maxBookings) || maxBookings < -1)) return "Must be -1 or greater";
+        if (maxBookings > 10000 && maxBookings !== -1) return "Max bookings cannot exceed 10000";
+        return undefined;
+      case "benefits":
+        if (value && value.length > 500) return "Benefits cannot exceed 500 characters";
+        return undefined;
+      default:
+        return undefined;
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+    let isValid = true;
+
+    (Object.keys(formData) as Array<keyof PlanFormData>).forEach((field) => {
+      // Skip validation for boolean fields
+      if (field === "prioritySupport" || field === "analyticsAccess") {
+        return;
+      }
+      const value = formData[field];
+      const error = validateField(field, typeof value === "string" ? value : String(value));
+      if (error) {
+        errors[field] = error;
+        isValid = false;
+      }
+    });
+
+    setFormErrors(errors);
+    return isValid;
+  };
 
   // Fetch plans
   const fetchPlans = useCallback(async () => {
@@ -261,6 +361,9 @@ export default function AdminSubscriptionPlansPage() {
         benefits: "",
       });
     }
+    // Reset errors and touched fields
+    setFormErrors({});
+    setTouchedFields({});
     setIsEditDialogOpen(true);
   }, []);
 
@@ -268,6 +371,26 @@ export default function AdminSubscriptionPlansPage() {
   const handleFormSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
+
+      // Mark all fields as touched
+      setTouchedFields({
+        name: true,
+        description: true,
+        monthlyPrice: true,
+        yearlyPrice: true,
+        trialDays: true,
+        platformFeePercentage: true,
+        maxServices: true,
+        maxBookingsPerMonth: true,
+        benefits: true,
+      });
+
+      // Validate form
+      if (!validateForm()) {
+        toast.error("Please fix the validation errors");
+        return;
+      }
+
       setSubmitting(true);
 
       try {
@@ -745,11 +868,31 @@ export default function AdminSubscriptionPlansPage() {
                     id="name"
                     placeholder="e.g. Pro Plan"
                     value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      if (touchedFields.name) {
+                        setFormErrors((prev) => ({
+                          ...prev,
+                          name: validateField("name", e.target.value),
+                        }));
+                      }
+                    }}
+                    onBlur={() => {
+                      setTouchedFields((prev) => ({ ...prev, name: true }));
+                      setFormErrors((prev) => ({
+                        ...prev,
+                        name: validateField("name", formData.name),
+                      }));
+                    }}
+                    className={touchedFields.name && formErrors.name ? "border-destructive" : ""}
                     required
                   />
+                  {touchedFields.name && formErrors.name && (
+                    <p className="text-xs text-destructive">{formErrors.name}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {formData.name.length}/50 characters
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -758,11 +901,31 @@ export default function AdminSubscriptionPlansPage() {
                     id="description"
                     placeholder="Plan description..."
                     value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setFormData({ ...formData, description: e.target.value });
+                      if (touchedFields.description) {
+                        setFormErrors((prev) => ({
+                          ...prev,
+                          description: validateField("description", e.target.value),
+                        }));
+                      }
+                    }}
+                    onBlur={() => {
+                      setTouchedFields((prev) => ({ ...prev, description: true }));
+                      setFormErrors((prev) => ({
+                        ...prev,
+                        description: validateField("description", formData.description),
+                      }));
+                    }}
+                    className={touchedFields.description && formErrors.description ? "border-destructive" : ""}
                     rows={2}
                   />
+                  {touchedFields.description && formErrors.description && (
+                    <p className="text-xs text-destructive">{formErrors.description}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {formData.description.length}/500 characters
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -774,14 +937,31 @@ export default function AdminSubscriptionPlansPage() {
                       min="0"
                       placeholder="200"
                       value={formData.monthlyPrice}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setFormData({
                           ...formData,
                           monthlyPrice: e.target.value,
-                        })
-                      }
+                        });
+                        if (touchedFields.monthlyPrice) {
+                          setFormErrors((prev) => ({
+                            ...prev,
+                            monthlyPrice: validateField("monthlyPrice", e.target.value),
+                          }));
+                        }
+                      }}
+                      onBlur={() => {
+                        setTouchedFields((prev) => ({ ...prev, monthlyPrice: true }));
+                        setFormErrors((prev) => ({
+                          ...prev,
+                          monthlyPrice: validateField("monthlyPrice", formData.monthlyPrice),
+                        }));
+                      }}
+                      className={touchedFields.monthlyPrice && formErrors.monthlyPrice ? "border-destructive" : ""}
                       required
                     />
+                    {touchedFields.monthlyPrice && formErrors.monthlyPrice && (
+                      <p className="text-xs text-destructive">{formErrors.monthlyPrice}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="yearlyPrice">Yearly (₹)</Label>
@@ -791,14 +971,31 @@ export default function AdminSubscriptionPlansPage() {
                       min="0"
                       placeholder="2400"
                       value={formData.yearlyPrice}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setFormData({
                           ...formData,
                           yearlyPrice: e.target.value,
-                        })
-                      }
+                        });
+                        if (touchedFields.yearlyPrice) {
+                          setFormErrors((prev) => ({
+                            ...prev,
+                            yearlyPrice: validateField("yearlyPrice", e.target.value),
+                          }));
+                        }
+                      }}
+                      onBlur={() => {
+                        setTouchedFields((prev) => ({ ...prev, yearlyPrice: true }));
+                        setFormErrors((prev) => ({
+                          ...prev,
+                          yearlyPrice: validateField("yearlyPrice", formData.yearlyPrice),
+                        }));
+                      }}
+                      className={touchedFields.yearlyPrice && formErrors.yearlyPrice ? "border-destructive" : ""}
                       required
                     />
+                    {touchedFields.yearlyPrice && formErrors.yearlyPrice && (
+                      <p className="text-xs text-destructive">{formErrors.yearlyPrice}</p>
+                    )}
                   </div>
                 </div>
 
@@ -809,12 +1006,30 @@ export default function AdminSubscriptionPlansPage() {
                       id="trialDays"
                       type="number"
                       min="0"
+                      max="365"
                       placeholder="7"
                       value={formData.trialDays}
-                      onChange={(e) =>
-                        setFormData({ ...formData, trialDays: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, trialDays: e.target.value });
+                        if (touchedFields.trialDays) {
+                          setFormErrors((prev) => ({
+                            ...prev,
+                            trialDays: validateField("trialDays", e.target.value),
+                          }));
+                        }
+                      }}
+                      onBlur={() => {
+                        setTouchedFields((prev) => ({ ...prev, trialDays: true }));
+                        setFormErrors((prev) => ({
+                          ...prev,
+                          trialDays: validateField("trialDays", formData.trialDays),
+                        }));
+                      }}
+                      className={touchedFields.trialDays && formErrors.trialDays ? "border-destructive" : ""}
                     />
+                    {touchedFields.trialDays && formErrors.trialDays && (
+                      <p className="text-xs text-destructive">{formErrors.trialDays}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="platformFeePercentage">
@@ -826,14 +1041,31 @@ export default function AdminSubscriptionPlansPage() {
                       min="0"
                       max="100"
                       value={formData.platformFeePercentage}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setFormData({
                           ...formData,
                           platformFeePercentage: e.target.value,
-                        })
-                      }
+                        });
+                        if (touchedFields.platformFeePercentage) {
+                          setFormErrors((prev) => ({
+                            ...prev,
+                            platformFeePercentage: validateField("platformFeePercentage", e.target.value),
+                          }));
+                        }
+                      }}
+                      onBlur={() => {
+                        setTouchedFields((prev) => ({ ...prev, platformFeePercentage: true }));
+                        setFormErrors((prev) => ({
+                          ...prev,
+                          platformFeePercentage: validateField("platformFeePercentage", formData.platformFeePercentage),
+                        }));
+                      }}
+                      className={touchedFields.platformFeePercentage && formErrors.platformFeePercentage ? "border-destructive" : ""}
                       required
                     />
+                    {touchedFields.platformFeePercentage && formErrors.platformFeePercentage && (
+                      <p className="text-xs text-destructive">{formErrors.platformFeePercentage}</p>
+                    )}
                   </div>
                 </div>
 
@@ -845,13 +1077,30 @@ export default function AdminSubscriptionPlansPage() {
                       type="number"
                       min="-1"
                       value={formData.maxServices}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setFormData({
                           ...formData,
                           maxServices: e.target.value,
-                        })
-                      }
+                        });
+                        if (touchedFields.maxServices) {
+                          setFormErrors((prev) => ({
+                            ...prev,
+                            maxServices: validateField("maxServices", e.target.value),
+                          }));
+                        }
+                      }}
+                      onBlur={() => {
+                        setTouchedFields((prev) => ({ ...prev, maxServices: true }));
+                        setFormErrors((prev) => ({
+                          ...prev,
+                          maxServices: validateField("maxServices", formData.maxServices),
+                        }));
+                      }}
+                      className={touchedFields.maxServices && formErrors.maxServices ? "border-destructive" : ""}
                     />
+                    {touchedFields.maxServices && formErrors.maxServices && (
+                      <p className="text-xs text-destructive">{formErrors.maxServices}</p>
+                    )}
                     <p className="text-[10px] text-muted-foreground">
                       -1 = unlimited
                     </p>
@@ -864,13 +1113,30 @@ export default function AdminSubscriptionPlansPage() {
                       min="-1"
                       placeholder="100"
                       value={formData.maxBookingsPerMonth}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setFormData({
                           ...formData,
                           maxBookingsPerMonth: e.target.value,
-                        })
-                      }
+                        });
+                        if (touchedFields.maxBookingsPerMonth) {
+                          setFormErrors((prev) => ({
+                            ...prev,
+                            maxBookingsPerMonth: validateField("maxBookingsPerMonth", e.target.value),
+                          }));
+                        }
+                      }}
+                      onBlur={() => {
+                        setTouchedFields((prev) => ({ ...prev, maxBookingsPerMonth: true }));
+                        setFormErrors((prev) => ({
+                          ...prev,
+                          maxBookingsPerMonth: validateField("maxBookingsPerMonth", formData.maxBookingsPerMonth),
+                        }));
+                      }}
+                      className={touchedFields.maxBookingsPerMonth && formErrors.maxBookingsPerMonth ? "border-destructive" : ""}
                     />
+                    {touchedFields.maxBookingsPerMonth && formErrors.maxBookingsPerMonth && (
+                      <p className="text-xs text-destructive">{formErrors.maxBookingsPerMonth}</p>
+                    )}
                     <p className="text-[10px] text-muted-foreground">
                       -1 = unlimited
                     </p>
@@ -883,11 +1149,31 @@ export default function AdminSubscriptionPlansPage() {
                     id="benefits"
                     placeholder="Priority Support, Basic Analytics, Email Support"
                     value={formData.benefits}
-                    onChange={(e) =>
-                      setFormData({ ...formData, benefits: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setFormData({ ...formData, benefits: e.target.value });
+                      if (touchedFields.benefits) {
+                        setFormErrors((prev) => ({
+                          ...prev,
+                          benefits: validateField("benefits", e.target.value),
+                        }));
+                      }
+                    }}
+                    onBlur={() => {
+                      setTouchedFields((prev) => ({ ...prev, benefits: true }));
+                      setFormErrors((prev) => ({
+                        ...prev,
+                        benefits: validateField("benefits", formData.benefits),
+                      }));
+                    }}
+                    className={touchedFields.benefits && formErrors.benefits ? "border-destructive" : ""}
                     rows={2}
                   />
+                  {touchedFields.benefits && formErrors.benefits && (
+                    <p className="text-xs text-destructive">{formErrors.benefits}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {formData.benefits.length}/500 characters
+                  </p>
                 </div>
 
                 {/* Feature Toggles */}
