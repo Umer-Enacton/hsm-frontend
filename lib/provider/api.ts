@@ -24,11 +24,11 @@ import type {
  * Get business profile for current provider
  */
 export async function getProviderBusiness(
-  userId: number
+  userId: number,
 ): Promise<Business | null> {
   try {
     const response = await api.get<{ business: Business }>(
-      API_ENDPOINTS.BUSINESS_BY_PROVIDER(userId)
+      API_ENDPOINTS.BUSINESS_BY_PROVIDER(userId),
     );
     return response.business;
   } catch (error) {
@@ -41,11 +41,11 @@ export async function getProviderBusiness(
  * Create new business profile
  */
 export async function createBusiness(
-  businessData: Partial<Business>
+  businessData: Partial<Business>,
 ): Promise<Business> {
   const response = await api.post<{ business: Business }>(
     API_ENDPOINTS.BUSINESSES,
-    businessData
+    businessData,
   );
   return response.business;
 }
@@ -55,11 +55,11 @@ export async function createBusiness(
  */
 export async function updateBusiness(
   businessId: number,
-  businessData: Partial<Business>
+  businessData: Partial<Business>,
 ): Promise<Business> {
   const response = await api.put<{ business: Business }>(
     API_ENDPOINTS.UPDATE_BUSINESS(businessId),
-    businessData
+    businessData,
   );
   return response.business;
 }
@@ -68,7 +68,12 @@ export async function updateBusiness(
  * Upload business logo via backend
  */
 export async function uploadBusinessLogo(file: File): Promise<{ url: string }> {
-  console.log("Starting logo upload for file:", file.name, file.size, file.type);
+  console.log(
+    "Starting logo upload for file:",
+    file.name,
+    file.size,
+    file.type,
+  );
 
   const formData = new FormData();
   formData.append("logo", file);
@@ -107,9 +112,14 @@ export async function uploadBusinessLogo(file: File): Promise<{ url: string }> {
  * Upload business cover image via backend
  */
 export async function uploadBusinessCoverImage(
-  file: File
+  file: File,
 ): Promise<{ url: string }> {
-  console.log("Starting cover image upload for file:", file.name, file.size, file.type);
+  console.log(
+    "Starting cover image upload for file:",
+    file.name,
+    file.size,
+    file.type,
+  );
 
   const formData = new FormData();
   formData.append("coverImage", file);
@@ -154,7 +164,7 @@ export async function uploadBusinessCoverImage(
 export async function getAvailabilitySlots(
   businessId: number,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
 ): Promise<AvailabilitySlot[]> {
   try {
     let endpoint = `/businesses/${businessId}/slots`;
@@ -178,11 +188,11 @@ export async function getAvailabilitySlots(
  */
 export async function createSlot(
   businessId: number,
-  slot: { startTime: string }
+  slot: { startTime: string },
 ): Promise<any> {
   const response = await api.post<{ slot: any; message: string }>(
     `/slots/${businessId}`,
-    slot
+    slot,
   );
   return response.slot;
 }
@@ -192,11 +202,11 @@ export async function createSlot(
  */
 export async function createSlots(
   businessId: number,
-  slots: Omit<AvailabilitySlot, "id" | "businessId">[]
+  slots: Omit<AvailabilitySlot, "id" | "businessId">[],
 ): Promise<AvailabilitySlot[]> {
   const response = await api.post<{ slots: AvailabilitySlot[] }>(
     `/businesses/${businessId}/slots/batch`,
-    { slots }
+    { slots },
   );
   return response.slots;
 }
@@ -206,11 +216,9 @@ export async function createSlots(
  */
 export async function deleteSlot(
   businessId: number,
-  slotId: number
+  slotId: number,
 ): Promise<void> {
-  await api.delete(
-    API_ENDPOINTS.DELETE_SLOT(businessId, slotId)
-  );
+  await api.delete(API_ENDPOINTS.DELETE_SLOT(businessId, slotId));
 }
 
 /**
@@ -225,11 +233,11 @@ export async function autoGenerateSlots(
     startTime: string;
     endTime: string;
     excludeDays: string[];
-  }
+  },
 ): Promise<AvailabilitySlot[]> {
   const response = await api.post<{ slots: AvailabilitySlot[] }>(
     `/businesses/${businessId}/slots/auto-generate`,
-    config
+    config,
   );
   return response.slots;
 }
@@ -242,11 +250,11 @@ export async function autoGenerateSlots(
  * Get services for a business
  */
 export async function getBusinessServices(
-  businessId: number
+  businessId: number,
 ): Promise<Service[]> {
   try {
     const response = await api.get<{ services: Service[] }>(
-      API_ENDPOINTS.SERVICES_BY_BUSINESS(businessId)
+      API_ENDPOINTS.SERVICES_BY_BUSINESS(businessId),
     );
     return response.services || [];
   } catch (error) {
@@ -260,11 +268,11 @@ export async function getBusinessServices(
  */
 export async function createService(
   businessId: number,
-  serviceData: Partial<Service>
+  serviceData: Partial<Service>,
 ): Promise<Service> {
   const response = await api.post<{ service: Service }>(
-    API_ENDPOINTS.SERVICES.replace(":businessId", businessId.toString()),
-    serviceData
+    `/services/${businessId}`,
+    serviceData,
   );
   return response.service;
 }
@@ -279,8 +287,16 @@ export async function createService(
 export async function getProviderBookings(
   status?: string,
   page?: number,
-  limit?: number
-): Promise<{ bookings: ProviderBooking[]; pagination?: { page: number; limit: number; total: number; totalPages: number } }> {
+  limit?: number,
+): Promise<{
+  bookings: ProviderBooking[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}> {
   try {
     const queryParams = new URLSearchParams();
     if (status) queryParams.append("status", status);
@@ -293,8 +309,14 @@ export async function getProviderBookings(
       : API_ENDPOINTS.PROVIDER_BOOKINGS;
 
     console.log("[Provider API] Fetching bookings from:", endpoint);
-    const response = await api.get<{ bookings: ProviderBooking[]; pagination?: any }>(endpoint);
-    console.log("[Provider API] Received bookings:", response.bookings?.length || 0);
+    const response = await api.get<{
+      bookings: ProviderBooking[];
+      pagination?: any;
+    }>(endpoint);
+    console.log(
+      "[Provider API] Received bookings:",
+      response.bookings?.length || 0,
+    );
     return {
       bookings: response.bookings || [],
       pagination: response.pagination,
@@ -311,10 +333,12 @@ export async function getProviderBookings(
 /**
  * Accept booking
  */
-export async function acceptBooking(bookingId: number): Promise<ProviderBooking> {
+export async function acceptBooking(
+  bookingId: number,
+): Promise<ProviderBooking> {
   const response = await api.put<{ booking: ProviderBooking }>(
     API_ENDPOINTS.ACCEPT_BOOKING(bookingId),
-    {}
+    {},
   );
   return response.booking;
 }
@@ -322,10 +346,12 @@ export async function acceptBooking(bookingId: number): Promise<ProviderBooking>
 /**
  * Reject booking
  */
-export async function rejectBooking(bookingId: number): Promise<ProviderBooking> {
+export async function rejectBooking(
+  bookingId: number,
+): Promise<ProviderBooking> {
   const response = await api.put<{ booking: ProviderBooking }>(
     API_ENDPOINTS.REJECT_BOOKING(bookingId),
-    {}
+    {},
   );
   return response.booking;
 }
@@ -333,10 +359,12 @@ export async function rejectBooking(bookingId: number): Promise<ProviderBooking>
 /**
  * Complete booking
  */
-export async function completeBooking(bookingId: number): Promise<ProviderBooking> {
+export async function completeBooking(
+  bookingId: number,
+): Promise<ProviderBooking> {
   const response = await api.put<{ booking: ProviderBooking }>(
     API_ENDPOINTS.COMPLETE_BOOKING(bookingId),
-    {}
+    {},
   );
   return response.booking;
 }
@@ -349,11 +377,11 @@ export async function completeBooking(bookingId: number): Promise<ProviderBookin
  * Get reviews for a business
  */
 export async function getBusinessReviews(
-  businessId: number
+  businessId: number,
 ): Promise<Review[]> {
   try {
     const response = await api.get<{ feedback: Review[] }>(
-      API_ENDPOINTS.FEEDBACK_BUSINESS(businessId)
+      API_ENDPOINTS.FEEDBACK_BUSINESS(businessId),
     );
     return response.feedback || [];
   } catch (error) {
@@ -372,7 +400,7 @@ export async function getBusinessReviews(
 export async function getRescheduleSettings(): Promise<any> {
   try {
     const response = await api.get<{ settings: any }>(
-      "/booking/provider/settings"
+      "/booking/provider/settings",
     );
     return response.settings;
   } catch (error) {
@@ -384,12 +412,10 @@ export async function getRescheduleSettings(): Promise<any> {
 /**
  * Update reschedule settings for provider
  */
-export async function updateRescheduleSettings(
-  settings: any
-): Promise<any> {
+export async function updateRescheduleSettings(settings: any): Promise<any> {
   const response = await api.put<{ settings: any }>(
     "/booking/provider/settings",
-    settings
+    settings,
   );
   return response.settings;
 }
@@ -404,7 +430,7 @@ export async function updateRescheduleSettings(
 export async function getProviderDashboardStats(): Promise<ProviderDashboardStats> {
   try {
     const response = await api.get<ProviderDashboardStats>(
-      "/provider/dashboard/stats"
+      "/provider/dashboard/stats",
     );
     return response;
   } catch (error) {
@@ -430,7 +456,7 @@ export async function getProviderDashboardStats(): Promise<ProviderDashboardStat
  * Complete onboarding - saves all stages data using existing endpoints
  */
 export async function completeOnboarding(
-  onboardingData: OnboardingData
+  onboardingData: OnboardingData,
 ): Promise<{ business: Business; success: boolean }> {
   try {
     console.log("Starting onboarding completion...", onboardingData);
@@ -442,7 +468,9 @@ export async function completeOnboarding(
     if (onboardingData.businessDetails.logo) {
       console.log("Uploading logo...");
       try {
-        const logoResult = await uploadBusinessLogo(onboardingData.businessDetails.logo);
+        const logoResult = await uploadBusinessLogo(
+          onboardingData.businessDetails.logo,
+        );
         logoUrl = logoResult.url;
         console.log("Logo uploaded:", logoUrl);
       } catch (error) {
@@ -454,7 +482,9 @@ export async function completeOnboarding(
     if (onboardingData.businessDetails.coverImage) {
       console.log("Uploading cover image...");
       try {
-        const coverResult = await uploadBusinessCoverImage(onboardingData.businessDetails.coverImage);
+        const coverResult = await uploadBusinessCoverImage(
+          onboardingData.businessDetails.coverImage,
+        );
         coverImageUrl = coverResult.url;
         console.log("Cover uploaded:", coverImageUrl);
       } catch (error) {
@@ -484,18 +514,19 @@ export async function completeOnboarding(
     // Step 3: Generate slots from working hours (frontend-only data)
     // Get slot interval (default 30 minutes)
     const slotInterval = onboardingData.slotInterval || 30;
-    console.log("Requesting slot generation with interval:", slotInterval, "minutes");
+    console.log(
+      "Requesting slot generation with interval:",
+      slotInterval,
+      "minutes",
+    );
 
     // Call backend to generate slots from working hours and break time (provided in request body)
     try {
-      await api.post<{ message: string }>(
-        `/slots/${business.id}/generate`,
-        {
-          workingHours: onboardingData.workingHours,
-          breakTime: onboardingData.breakTime,
-          slotInterval
-        }
-      );
+      await api.post<{ message: string }>(`/slots/${business.id}/generate`, {
+        workingHours: onboardingData.workingHours,
+        breakTime: onboardingData.breakTime,
+        slotInterval,
+      });
       console.log("Slots generated successfully by backend");
     } catch (error) {
       console.error("Failed to auto-generate slots:", error);
@@ -506,7 +537,9 @@ export async function completeOnboarding(
     return { business, success: true };
   } catch (error: any) {
     console.error("Error completing onboarding:", error);
-    throw new Error(error.message || "Failed to complete onboarding. Please try again.");
+    throw new Error(
+      error.message || "Failed to complete onboarding. Please try again.",
+    );
   }
 }
 
@@ -523,7 +556,7 @@ export async function initiateCompletion(
     beforePhotoUrl?: string;
     afterPhotoUrl?: string;
     completionNotes?: string;
-  }
+  },
 ): Promise<{ otpExpiry: string; canResendAfter: string; message: string }> {
   try {
     const response = await api.post<{
@@ -543,7 +576,7 @@ export async function initiateCompletion(
  */
 export async function verifyCompletionOTP(
   bookingId: number,
-  otp: string
+  otp: string,
 ): Promise<{ success: boolean; message: string; booking?: any }> {
   try {
     const response = await api.post<{
@@ -562,7 +595,7 @@ export async function verifyCompletionOTP(
  * Resend completion OTP
  */
 export async function resendCompletionOTP(
-  bookingId: number
+  bookingId: number,
 ): Promise<{ otpExpiry: string; message: string }> {
   try {
     const response = await api.post<{
@@ -582,8 +615,12 @@ export async function resendCompletionOTP(
 export async function uploadCompletionPhotos(
   bookingId: number,
   beforePhotoUrl?: string,
-  afterPhotoUrl?: string
-): Promise<{ beforePhotoUrl?: string; afterPhotoUrl?: string; message: string }> {
+  afterPhotoUrl?: string,
+): Promise<{
+  beforePhotoUrl?: string;
+  afterPhotoUrl?: string;
+  message: string;
+}> {
   try {
     const response = await api.post<{
       beforePhotoUrl?: string;
