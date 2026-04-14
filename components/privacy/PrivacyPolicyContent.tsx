@@ -1,27 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Shield, AlertCircle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/lib/queries/query-keys";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { PrivacyPolicySkeleton } from "@/components/privacy/skeletons/PrivacyPolicySkeleton";
 
 export function PrivacyPolicyContent() {
-  const [policy, setPolicy] = useState<{
-    version: string;
-    content: string;
-    effectiveDate: string;
-  } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchPolicy();
-  }, []);
-
-  const fetchPolicy = async () => {
-    try {
-      setIsLoading(true);
+  const { data: policy, isLoading, error } = useQuery({
+    queryKey: [QUERY_KEYS.GLOBAL_PRIVACY_POLICY],
+    queryFn: async () => {
       const response = await api.get<{
         policy: {
           version: string;
@@ -29,16 +18,10 @@ export function PrivacyPolicyContent() {
           effectiveDate: string;
         };
       }>(API_ENDPOINTS.PRIVACY_POLICY_ACTIVE);
-      if (response?.policy) {
-        setPolicy(response.policy);
-      }
-    } catch (err: any) {
-      console.error("Error fetching policy:", err);
-      setError("Failed to load privacy policy");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return response.policy;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   if (isLoading) {
     return <PrivacyPolicySkeleton />;
@@ -49,7 +32,7 @@ export function PrivacyPolicyContent() {
       <Card>
         <CardContent className="flex items-center gap-3 py-12">
           <AlertCircle className="h-5 w-5 text-destructive" />
-          <p className="text-muted-foreground">{error || "No privacy policy available"}</p>
+          <p className="text-muted-foreground">{error?.message || "No privacy policy available"}</p>
         </CardContent>
       </Card>
     );

@@ -3,10 +3,11 @@ import { toast } from "sonner";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { QUERY_KEYS } from "./query-keys";
 
-interface StaffPayoutSummary {
+export interface StaffPayoutSummary {
   staffId: number;
   staffName: string;
   staffEmail: string;
+  staffAvatar?: string | null;
   employeeId?: string;
   upiId?: string;
   bankAccount?: string;
@@ -14,13 +15,13 @@ interface StaffPayoutSummary {
   payoutCount: number;
 }
 
-interface PayoutTotals {
+export interface PayoutTotals {
   totalPendingAmount: number;
   totalPaidAmount: number;
   pendingCount: number;
 }
 
-interface StaffPayoutSummaryResponse {
+export interface StaffPayoutSummaryResponse {
   pendingPayouts: StaffPayoutSummary[];
   totals: PayoutTotals;
 }
@@ -36,10 +37,10 @@ export function useProviderStaffPayoutSummary() {
   return useQuery({
     queryKey: [QUERY_KEYS.STAFF_PAYOUTS, "provider-summary"],
     queryFn: async (): Promise<StaffPayoutSummaryResponse> => {
-      const response = await api.get<StaffPayoutSummaryResponse>(
+      const response = await api.get<{ message: string; data: StaffPayoutSummaryResponse }>(
         API_ENDPOINTS.STAFF_PAYOUTS_PROVIDER_SUMMARY,
       );
-      return response || { pendingPayouts: [], totals: { totalPendingAmount: 0, totalPaidAmount: 0, pendingCount: 0 } };
+      return response?.data || { pendingPayouts: [], totals: { totalPendingAmount: 0, totalPaidAmount: 0, pendingCount: 0 } };
     },
     refetchOnWindowFocus: true,
     staleTime: 1 * 60 * 1000, // 1 minute - payout status changes frequently
@@ -55,8 +56,10 @@ export function useStaffEarnings() {
   return useQuery({
     queryKey: [QUERY_KEYS.STAFF_PAYOUTS, "my-earnings"],
     queryFn: async () => {
-      const response = await api.get(API_ENDPOINTS.STAFF_PAYOUTS_MY_EARNINGS);
-      return response;
+      const response = await api.get<{ message: string; data: any }>(
+        API_ENDPOINTS.STAFF_PAYOUTS_MY_EARNINGS,
+      );
+      return response?.data || null;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: false,
@@ -70,8 +73,10 @@ export function useStaffPayouts() {
   return useQuery({
     queryKey: [QUERY_KEYS.STAFF_PAYOUTS, "my-payouts"],
     queryFn: async () => {
-      const response = await api.get(API_ENDPOINTS.STAFF_PAYOUTS_MY_PAYOUTS);
-      return response;
+      const response = await api.get<{ message: string; data: any }>(
+        API_ENDPOINTS.STAFF_PAYOUTS_MY_PAYOUTS,
+      );
+      return response?.data || [];
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: false,

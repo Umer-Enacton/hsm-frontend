@@ -28,13 +28,26 @@ export interface StaffLeave {
   staffName: string;
   staffEmail: string;
   staffAvatar: string | null;
-  employeeId: string;
+  staffEmployeeId: string;
   leaveType: "full_day" | "half_day" | "hours";
   startDate: string;
   endDate: string;
+  startTime?: string | null;
+  endTime?: string | null;
   reason: string | null;
   status: "pending" | "approved" | "rejected" | "cancelled";
   createdAt: string;
+  approvedAt?: string | null;
+  rejectionReason?: string | null;
+  staffStatus?: string;
+  conflictingBookings?: Array<{
+    id: number;
+    bookingDate: string;
+    startTime: string;
+    customerName: string;
+    status: string;
+  }>;
+  hasConflicts?: boolean;
 }
 
 export interface StaffFilters {
@@ -78,7 +91,7 @@ export function useStaffLeaveRequests() {
       const response = await api.get<{ message: string; data: StaffLeave[] }>(
         API_ENDPOINTS.STAFF_LEAVE_BUSINESS,
       );
-      return response.data || [];
+      return response?.data || [];
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
@@ -187,6 +200,44 @@ export function useUpdateStaff() {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to update staff');
+    },
+  });
+}
+
+/**
+ * Approve staff leave mutation
+ */
+export function useApproveStaffLeave() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await api.put<{
+        message: string;
+        data: StaffLeave;
+        unassignedBookings?: number[];
+        needsReassignment?: boolean;
+      }>(API_ENDPOINTS.STAFF_LEAVE_APPROVE(id), {});
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [STAFF_QUERY_KEYS.leave] });
+    },
+  });
+}
+
+/**
+ * Reject staff leave mutation
+ */
+export function useRejectStaffLeave() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, rejectionReason }: { id: number; rejectionReason: string }) => {
+      return await api.put(API_ENDPOINTS.STAFF_LEAVE_REJECT(id), { rejectionReason });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [STAFF_QUERY_KEYS.leave] });
     },
   });
 }

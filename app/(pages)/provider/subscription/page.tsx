@@ -43,60 +43,14 @@ import {
 } from "@/components/ui/card";
 import { SubscriptionCheckoutModal } from "@/components/provider/subscription/SubscriptionCheckoutModal";
 import { StatusBadge } from "@/components/admin/shared";
-
-interface Plan {
-  id: number;
-  name: string;
-  description: string | null;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  trialDays: number;
-  platformFeePercentage: number;
-  maxServices: number;
-  maxBookingsPerMonth: number | null;
-  prioritySupport: boolean;
-  analyticsAccess: boolean;
-  benefits: string[] | null;
-  features: {
-    allowedRoutes?: string[];
-    allowedGraphs?: string[];
-  } | null;
-}
-
-interface Subscription {
-  id: number;
-  planId: number;
-  planName: string;
-  planDescription: string | null;
-  planMonthlyPrice: number;
-  planYearlyPrice: number;
-  planTrialDays: number;
-  planPlatformFeePercentage: number;
-  planMaxServices: number;
-  planMaxBookingsPerMonth: number | null;
-  planPrioritySupport: boolean;
-  planAnalyticsAccess: boolean;
-  planBenefits: string[] | null;
-  planFeatures: {
-    allowedRoutes?: string[];
-    allowedGraphs?: string[];
-  } | null;
-  status: string;
-  startDate: string;
-  endDate: string | null;
-  trialEndDate: string | null;
-  billingCycle: string;
-  autoRenew: boolean;
-  cancelAtPeriodEnd: boolean;
-  razorpaySubscriptionId: string | null;
-  isTrial: boolean;
-  usage?: {
-    currentMonthBookings: number;
-    maxBookings: number | null;
-    remainingBookings: number | null;
-    limitReached: boolean;
-  };
-}
+import { ProviderSubscriptionSkeleton } from "@/components/provider/skeletons";
+import {
+  useSubscriptionPlans,
+  useCurrentSubscription,
+  useCleanupSubscriptions,
+  type Plan,
+  type Subscription,
+} from "@/lib/queries/use-provider-subscription";
 
 interface PricingCardProps {
   plan: Plan;
@@ -150,7 +104,7 @@ function PricingCard({
       return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
     }
     return 0;
-  }, [subscription?.status, subscription?.trialEndDate, subscription?.endDate]);
+  }, [subscription]);
 
   const hasTrial = plan.trialDays > 0;
   const planNameUpper = plan.name.toUpperCase();
@@ -419,9 +373,19 @@ export default function ProviderSubscriptionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // TanStack Queries & Mutations
+  const { data: plansData, isLoading: loadingPlans, refetch: refetchPlans } = useSubscriptionPlans();
+  const { data: subscription, isLoading: loadingSubscription, refetch: refetchSubscription } = useCurrentSubscription();
+  const cleanupMutation = useCleanupSubscriptions();
+
+  const loading = loadingPlans || loadingSubscription;
+
+  const plans = useMemo(() => {
+    if (!plansData) return [];
+    return [...plansData].sort((a, b) => a.monthlyPrice - b.monthlyPrice);
+  }, [plansData]);
+
   const [purchasing, setPurchasing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -434,59 +398,14 @@ export default function ProviderSubscriptionPage() {
     string | null
   >(null);
 
-  // Fetch plans and subscription
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch plans
-      const plansResponse = await api.get<{ message: string; data: Plan[] }>(
-        API_ENDPOINTS.SUBSCRIPTION_PLANS,
-      );
-      if (plansResponse && plansResponse.data) {
-        // Backend already parses features JSON, no need to parse again
-        const parsedPlans = plansResponse.data.map((plan) => ({
-          ...plan,
-          features: plan.features || null, // Already an object from backend
-        }));
-        // Sort by price
-        parsedPlans.sort((a, b) => a.monthlyPrice - b.monthlyPrice);
-        setPlans(parsedPlans);
-      }
-
-      // Fetch current subscription
-      const subResponse = await api.get<{
-        message: string;
-        data: Subscription | null;
-      }>(API_ENDPOINTS.PROVIDER_SUBSCRIPTION_CURRENT);
-      if (subResponse && subResponse.data) {
-        // Backend already parses features JSON, no need to parse again
-        setSubscription({
-          ...subResponse.data,
-          planFeatures: subResponse.data.planFeatures || null, // Already an object from backend
-        });
-      }
-    } catch (error: any) {
-      console.error("Error fetching subscription data:", error);
-      toast.error(error?.message || "Failed to load subscription data");
-    } finally {
-      setLoading(false);
-    }
+  const fetchData = () => {
+    refetchPlans();
+    refetchSubscription();
   };
 
   useEffect(() => {
-    fetchData();
-
     // Cleanup abandoned pending subscriptions on page load
-    const cleanupSubscriptions = async () => {
-      try {
-        await api.get(API_ENDPOINTS.PROVIDER_SUBSCRIPTION_CLEANUP);
-      } catch (err) {
-        console.error("Error cleaning up subscriptions:", err);
-      }
-    };
-
-    cleanupSubscriptions();
+    cleanupMutation.mutate();
   }, []);
 
   // Check for success params - refetch data and show success message
@@ -505,7 +424,7 @@ export default function ProviderSubscriptionPage() {
         toast.success("Subscription updated successfully!");
       }
     }
-  }, [searchParams]);
+  }, [searchParams, refetchPlans, refetchSubscription]);
 
   // Handle ?authorize= URL parameter - opens checkout modal
   useEffect(() => {
@@ -696,23 +615,15 @@ export default function ProviderSubscriptionPage() {
     }
   };
 
+  // Loading State
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight">
-          Subscription Plans
-        </h1>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-[500px] w-full" />
-          ))}
-        </div>
-      </div>
-    );
+    return <ProviderSubscriptionSkeleton />;
   }
 
+  const currentSubscription = subscription || null;
+
   // Find which plan is currently active
-  const activePlanId = subscription?.planId;
+  const activePlanId = currentSubscription?.planId;
 
   return (
     <div className="space-y-6 pb-24">
@@ -817,7 +728,7 @@ export default function ProviderSubscriptionPage() {
               plan={plan}
               isActive={isActive}
               isTrialEligible={planTrialEligible}
-              subscription={subscription}
+              subscription={currentSubscription}
               billingCycle={billingCycle}
               onCancel={handleCancel}
               onToggleAutoRenew={handleToggleAutoRenew}
@@ -853,9 +764,9 @@ export default function ProviderSubscriptionPage() {
       {/* ============================================ */}
       <SubscriptionCheckoutModal
         isOpen={showCheckoutModal}
-        subscriptionId={subscriptionToAuthorize}
-        onSuccess={handlePaymentSuccess}
         onClose={handleModalClose}
+        subscriptionId={currentSubscription?.razorpaySubscriptionId || null}
+        onSuccess={handlePaymentSuccess}
       />
     </div>
   );

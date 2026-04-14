@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Search,
   CheckCircle2,
@@ -58,6 +59,7 @@ import {
   LoadingState,
   StatusBadge,
 } from "@/components/admin/shared";
+import { AdminProviderSubscriptionsSkeleton } from "@/components/admin/skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import {
@@ -108,14 +110,11 @@ interface SubscriptionDetail {
 
 export default function AdminProviderSubscriptionsPage() {
   const router = useRouter();
-  const [subscriptions, setSubscriptions] = useState<ProviderSubscription[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [planFilter, setPlanFilter] = useState<string>("all");
   const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Admin action states
   const [actionLoading, setActionLoading] = useState(false);
@@ -127,25 +126,17 @@ export default function AdminProviderSubscriptionsPage() {
   // Debounce search to avoid excessive re-renders
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Fetch subscriptions
-  const fetchSubscriptions = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
+  // Fetch subscriptions with TanStack Query
+  const { data: subscriptions = [], isLoading: loading, error, refetch: fetchSubscriptions } = useQuery({
+    queryKey: ["admin-provider-subscriptions"],
+    queryFn: async () => {
       const response = await api.get<{ message: string; data: ProviderSubscription[] }>(
         API_ENDPOINTS.PROVIDER_SUBSCRIPTION_ALL
       );
-
-      setSubscriptions(response?.data || []);
-    } catch (err: any) {
-      console.error("Error fetching subscriptions:", err);
-      setError(err?.message || "Failed to load subscriptions");
-      toast.error(err?.message || "Failed to load subscriptions");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return response?.data || [];
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   // Fetch subscription details
   const fetchSubscriptionDetails = async (providerId: number) => {
@@ -178,9 +169,7 @@ export default function AdminProviderSubscriptionsPage() {
     }
   };
 
-  useEffect(() => {
-    fetchSubscriptions();
-  }, []);
+  // Removed manual useEffect fetching as useQuery handles it
 
   // Filter subscriptions
   const filteredSubscriptions = useMemo(() => {
@@ -330,6 +319,26 @@ export default function AdminProviderSubscriptionsPage() {
     await fetchSubscriptionDetails(subscription.providerId);
   };
 
+  if (loading) {
+    return <AdminProviderSubscriptionsSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Provider Subscriptions"
+          description="View and manage all provider subscriptions"
+          onRefresh={() => fetchSubscriptions()}
+        />
+        <ErrorState
+          message={error instanceof Error ? error.message : "Failed to load subscriptions"}
+          onRetry={() => fetchSubscriptions()}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -414,14 +423,7 @@ export default function AdminProviderSubscriptionsPage() {
       </div>
 
       {/* Subscriptions Table */}
-      {loading ? (
-        <LoadingState message="Loading subscriptions..." />
-      ) : error ? (
-        <ErrorState
-          message={error}
-          onRetry={fetchSubscriptions}
-        />
-      ) : filteredSubscriptions.length === 0 ? (
+      {filteredSubscriptions.length === 0 ? (
         <EmptyState
           icon={CreditCard}
           title="No subscriptions found"

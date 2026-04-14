@@ -64,6 +64,7 @@ import {
   ErrorState,
   LoadingState,
 } from "@/components/admin/shared";
+import { AdminCronJobsSkeleton } from "@/components/admin/skeletons";
 
 interface CronJob {
   id: number;
@@ -653,7 +654,7 @@ export default function AdminCronJobsPage() {
 
   // Loading state
   if (isLoadingJobs || isLoadingStats) {
-    return <LoadingState message="Loading cron jobs..." />;
+    return <AdminCronJobsSkeleton />;
   }
 
   // Empty state

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
   Pencil,
@@ -45,6 +46,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AdminPageHeader, StatCard } from "@/components/admin/shared";
+import { AdminSubscriptionPlansSkeleton } from "@/components/admin/skeletons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -154,8 +156,7 @@ interface DeletePlanState {
 }
 
 export default function AdminSubscriptionPlansPage() {
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -262,26 +263,15 @@ export default function AdminSubscriptionPlansPage() {
   };
 
   // Fetch plans
-  const fetchPlans = useCallback(async () => {
-    try {
-      setLoading(true);
+  const { data: plans = [], isLoading: loading, refetch: fetchPlans } = useQuery({
+    queryKey: ["admin-subscription-plans"],
+    queryFn: async () => {
       const response = await api.get<{ message: string; data: Plan[] }>(
         API_ENDPOINTS.SUBSCRIPTION_PLANS,
       );
-      if (response && response.data) {
-        setPlans(response.data);
-      }
-    } catch (error: any) {
-      console.error("Error fetching plans:", error);
-      toast.error(error?.message || "Failed to fetch plans");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchPlans();
-  }, [fetchPlans]);
+      return response?.data || [];
+    },
+  });
 
   // Filter plans based on search
   const filteredPlans = useMemo(() => {
@@ -516,6 +506,10 @@ export default function AdminSubscriptionPlansPage() {
     [fetchPlans],
   );
 
+  if (loading) {
+    return <AdminSubscriptionPlansSkeleton />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -581,13 +575,7 @@ export default function AdminSubscriptionPlansPage() {
       </div>
 
       {/* Plans Table */}
-      {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-muted animate-pulse rounded-md" />
-          ))}
-        </div>
-      ) : filteredPlans.length === 0 ? (
+      {filteredPlans.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-muted/30 p-12 text-center">
           <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold">No Plans Found</h3>

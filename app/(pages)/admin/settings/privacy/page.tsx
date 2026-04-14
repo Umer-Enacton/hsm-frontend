@@ -14,6 +14,8 @@ import {
   Shield,
   Clock,
 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/lib/queries/query-keys";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { TiptapEditor } from "@/components/editor/TiptapEditor";
 import { StatCard } from "@/components/admin/shared/StatCard";
@@ -83,9 +85,20 @@ const getNextVersion = (versions: string[]): string => {
 };
 
 export default function AdminPrivacyPolicyPage() {
-  const [policies, setPolicies] = useState<PrivacyPolicy[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: policiesData, isLoading } = useQuery({
+    queryKey: [QUERY_KEYS.ADMIN_PRIVACY_POLICIES],
+    queryFn: async () => {
+      const response = await api.get<{ policies: PrivacyPolicy[] }>(
+        API_ENDPOINTS.ADMIN_PRIVACY_POLICIES
+      );
+      return response.policies || [];
+    },
+  });
+
+  const policies = policiesData || [];
+
   const [editingPolicy, setEditingPolicy] = useState<PrivacyPolicy | null>(null);
   const [newVersion, setNewVersion] = useState("");
   const [newContent, setNewContent] = useState("");
@@ -95,24 +108,6 @@ export default function AdminPrivacyPolicyPage() {
   const [policyToDelete, setPolicyToDelete] = useState<PrivacyPolicy | null>(null);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [policyToActivate, setPolicyToActivate] = useState<PrivacyPolicy | null>(null);
-
-  const fetchPolicies = async () => {
-    try {
-      const response = await api.get<{ policies: PrivacyPolicy[] }>(
-        API_ENDPOINTS.ADMIN_PRIVACY_POLICIES
-      );
-      setPolicies(response.policies || []);
-    } catch (error) {
-      console.error("Error fetching policies:", error);
-      toast.error("Failed to load privacy policies");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPolicies();
-  }, []);
 
   // Auto-calculate next version when creating new
   useEffect(() => {
@@ -124,89 +119,100 @@ export default function AdminPrivacyPolicyPage() {
     }
   }, [policies, editingPolicy]);
 
-  const handleCreate = async () => {
+  const createMutation = useMutation({
+    mutationFn: async (payload: { version: string; content: string }) => {
+      await api.post(API_ENDPOINTS.ADMIN_PRIVACY_POLICIES, payload);
+    },
+    onSuccess: () => {
+      toast.success("Policy version created successfully");
+      setNewVersion("");
+      setNewContent("");
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_PRIVACY_POLICIES] });
+    },
+    onError: (error: any) => {
+      console.error("Error creating policy:", error);
+      toast.error(error.response?.data?.message || "Failed to create policy");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (payload: { id: number; content: string }) => {
+      await api.put(API_ENDPOINTS.ADMIN_PRIVACY_POLICY_BY_ID(payload.id), {
+        content: payload.content,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Policy updated successfully");
+      setEditingPolicy(null);
+      setNewContent("");
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_PRIVACY_POLICIES] });
+    },
+    onError: (error: any) => {
+      console.error("Error updating policy:", error);
+      toast.error(error.response?.data?.message || "Failed to update policy");
+    },
+  });
+
+  const activateMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await api.post(API_ENDPOINTS.ADMIN_PRIVACY_POLICY_ACTIVATE(id), {});
+    },
+    onSuccess: () => {
+      toast.success("Policy activated and notifications sent to all users");
+      setActivateDialogOpen(false);
+      setPolicyToActivate(null);
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_PRIVACY_POLICIES] });
+    },
+    onError: (error: any) => {
+      console.error("Error activating policy:", error);
+      toast.error(error.response?.data?.message || "Failed to activate policy");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(API_ENDPOINTS.ADMIN_PRIVACY_POLICY_BY_ID(id));
+    },
+    onSuccess: () => {
+      toast.success("Policy deleted successfully");
+      setDeleteDialogOpen(false);
+      setPolicyToDelete(null);
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_PRIVACY_POLICIES] });
+    },
+    onError: (error: any) => {
+      console.error("Error deleting policy:", error);
+      toast.error(error.response?.data?.message || "Failed to delete policy");
+    },
+  });
+
+  const handleCreate = () => {
     if (!newContent) {
       toast.error("Content is required");
       return;
     }
-
-    setIsSaving(true);
-    try {
-      await api.post(API_ENDPOINTS.ADMIN_PRIVACY_POLICIES, {
-        version: newVersion,
-        content: newContent,
-      });
-
-      toast.success("Policy version created successfully");
-      setNewVersion("");
-      setNewContent("");
-      fetchPolicies();
-    } catch (error: any) {
-      console.error("Error creating policy:", error);
-      toast.error(error.response?.data?.message || "Failed to create policy");
-    } finally {
-      setIsSaving(false);
-    }
+    createMutation.mutate({ version: newVersion, content: newContent });
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = () => {
     if (!editingPolicy) return;
-
-    setIsSaving(true);
-    try {
-      await api.put(API_ENDPOINTS.ADMIN_PRIVACY_POLICY_BY_ID(editingPolicy.id), {
-        content: newContent,
-      });
-
-      toast.success("Policy updated successfully");
-      setEditingPolicy(null);
-      setNewContent("");
-      fetchPolicies();
-    } catch (error: any) {
-      console.error("Error updating policy:", error);
-      toast.error(error.response?.data?.message || "Failed to update policy");
-    } finally {
-      setIsSaving(false);
-    }
+    updateMutation.mutate({ id: editingPolicy.id, content: newContent });
   };
 
-  const handleActivate = async () => {
+  const handleActivate = () => {
     if (!policyToActivate) return;
-
-    setIsSaving(true);
-    try {
-      await api.post(API_ENDPOINTS.ADMIN_PRIVACY_POLICY_ACTIVATE(policyToActivate.id), {});
-
-      toast.success("Policy activated and notifications sent to all users");
-      setActivateDialogOpen(false);
-      setPolicyToActivate(null);
-      fetchPolicies();
-    } catch (error: any) {
-      console.error("Error activating policy:", error);
-      toast.error(error.response?.data?.message || "Failed to activate policy");
-    } finally {
-      setIsSaving(false);
-    }
+    activateMutation.mutate(policyToActivate.id);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!policyToDelete) return;
-
-    setIsSaving(true);
-    try {
-      await api.delete(API_ENDPOINTS.ADMIN_PRIVACY_POLICY_BY_ID(policyToDelete.id));
-
-      toast.success("Policy deleted successfully");
-      setDeleteDialogOpen(false);
-      setPolicyToDelete(null);
-      fetchPolicies();
-    } catch (error: any) {
-      console.error("Error deleting policy:", error);
-      toast.error(error.response?.data?.message || "Failed to delete policy");
-    } finally {
-      setIsSaving(false);
-    }
+    deleteMutation.mutate(policyToDelete.id);
   };
+
+  const isSaving =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    activateMutation.isPending ||
+    deleteMutation.isPending;
 
   const startEdit = (policy: PrivacyPolicy) => {
     setEditingPolicy(policy);
@@ -240,8 +246,13 @@ export default function AdminPrivacyPolicyPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6 animate-pulse">
+        <div className="h-8 bg-muted rounded w-1/3"></div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="h-32 bg-muted rounded-xl"></div>
+          <div className="h-32 bg-muted rounded-xl"></div>
+        </div>
+        <div className="h-[400px] bg-muted rounded-xl"></div>
       </div>
     );
   }

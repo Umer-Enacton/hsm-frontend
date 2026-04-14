@@ -1,18 +1,46 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { api, API_ENDPOINTS } from "@/lib/api";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Plus, X, Check, Clock, CheckCircle, Loader2 } from "lucide-react";
+import {
+  Calendar,
+  Plus,
+  X,
+  Check,
+  Clock,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import {
+  useStaffLeaveHistory,
+  useCreateStaffLeave,
+  useCancelStaffLeave,
+} from "@/lib/queries/use-staff";
+import { StaffLeaveSkeleton } from "@/components/staff/skeletons";
 import {
   Table,
   TableBody,
@@ -35,82 +63,43 @@ interface LeaveRequest {
 }
 
 export default function StaffLeavePage() {
-  const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMultiDay, setIsMultiDay] = useState(false);
 
-  useEffect(() => {
-    fetchLeaveHistory();
-  }, []);
+  // TanStack Query
+  const {
+    data: leaveHistory = [],
+    isLoading,
+    refetch,
+  } = useStaffLeaveHistory();
 
-  const fetchLeaveHistory = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get<{ message: string; data: LeaveRequest[] }>(
-        API_ENDPOINTS.STAFF_LEAVE_MY_LEAVE,
-      );
-      setLeaveHistory(response.data || []);
-    } catch (error) {
-      console.error("Error fetching leave history:", error);
-      toast.error("Failed to load leave history");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Mutations
+  const createLeaveMutation = useCreateStaffLeave();
+  const cancelLeaveMutation = useCancelStaffLeave();
 
   const handleSubmitLeave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
     const startDate = formData.get("startDate") as string;
-    const endDate = isMultiDay ? (formData.get("endDate") as string) : startDate;
+    const endDate = isMultiDay
+      ? (formData.get("endDate") as string)
+      : startDate;
+    const reasonValue = formData.get("reason");
 
     const leaveData = {
       leaveType: "full_day" as const,
       startDate,
       endDate,
-      reason: formData.get("reason") || undefined,
+      reason: typeof reasonValue === "string" ? reasonValue : undefined,
     };
 
     try {
-      const response = await api.post<{
-        message: string;
-        data: LeaveRequest;
-        warning?: {
-          type: string;
-          message: string;
-          bookings: Array<{
-            id: number;
-            bookingDate: string;
-            startTime: string;
-            endTime: string;
-            serviceName: string;
-          }>;
-        };
-      }>(API_ENDPOINTS.STAFF_LEAVE, leaveData);
-
-      // Show success message
-      toast.success(response.message || "Leave request submitted successfully");
-
-      // Show warning if there are existing bookings
-      if (response.warning) {
-        toast.warning(response.warning.message, {
-          description: `${response.warning.bookings.length} booking(s) found on these dates. Provider will be notified.`,
-          duration: 5000,
-        });
-      }
-
+      await createLeaveMutation.mutateAsync(leaveData);
       setShowRequestDialog(false);
       setIsMultiDay(false);
-      fetchLeaveHistory();
-    } catch (error: any) {
-      console.error("Error submitting leave:", error);
-      toast.error(error.response?.data?.message || "Failed to submit leave request");
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      // Error handled by mutation
     }
   };
 
@@ -118,21 +107,34 @@ export default function StaffLeavePage() {
     if (!confirm("Are you sure you want to cancel this leave request?")) return;
 
     try {
-      await api.patch(API_ENDPOINTS.STAFF_LEAVE_CANCEL(leaveId), {});
-      toast.success("Leave request cancelled");
-      fetchLeaveHistory();
-    } catch (error: any) {
-      console.error("Error cancelling leave:", error);
-      toast.error(error.response?.data?.message || "Failed to cancel leave");
+      await cancelLeaveMutation.mutateAsync(leaveId);
+    } catch (error) {
+      // Error handled by mutation
     }
   };
 
   const getStatusBadge = (status: LeaveRequest["status"]) => {
     const config = {
-      approved: { label: "Approved", className: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400" },
-      pending: { label: "Pending", className: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400" },
-      rejected: { label: "Rejected", className: "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400" },
-      cancelled: { label: "Cancelled", className: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400" },
+      approved: {
+        label: "Approved",
+        className:
+          "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400",
+      },
+      pending: {
+        label: "Pending",
+        className:
+          "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400",
+      },
+      rejected: {
+        label: "Rejected",
+        className:
+          "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400",
+      },
+      cancelled: {
+        label: "Cancelled",
+        className:
+          "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400",
+      },
     };
     return config[status];
   };
@@ -168,15 +170,11 @@ export default function StaffLeavePage() {
   };
 
   const upcomingLeaves = leaveHistory.filter(
-    (l) => l.status === "approved" && new Date(l.endDate) >= new Date()
+    (l) => l.status === "approved" && new Date(l.endDate) >= new Date(),
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  if (isLoading) {
+    return <StaffLeaveSkeleton />;
   }
 
   return (
@@ -184,15 +182,20 @@ export default function StaffLeavePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Leave Management</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Leave Management
+          </h1>
           <p className="text-muted-foreground">
             Request leave and view your leave history
           </p>
         </div>
-        <Dialog open={showRequestDialog} onOpenChange={(open) => {
-          setShowRequestDialog(open);
-          if (!open) setIsMultiDay(false);
-        }}>
+        <Dialog
+          open={showRequestDialog}
+          onOpenChange={(open) => {
+            setShowRequestDialog(open);
+            if (!open) setIsMultiDay(false);
+          }}
+        >
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
@@ -218,7 +221,9 @@ export default function StaffLeavePage() {
                 <Checkbox
                   id="multiDay"
                   checked={isMultiDay}
-                  onCheckedChange={(checked) => setIsMultiDay(checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    setIsMultiDay(checked as boolean)
+                  }
                 />
                 <Label
                   htmlFor="multiDay"
@@ -279,8 +284,8 @@ export default function StaffLeavePage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
+                <Button type="submit" disabled={createLeaveMutation.isPending}>
+                  {createLeaveMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Submitting...
@@ -306,7 +311,8 @@ export default function StaffLeavePage() {
                   You have upcoming approved leave
                 </p>
                 <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                  {upcomingLeaves.length} leave{upcomingLeaves.length > 1 ? "s" : ""} scheduled
+                  {upcomingLeaves.length} leave
+                  {upcomingLeaves.length > 1 ? "s" : ""} scheduled
                 </p>
               </div>
             </div>
@@ -315,17 +321,21 @@ export default function StaffLeavePage() {
       )}
 
       {/* Leave History Table */}
-      <Card>
+      <Card className="p-0 pt-5">
         <CardHeader>
           <CardTitle>Leave History</CardTitle>
-          <CardDescription>Your past and current leave requests</CardDescription>
+          <CardDescription>
+            Your past and current leave requests
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {leaveHistory.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No leave history</p>
-              <p className="text-sm">Request your first leave using the button above</p>
+              <p className="text-sm">
+                Request your first leave using the button above
+              </p>
             </div>
           ) : (
             <div className="border rounded-md overflow-hidden bg-card shadow-sm">
@@ -337,13 +347,18 @@ export default function StaffLeavePage() {
                     <TableHead className="py-4 px-4">Reason</TableHead>
                     <TableHead className="py-4 px-4">Status</TableHead>
                     <TableHead className="py-4 px-4">Requested</TableHead>
-                    <TableHead className="py-4 px-4 text-right">Actions</TableHead>
+                    <TableHead className="py-4 px-4 text-right">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {leaveHistory.map((leave) => {
                     const statusConfig = getStatusBadge(leave.status);
-                    const days = getDurationDays(leave.startDate, leave.endDate);
+                    const days = getDurationDays(
+                      leave.startDate,
+                      leave.endDate,
+                    );
                     return (
                       <TableRow
                         key={leave.id}
@@ -352,11 +367,15 @@ export default function StaffLeavePage() {
                         <TableCell className="py-4 px-4">
                           <div className="flex items-center gap-2 text-sm">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{formatDate(leave.startDate)}</span>
+                            <span className="font-medium">
+                              {formatDate(leave.startDate)}
+                            </span>
                             {leave.startDate !== leave.endDate && (
                               <>
                                 <span className="text-muted-foreground">→</span>
-                                <span className="font-medium">{formatDate(leave.endDate)}</span>
+                                <span className="font-medium">
+                                  {formatDate(leave.endDate)}
+                                </span>
                               </>
                             )}
                           </div>
@@ -367,7 +386,10 @@ export default function StaffLeavePage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="py-4 px-4">
-                          <p className="text-sm max-w-[200px] truncate" title={leave.reason || ""}>
+                          <p
+                            className="text-sm max-w-[200px] truncate"
+                            title={leave.reason || ""}
+                          >
                             {leave.reason || "-"}
                           </p>
                           {leave.rejectionReason && (
@@ -377,7 +399,10 @@ export default function StaffLeavePage() {
                           )}
                         </TableCell>
                         <TableCell className="py-4 px-4">
-                          <Badge className={statusConfig.className} variant="outline">
+                          <Badge
+                            className={statusConfig.className}
+                            variant="outline"
+                          >
                             <span className="flex items-center gap-1">
                               {getStatusIcon(leave.status)}
                               {statusConfig.label}

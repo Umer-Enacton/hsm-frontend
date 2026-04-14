@@ -38,4 +38,10 @@ export const QUERY_KEYS = {
   ADMIN_BUSINESSES: "admin_businesses",
   ADMIN_PAYOUTS: "admin_payouts",
   ADMIN_SETTINGS: "admin_settings",
+  ADMIN_PRIVACY_POLICIES: "admin_privacy_policies",
+  ADMIN_TERMS_CONDITIONS: "admin_terms_conditions",
+
+  // Global shared base keys
+  GLOBAL_PRIVACY_POLICY: "global_privacy_policy",
+  GLOBAL_TERMS_CONDITIONS: "global_terms_conditions",
 } as const;

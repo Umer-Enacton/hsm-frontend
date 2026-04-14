@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Calendar,
   Clock,
@@ -15,29 +14,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { api, API_ENDPOINTS } from "@/lib/api";
 import { getUserData } from "@/lib/auth-utils";
-import { QUERY_KEYS } from "@/lib/queries/query-keys";
-
-interface Booking {
-  id: number;
-  serviceName: string;
-  customerName: string;
-  customerPhone: string;
-  businessAddress: string;
-  bookingDate: string;
-  slotStartTime: string;
-  slotEndTime: string;
-  status: string;
-  totalPrice: number;
-}
-
-interface EarningData {
-  totalEarnings: number;
-  pendingPayout: number;
-  paidAmount: number;
-  completedBookings: number;
-}
+import { useStaffDashboard, useStaffEarnings } from "@/lib/queries/use-staff";
+import { StaffDashboardSkeleton } from "@/components/staff/skeletons";
 
 interface DashboardStats {
   todayBookings: number;
@@ -49,91 +28,63 @@ interface DashboardStats {
 
 export default function StaffDashboardPage() {
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const [userData, setUserData] = useState<any>(null);
+  const userData = getUserData();
 
-  useEffect(() => {
-    setUserData(getUserData());
-  }, []);
-
-  // TanStack Query for bookings
+  // TanStack Query for dashboard data
   const {
-    data: bookings = [],
-    isLoading: isLoadingBookings,
-    refetch: refetchBookings,
-  } = useQuery<Booking[]>({
-    queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS, "staff"],
-    queryFn: async () => {
-      const response = await api.get<{ message: string; data: Booking[] }>(
-        API_ENDPOINTS.BOOKING_STAFF_MY_BOOKINGS,
-      );
-      return response.data;
-    },
-  });
+    data: dashboardData,
+    isLoading: isLoadingDashboard,
+    refetch: refetchDashboard,
+  } = useStaffDashboard();
 
   // TanStack Query for earnings
   const {
     data: earningsData,
     isLoading: isLoadingEarnings,
-  } = useQuery<{
-    earnings: any[];
-    totals: {
-      totalEarnings: number;
-      pendingPayout: number;
-      paidAmount: number;
-      completedBookings: number;
-    };
-  }>({
-    queryKey: ["staff", "earnings", "month"],
-    queryFn: async () => {
-      const response = await api.get<{
-        message: string;
-        data: {
-          earnings: any[];
-          totals: {
-            totalEarnings: number;
-            pendingPayout: number;
-            paidAmount: number;
-            completedBookings: number;
-          };
-        };
-      }>(
-        `${API_ENDPOINTS.STAFF_PAYOUTS_MY_EARNINGS}?period=month`,
-      );
-      return response.data;
-    },
-  });
+    refetch: refetchEarnings,
+  } = useStaffEarnings("month");
 
-  // Extract totals for easier access
-  const earnings = earningsData?.totals;
+  const isLoading = isLoadingDashboard || isLoadingEarnings;
 
-  const isLoading = isLoadingBookings || isLoadingEarnings;
+  // Extract data
+  const todayBookings = dashboardData?.todayBookings || [];
+  const dashboardStats = dashboardData?.stats || {
+    totalBookings: 0,
+    completedBookings: 0,
+    totalEarnings: 0,
+    pendingEarnings: 0,
+  };
+  const earnings = earningsData?.totals || {
+    totalEarnings: 0,
+    pendingPayout: 0,
+    paidAmount: 0,
+    completedBookings: 0,
+  };
 
   // Calculate stats
   const stats = useMemo<DashboardStats>(() => {
     const today = new Date().toDateString();
-    const todayBookingCount = bookings.filter((b) => {
+    const todayBookingCount = todayBookings.filter((b) => {
       const bookingDate = new Date(b.bookingDate).toDateString();
       return bookingDate === today;
     }).length;
 
-    const upcomingCount = bookings.filter((b) => {
-      const bookingDate = new Date(b.bookingDate);
-      return bookingDate > new Date();
-    }).length;
+    // Get all bookings for upcoming count
+    const allBookingsCount = dashboardStats.totalBookings || 0;
+    const completedCount = dashboardStats.completedBookings || 0;
 
     return {
       todayBookings: todayBookingCount,
-      upcomingBookings: upcomingCount,
-      completedThisMonth: earnings?.completedBookings || 0,
-      totalEarnings: earnings?.totalEarnings || 0,
-      pendingPayout: earnings?.pendingPayout || 0,
+      upcomingBookings: allBookingsCount - completedCount,
+      completedThisMonth: earnings.completedBookings || 0,
+      totalEarnings: earnings.totalEarnings || 0,
+      pendingPayout: earnings.pendingPayout || 0,
     };
-  }, [bookings, earnings]);
+  }, [todayBookings, dashboardStats, earnings]);
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["staff", "bookings"] });
-    queryClient.invalidateQueries({ queryKey: ["staff", "earnings"] });
+    refetchDashboard();
+    refetchEarnings();
   };
 
   const formatCurrency = (amountInPaise: number) => {
@@ -158,34 +109,15 @@ export default function StaffDashboardPage() {
     }
   };
 
-  const upcomingBookings = bookings.filter((b) => {
-    const bookingDate = new Date(b.bookingDate);
-    return bookingDate > new Date();
-  }).slice(0, 5);
+  const upcomingBookings = todayBookings
+    .filter((b) => {
+      const bookingDate = new Date(b.bookingDate);
+      return bookingDate >= new Date();
+    })
+    .slice(0, 5);
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        {/* Header Skeleton */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
-            <div className="h-7 w-40 bg-muted animate-pulse rounded"></div>
-            <div className="h-4 w-64 bg-muted animate-pulse rounded"></div>
-          </div>
-          <div className="h-9 w-24 bg-muted animate-pulse rounded"></div>
-        </div>
-
-        {/* Stats Skeleton */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="border rounded-lg p-6 space-y-3">
-              <div className="h-4 w-24 bg-muted animate-pulse rounded"></div>
-              <div className="h-8 w-16 bg-muted animate-pulse rounded"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <StaffDashboardSkeleton />;
   }
 
   return (
@@ -226,7 +158,9 @@ export default function StaffDashboardPage() {
               {stats.todayBookings}
             </div>
             <p className="text-xs text-muted-foreground">
-              {stats.todayBookings === 1 ? "booking scheduled" : "bookings scheduled"}
+              {stats.todayBookings === 1
+                ? "booking scheduled"
+                : "bookings scheduled"}
             </p>
           </CardContent>
         </Card>
@@ -262,7 +196,9 @@ export default function StaffDashboardPage() {
               {stats.completedThisMonth}
             </div>
             <p className="text-xs text-muted-foreground">
-              {stats.completedThisMonth === 1 ? "job completed" : "jobs completed"}
+              {stats.completedThisMonth === 1
+                ? "job completed"
+                : "jobs completed"}
             </p>
           </CardContent>
         </Card>
@@ -293,45 +229,57 @@ export default function StaffDashboardPage() {
       </div>
 
       {/* Earnings Details Card */}
-      <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40 border-green-200 dark:border-green-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-300">
-            <IndianRupee className="h-5 w-5" />
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
             Your Earnings
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">
-                Total Earned
-              </p>
-              <p className="text-2xl font-bold text-green-600">
-                {formatCurrency(earnings?.paidAmount || 0)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Received in your account
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">
-                Pending Payout
-              </p>
-              <p className="text-2xl font-bold text-orange-600">
-                {formatCurrency(earnings?.pendingPayout || 0)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Awaiting transfer
+          <div className="divide-y divide-border">
+            {/* Total Received */}
+            <div className="flex items-center justify-between py-3 first:pt-0">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Total Received</p>
+                  <p className="text-xs text-muted-foreground">
+                    In your account
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm font-semibold">
+                {formatCurrency(earnings.paidAmount || 0)}
               </p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">
-                Total Earnings
+
+            {/* Pending Payout */}
+            <div className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-3">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Pending Payout</p>
+                  <p className="text-xs text-muted-foreground">
+                    Awaiting transfer
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm font-semibold">
+                {formatCurrency(earnings.pendingPayout || 0)}
               </p>
-              <p className="text-2xl font-bold">
-                {formatCurrency((earnings?.paidAmount || 0) + (earnings?.pendingPayout || 0))}
+            </div>
+
+            {/* Total */}
+            <div className="flex items-center justify-between pt-3">
+              <div className="flex items-center gap-3">
+                <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-semibold">Total Earnings</p>
+              </div>
+              <p className="text-sm font-bold">
+                {formatCurrency(
+                  (earnings.paidAmount || 0) + (earnings.pendingPayout || 0),
+                )}
               </p>
-              <p className="text-xs text-muted-foreground">Total + Pending</p>
             </div>
           </div>
         </CardContent>
@@ -357,8 +305,13 @@ export default function StaffDashboardPage() {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-sm truncate">{booking.serviceName}</p>
-                        <Badge className={getStatusColor(booking.status)} variant="secondary">
+                        <p className="font-medium text-sm truncate">
+                          {booking.serviceName}
+                        </p>
+                        <Badge
+                          className={getStatusColor(booking.status)}
+                          variant="secondary"
+                        >
                           {booking.status}
                         </Badge>
                       </div>

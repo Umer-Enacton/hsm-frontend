@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,13 +35,14 @@ import {
   Mail,
   History,
   Image as ImageIcon,
-  Loader2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ServiceCompletionDialog } from "@/components/provider/bookings/ServiceCompletionDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useStaffBookings } from "@/lib/queries/use-staff";
+import { StaffBookingsSkeleton } from "@/components/staff/skeletons";
 
 interface Booking {
   id: number;
@@ -76,9 +78,6 @@ interface BookingStats {
 }
 
 export default function StaffBookingsPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "all" | "confirmed" | "completed" | "cancelled" | "missed"
   >("all");
@@ -94,28 +93,11 @@ export default function StaffBookingsPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  const fetchBookings = async () => {
-    setIsRefreshing(true);
-    try {
-      const response = await api.get<{ message: string; data: Booking[] }>(
-        API_ENDPOINTS.BOOKING_STAFF_MY_BOOKINGS,
-      );
-      setBookings(response.data || []);
-    } catch (error) {
-      console.error("Error fetching bookings:", error);
-      toast.error("Failed to load bookings");
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
-    }
-  };
+  // TanStack Query
+  const { data: bookings = [], isLoading, refetch } = useStaffBookings();
 
   const handleRefresh = async () => {
-    await fetchBookings();
+    await refetch();
   };
 
   const handleOpenCompletionDialog = (booking: Booking) => {
@@ -125,7 +107,7 @@ export default function StaffBookingsPage() {
   };
 
   const handleCompletionSuccess = () => {
-    fetchBookings();
+    refetch();
     setCompletionDialogOpen(false);
     setSelectedBookingForCompletion(null);
   };
@@ -133,16 +115,6 @@ export default function StaffBookingsPage() {
   const toggleRowExpand = (bookingId: number) => {
     setExpandedRowId(expandedRowId === bookingId ? null : bookingId);
   };
-
-  const filteredBookings = bookings.filter((booking) => {
-    const matchesSearch =
-      booking.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.serviceName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.businessAddress?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    if (activeTab === "all") return matchesSearch;
-    return matchesSearch && booking.status === activeTab;
-  });
 
   // Calculate stats
   const stats: BookingStats = {
@@ -252,34 +224,27 @@ export default function StaffBookingsPage() {
     return 0;
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">My Bookings</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              View and manage your assigned bookings
-            </p>
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-4">
-                <div className="h-4 bg-muted rounded w-24 mb-2" />
-                <div className="h-8 bg-muted rounded w-16" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <Card className="animate-pulse">
-          <CardContent className="p-6">
-            <div className="h-64 bg-muted rounded" />
-          </CardContent>
-        </Card>
-      </div>
+  // IMPORTANT: useMemo hooks must be called before any early returns (Rules of Hooks)
+  // Filter bookings by active tab
+  const filteredBookings = useMemo(() => {
+    if (activeTab === "all") return bookings;
+    return bookings.filter((b) => b.status === activeTab);
+  }, [bookings, activeTab]);
+
+  // Filter by search term
+  const searchedBookings = useMemo(() => {
+    if (!searchTerm) return filteredBookings;
+    const term = searchTerm.toLowerCase();
+    return filteredBookings.filter(
+      (b) =>
+        b.serviceName.toLowerCase().includes(term) ||
+        b.customerName.toLowerCase().includes(term) ||
+        b.customerPhone.includes(term),
     );
+  }, [filteredBookings, searchTerm]);
+
+  if (isLoading) {
+    return <StaffBookingsSkeleton />;
   }
 
   return (
@@ -296,11 +261,9 @@ export default function StaffBookingsPage() {
           variant="outline"
           size="icon"
           onClick={handleRefresh}
-          disabled={isRefreshing}
+          disabled={isLoading}
         >
-          <RefreshCw
-            className={cn("h-4 w-4", isRefreshing && "animate-spin")}
-          />
+          <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
         </Button>
       </div>
 
@@ -903,7 +866,7 @@ export default function StaffBookingsPage() {
                                           </label>
                                           <p className="font-semibold text-lg text-blue-900 dark:text-blue-100 flex items-center gap-1 mt-1">
                                             <IndianRupee className="h-4 w-4" />
-                                            {(booking.totalPrice / 100).toFixed(2)}
+                                            {booking.totalPrice.toFixed(2)}
                                           </p>
                                         </div>
                                         <div>

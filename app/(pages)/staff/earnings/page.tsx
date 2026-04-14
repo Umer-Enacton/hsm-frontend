@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { AdminPageHeader, StatCard, EmptyState } from "@/components/admin/shared";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,8 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useStaffEarnings as useStaffEarningsData } from "@/lib/queries/use-staff";
+import { StaffEarningsSkeleton } from "@/components/staff/skeletons";
 
 interface Earning {
   id: number;
@@ -52,27 +55,9 @@ interface EarningsData {
 }
 
 export default function StaffEarningsPage() {
-  const [earningsData, setEarningsData] = useState<EarningsData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("month");
 
-  useEffect(() => {
-    fetchEarnings();
-  }, [period]);
-
-  const fetchEarnings = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get<{ message: string; data: EarningsData }>(
-        `${API_ENDPOINTS.STAFF_PAYOUTS_MY_EARNINGS}?period=${period}`
-      );
-      setEarningsData(response.data);
-    } catch (error) {
-      console.error("Error fetching earnings:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: earningsData, isLoading, refetch } = useStaffEarningsData(period);
 
   const getStatusColor = (status: Earning["payoutStatus"]) => {
     switch (status) {
@@ -112,12 +97,8 @@ export default function StaffEarningsPage() {
     a.click();
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+  if (isLoading) {
+    return <StaffEarningsSkeleton />;
   }
 
   return (
@@ -146,7 +127,7 @@ export default function StaffEarningsPage() {
           </div>
         }
         showRefresh={true}
-        onRefresh={fetchEarnings}
+        onRefresh={refetch}
       />
 
       {/* Summary Cards */}

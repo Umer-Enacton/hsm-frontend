@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Briefcase, Building2, Badge, User, Ban } from "lucide-react";
+import { Briefcase, Building2, Badge, Ban } from "lucide-react";
 import {
   useAdminBusinessList,
   useBusinessStats,
@@ -22,7 +22,11 @@ import {
   ViewToggleButtons,
 } from "@/components/admin/shared";
 import { DataTablePagination } from "@/components/common";
-import { AdminBusinessSkeleton, AdminBusinessTableSkeleton, AdminBusinessGridSkeleton } from "@/components/admin/skeletons";
+import {
+  AdminBusinessSkeleton,
+  AdminBusinessTableSkeleton,
+  AdminBusinessGridSkeleton,
+} from "@/components/admin/skeletons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -93,7 +97,10 @@ export default function AdminBusinessPage() {
     page: currentPage,
     limit: pageSize,
     search: debouncedSearch.trim() || undefined,
-    status: statusFilter === "all" ? undefined : (statusFilter as "verified" | "pending" | "blocked"),
+    status:
+      statusFilter === "all"
+        ? undefined
+        : (statusFilter as "verified" | "pending" | "blocked"),
   });
 
   const { data: stats } = useBusinessStats();
@@ -233,16 +240,20 @@ export default function AdminBusinessPage() {
       {/* Results count & View Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="text-sm text-muted-foreground">
-          Showing{" "}
-          <span className="font-medium">{businesses.length}</span> of{" "}
-          <span className="font-medium">{pagination?.total || 0}</span> businesses
+          Showing <span className="font-medium">{businesses.length}</span> of{" "}
+          <span className="font-medium">{pagination?.total || 0}</span>{" "}
+          businesses
         </div>
         <ViewToggleButtons viewMode={viewMode} onViewModeChange={setViewMode} />
       </div>
 
       {/* Business Grid/List */}
       {businessesLoading ? (
-        viewMode === "grid" ? <AdminBusinessGridSkeleton /> : <AdminBusinessTableSkeleton />
+        viewMode === "grid" ? (
+          <AdminBusinessGridSkeleton />
+        ) : (
+          <AdminBusinessTableSkeleton />
+        )
       ) : businessesError ? (
         <ErrorState
           message={
@@ -519,11 +530,11 @@ function BusinessListView({
           >
             <TableCell className="py-4 px-4">
               <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12">
+                <Avatar className="h-12 w-12 rounded-sm">
                   {business.logo ? (
                     <AvatarImage src={business.logo} alt={business.name} />
                   ) : (
-                    <AvatarFallback>
+                    <AvatarFallback className="rounded-sm">
                       <Building2 className="h-5 w-5 text-muted-foreground" />
                     </AvatarFallback>
                   )}
@@ -554,9 +565,18 @@ function BusinessListView({
             </TableCell>
             <TableCell className="py-4 px-4">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-4 w-4 text-primary" />
-                </div>
+                <Avatar className="h-8 w-8">
+                  {business.providerAvatar ? (
+                    <AvatarImage
+                      src={business.providerAvatar}
+                      alt={business.providerName || "Provider"}
+                    />
+                  ) : (
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                      {business.providerName?.charAt(0)?.toUpperCase() || "P"}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
                 <span className="text-sm">{business.providerName || "-"}</span>
               </div>
             </TableCell>

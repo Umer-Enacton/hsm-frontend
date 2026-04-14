@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   CreditCard,
   Plus,
@@ -26,6 +27,8 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { api, API_ENDPOINTS } from "@/lib/api";
+import { useStaffPaymentDetails, useUpsertPaymentDetails } from "@/lib/queries/use-staff";
+import { StaffPaymentDetailsSkeleton } from "@/components/staff/skeletons";
 
 interface PaymentDetail {
   id: number;
@@ -39,9 +42,9 @@ interface PaymentDetail {
 }
 
 export default function StaffPaymentDetailsPage() {
-  const [paymentDetails, setPaymentDetails] = useState<PaymentDetail[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  // TanStack Query
+  const { data: paymentDetails = [], isLoading, refetch } = useStaffPaymentDetails();
+  const upsertPaymentDetailsMutation = useUpsertPaymentDetails();
 
   // Dialog states
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -53,27 +56,6 @@ export default function StaffPaymentDetailsPage() {
   const [bankAccount, setBankAccount] = useState("");
   const [ifscCode, setIfscCode] = useState("");
   const [accountHolderName, setAccountHolderName] = useState("");
-
-  // Fetch payment details
-  const fetchPaymentDetails = async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.get<{ details: PaymentDetail[] }>(
-        API_ENDPOINTS.PAYMENT_DETAILS
-      );
-      setPaymentDetails(response.details || []);
-    } catch (error: any) {
-      console.error("Error fetching payment details:", error);
-      toast.error(error.message || "Failed to load payment details");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Initial fetch
-  useState(() => {
-    fetchPaymentDetails();
-  });
 
   const openAddDialog = (type: "upi" | "bank") => {
     setPaymentType(type);
@@ -150,24 +132,18 @@ export default function StaffPaymentDetailsPage() {
       }
     }
 
-    setIsSaving(true);
     try {
-      await api.post(API_ENDPOINTS.PAYMENT_DETAILS, {
+      await upsertPaymentDetailsMutation.mutateAsync({
         paymentType,
         upiId: paymentType === "upi" ? upiId : undefined,
-        bankAccount: paymentType === "bank" ? bankAccount : undefined,
-        ifscCode: paymentType === "bank" ? ifscCode : undefined,
-        accountHolderName: paymentType === "bank" ? accountHolderName : undefined,
+        bankAccountNumber: paymentType === "bank" ? bankAccount : undefined,
+        bankIfsc: paymentType === "bank" ? ifscCode : undefined,
+        bankAccountHolder: paymentType === "bank" ? accountHolderName : undefined,
       });
 
-      toast.success("Payment details saved successfully");
       closeDialog();
-      fetchPaymentDetails();
-    } catch (error: any) {
-      console.error("Error saving payment details:", error);
-      toast.error(error.message || "Failed to save payment details");
-    } finally {
-      setIsSaving(false);
+    } catch (error) {
+      // Error handled by mutation
     }
   };
 
@@ -258,15 +234,7 @@ export default function StaffPaymentDetailsPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 max-w-4xl">
-          {[1, 2].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-4">
-                <div className="h-20 bg-muted rounded" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <StaffPaymentDetailsSkeleton />
       ) : paymentDetails.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
@@ -445,15 +413,15 @@ export default function StaffPaymentDetailsPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog} disabled={isSaving}>
+            <Button variant="outline" onClick={closeDialog} disabled={upsertPaymentDetailsMutation.isPending}>
               Cancel
             </Button>
             <Button
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={upsertPaymentDetailsMutation.isPending}
               className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
             >
-              {isSaving ? "Saving..." : `Add ${paymentType === "upi" ? "UPI ID" : "Bank Details"}`}
+              {upsertPaymentDetailsMutation.isPending ? "Saving..." : `Add ${paymentType === "upi" ? "UPI ID" : "Bank Details"}`}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -33,7 +33,11 @@ const navItems = [
   { label: "Availability", href: "/provider/availability", icon: Calendar },
   { label: "Bookings", href: "/provider/bookings", icon: Clock },
   { label: "Staff", href: "/provider/staff", icon: Users },
-  { label: "Leave Management", href: "/provider/staff/leave", icon: CalendarClock },
+  {
+    label: "Leave Management",
+    href: "/provider/staff/leave",
+    icon: CalendarClock,
+  },
   { label: "Staff Payouts", href: "/provider/staff-payouts", icon: Wallet },
   { label: "Reviews", href: "/provider/reviews", icon: Star },
   { label: "Payments", href: "/provider/payments", icon: CreditCard },
@@ -84,10 +88,14 @@ export default function ProviderLayout({
           const userProfile = await getCurrentProfile();
           setUser(userProfile);
         } catch (profileError) {
-          console.error("Failed to fetch profile, using token data:", profileError);
+          console.error(
+            "Failed to fetch profile, using token data:",
+            profileError,
+          );
           setUser({
             id: userData.id,
-            name: userData.name || userData.email?.split("@")[0] || "Provider User",
+            name:
+              userData.name || userData.email?.split("@")[0] || "Provider User",
             email: userData.email || "provider@hsm.com",
             phone: "",
             roleId: userData.roleId,

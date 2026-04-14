@@ -9,7 +9,7 @@ export interface TokenPayload {
   id: number;
   email: string;
   roleId: UserRole;
-  name?: string;  // Optional: might not be in JWT token
+  name?: string; // Optional: might not be in JWT token
   phone?: string; // Optional: might not be in JWT token
   iat?: number;
   exp?: number;
@@ -23,7 +23,10 @@ export function parseToken(token: string): TokenPayload | null {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) {
-      console.error("Invalid token format: expected 3 parts, got", parts.length);
+      console.error(
+        "Invalid token format: expected 3 parts, got",
+        parts.length,
+      );
       return null;
     }
 
@@ -31,11 +34,11 @@ export function parseToken(token: string): TokenPayload | null {
     try {
       // Browser-safe base64url decode (Buffer is not defined in Next.js client production)
       const base64Url = parts[1];
-      let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      let base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
       const pad = base64.length % 4;
       if (pad) {
-        if (pad === 1) throw new Error('InvalidLengthError');
-        base64 += new Array(5 - pad).join('=');
+        if (pad === 1) throw new Error("InvalidLengthError");
+        base64 += new Array(5 - pad).join("=");
       }
       // decodeURIComponent(escape(atob(...))) handles UTF-8 characters properly
       payload = JSON.parse(decodeURIComponent(escape(atob(base64))));
@@ -138,7 +141,6 @@ export function clearAuthData(): void {
   sessionStorage.removeItem("userData");
   
   // Clear the cookies for Next.js middleware
-  document.cookie = "hsm_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
   document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 }
 
@@ -148,7 +150,7 @@ export function clearAuthData(): void {
 export function storeAuthData(
   token: string,
   user: any,
-  remember: boolean = false
+  remember: boolean = false,
 ): void {
   if (typeof window === "undefined") return;
 
@@ -161,9 +163,9 @@ export function storeAuthData(
   storage.setItem("token", token);
   storage.setItem("userData", JSON.stringify(user));
   
-  // Store token in cookie for Next.js middleware (use custom name to prevent HttpOnly conflicts)
-  const maxAge = remember ? "max-age=" + (30 * 24 * 60 * 60) + "; " : "";
-  document.cookie = `hsm_token=${token}; ${maxAge}path=/; samesite=lax; secure`;
+  // Store token in cookie for Next.js middleware
+  const maxAge = remember ? "max-age=" + 30 * 24 * 60 * 60 + "; " : "";
+  document.cookie = `token=${token}; ${maxAge}path=/; samesite=lax; secure`;
 }
 
 /**
@@ -184,7 +186,7 @@ export function redirectToLogin(returnUrl?: string): void {
  * Handle logout and redirect
  */
 export async function handleLogout(
-  redirectUrl: string = "/login"
+  redirectUrl: string = "/login",
 ): Promise<void> {
   if (typeof window === "undefined") return;
 
@@ -194,7 +196,8 @@ export async function handleLogout(
   try {
     // Call backend logout endpoint if available
     // Using the API base URL and /logout endpoint
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+    const API_BASE_URL =
+      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
     await fetch(`${API_BASE_URL}/logout`, {
       method: "POST",
       credentials: "include",
@@ -203,7 +206,9 @@ export async function handleLogout(
       },
     }).catch(() => {
       // Ignore errors, proceed with redirect
-      console.log("Backend logout call failed or unavailable, proceeding with client-side logout");
+      console.log(
+        "Backend logout call failed or unavailable, proceeding with client-side logout",
+      );
     });
   } catch (error) {
     // Ignore errors, proceed with redirect

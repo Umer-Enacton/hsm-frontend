@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader, StatCard } from "@/components/admin/shared";
+import { ProviderStaffSkeleton } from "@/components/provider/skeletons";
 import { AdminPagination, EmptyState } from "@/components/admin/shared";
 import {
   useProviderStaff,
@@ -164,11 +165,7 @@ export default function StaffManagementPage() {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <ProviderStaffSkeleton />;
   }
 
   if (error) {

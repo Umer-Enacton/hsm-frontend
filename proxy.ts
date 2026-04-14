@@ -159,10 +159,8 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Get token from cookie (checking our client-side hsm_token first to avoid stale HttpOnly ones)
-  const token =
-    request.cookies.get("hsm_token")?.value ||
-    request.cookies.get("token")?.value;
+  // Get token from cookie
+  const token = request.cookies.get("token")?.value;
 
   // Check if user is authenticated
   const isAuthenticated = Boolean(token && verifyToken(token).valid);

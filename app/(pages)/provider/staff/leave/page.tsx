@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { formatDistanceToNow } from "date-fns";
 import {
   Calendar,
   Check,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,8 +57,15 @@ import {
 import { toast } from "sonner";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
+import {
+  useStaffLeaveRequests,
+  useApproveStaffLeave,
+  useRejectStaffLeave,
+} from "@/lib/queries/use-provider-staff";
+import { ProviderStaffLeaveSkeleton } from "@/components/provider/skeletons";
 
+// If StaffLeaveRequest isn't perfectly matched with API (since the old interface had a lot of optional stuff), we can just keep the interface or extract it.
+// The old interface had this so let's keep it just in case:
 interface StaffLeaveRequest {
   id: number;
   staffId: number;
@@ -88,52 +97,39 @@ type StatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 
 export default function ProviderStaffLeavePage() {
   const router = useRouter();
-  const [leaveRequests, setLeaveRequests] = useState<StaffLeaveRequest[]>([]);
-  const [filteredRequests, setFilteredRequests] = useState<StaffLeaveRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   const [searchTerm, setSearchTerm] = useState("");
   const [unassignedBookings, setUnassignedBookings] = useState<number[]>([]);
 
+  // TanStack Queries & Mutations
+  const {
+    data: leaveRequestsData = [],
+    isLoading,
+    refetch,
+  } = useStaffLeaveRequests();
+  const approveMutation = useApproveStaffLeave();
+  const rejectMutation = useRejectStaffLeave();
+
   // Dialog states
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<StaffLeaveRequest | null>(null);
-  const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
+  const [selectedRequest, setSelectedRequest] =
+    useState<StaffLeaveRequest | null>(null);
+  const [actionType, setActionType] = useState<"approve" | "reject" | null>(
+    null,
+  );
   const [rejectionReason, setRejectionReason] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    fetchLeaveRequests();
-  }, []);
+  const isProcessing = approveMutation.isPending || rejectMutation.isPending;
+  const leaveRequests = leaveRequestsData as StaffLeaveRequest[];
 
-  useEffect(() => {
-    filterRequests();
-  }, [leaveRequests, statusFilter, searchTerm]);
-
-  const fetchLeaveRequests = async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.get<{ message: string; data: StaffLeaveRequest[] }>(
-        API_ENDPOINTS.STAFF_LEAVE_BUSINESS,
-      );
-      setLeaveRequests(response.data || []);
-    } catch (error: any) {
-      console.error("Error fetching leave requests:", error);
-      toast.error(error.message || "Failed to load leave requests");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const filterRequests = () => {
+  // Derived state for filtered requests
+  const filteredRequests = useMemo(() => {
     let filtered = [...leaveRequests];
 
-    // Filter by status
     if (statusFilter !== "all") {
       filtered = filtered.filter((req) => req.status === statusFilter);
     }
 
-    // Filter by search term
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
@@ -144,15 +140,18 @@ export default function ProviderStaffLeavePage() {
       );
     }
 
-    // Sort by date (newest first)
     filtered.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
-    setFilteredRequests(filtered);
-  };
+    return filtered;
+  }, [leaveRequests, statusFilter, searchTerm]);
 
-  const openActionDialog = (request: StaffLeaveRequest, action: "approve" | "reject") => {
+  const openActionDialog = (
+    request: StaffLeaveRequest,
+    action: "approve" | "reject",
+  ) => {
     setSelectedRequest(request);
     setActionType(action);
     setRejectionReason("");
@@ -162,15 +161,9 @@ export default function ProviderStaffLeavePage() {
   const handleAction = async () => {
     if (!selectedRequest || !actionType) return;
 
-    setIsProcessing(true);
     try {
       if (actionType === "approve") {
-        const response = await api.put<{
-          message: string;
-          data: StaffLeaveRequest;
-          unassignedBookings?: number[];
-          needsReassignment?: boolean;
-        }>(API_ENDPOINTS.STAFF_LEAVE_APPROVE(selectedRequest.id), {});
+        const response = await approveMutation.mutateAsync(selectedRequest.id);
 
         toast.success(response.message || "Leave request approved");
 
@@ -179,11 +172,12 @@ export default function ProviderStaffLeavePage() {
           setUnassignedBookings(response.unassignedBookings);
           toast.info(
             `${response.unassignedBookings.length} booking(s) unassigned. Click "Reassign Staff" to assign new staff.`,
-            { duration: 6000 }
+            { duration: 6000 },
           );
         }
       } else {
-        await api.put(API_ENDPOINTS.STAFF_LEAVE_REJECT(selectedRequest.id), {
+        await rejectMutation.mutateAsync({
+          id: selectedRequest.id,
           rejectionReason: rejectionReason || "No reason provided",
         });
         toast.success("Leave request rejected");
@@ -192,12 +186,9 @@ export default function ProviderStaffLeavePage() {
       setActionDialogOpen(false);
       setSelectedRequest(null);
       setRejectionReason("");
-      fetchLeaveRequests();
     } catch (error: any) {
       console.error("Error processing leave request:", error);
       toast.error(error.message || "Failed to process leave request");
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -209,10 +200,26 @@ export default function ProviderStaffLeavePage() {
 
   const getStatusBadge = (status: string) => {
     const config = {
-      pending: { label: "Pending", className: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 hover:bg-amber-200" },
-      approved: { label: "Approved", className: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 hover:bg-emerald-200" },
-      rejected: { label: "Rejected", className: "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 hover:bg-rose-200" },
-      cancelled: { label: "Cancelled", className: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200" },
+      pending: {
+        label: "Pending",
+        className:
+          "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 hover:bg-amber-200",
+      },
+      approved: {
+        label: "Approved",
+        className:
+          "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 hover:bg-emerald-200",
+      },
+      rejected: {
+        label: "Rejected",
+        className:
+          "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 hover:bg-rose-200",
+      },
+      cancelled: {
+        label: "Cancelled",
+        className:
+          "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200",
+      },
     };
     return config[status as keyof typeof config] || config.pending;
   };
@@ -234,12 +241,18 @@ export default function ProviderStaffLeavePage() {
     });
   };
 
+  if (isLoading) {
+    return <ProviderStaffLeaveSkeleton />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Staff Leave Management</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Staff Leave Management
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Review and manage staff leave requests
           </p>
@@ -247,7 +260,7 @@ export default function ProviderStaffLeavePage() {
         <Button
           variant="outline"
           size="icon"
-          onClick={fetchLeaveRequests}
+          onClick={() => refetch()}
           disabled={isLoading}
         >
           <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
@@ -265,7 +278,8 @@ export default function ProviderStaffLeavePage() {
                 </div>
                 <div>
                   <p className="font-medium text-orange-900 dark:text-orange-100">
-                    {unassignedBookings.length} Booking(s) Need Staff Reassignment
+                    {unassignedBookings.length} Booking(s) Need Staff
+                    Reassignment
                   </p>
                   <p className="text-sm text-orange-700 dark:text-orange-300">
                     Staff was unassigned due to approved leave
@@ -360,7 +374,9 @@ export default function ProviderStaffLeavePage() {
               <Label htmlFor="status-filter">Status:</Label>
               <Select
                 value={statusFilter}
-                onValueChange={(value) => setStatusFilter(value as StatusFilter)}
+                onValueChange={(value) =>
+                  setStatusFilter(value as StatusFilter)
+                }
               >
                 <SelectTrigger id="status-filter" className="w-40">
                   <SelectValue />
@@ -388,7 +404,7 @@ export default function ProviderStaffLeavePage() {
       </Card>
 
       {/* Leave Requests Table */}
-      <Card>
+      <Card className="p-0">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -414,7 +430,9 @@ export default function ProviderStaffLeavePage() {
                     <TableHead className="py-4 px-4">Reason</TableHead>
                     <TableHead className="py-4 px-4">Status</TableHead>
                     <TableHead className="py-4 px-4">Requested</TableHead>
-                    <TableHead className="py-4 px-4 text-right">Actions</TableHead>
+                    <TableHead className="py-4 px-4 text-right">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -427,12 +445,23 @@ export default function ProviderStaffLeavePage() {
                       >
                         <TableCell className="py-4 px-4">
                           <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                              <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                            </div>
+                            <Avatar className="h-9 w-9 border">
+                              {request.staffAvatar ? (
+                                <AvatarImage
+                                  src={request.staffAvatar}
+                                  alt={request.staffName}
+                                />
+                              ) : (
+                                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-500 text-white text-xs font-medium">
+                                  {request.staffName?.charAt(0) || "S"}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="font-medium text-sm">{request.staffName}</p>
+                                <p className="font-medium text-sm">
+                                  {request.staffName}
+                                </p>
                                 {request.staffEmployeeId && (
                                   <span className="text-xs bg-muted px-2 py-0.5 rounded">
                                     {request.staffEmployeeId}
@@ -449,7 +478,9 @@ export default function ProviderStaffLeavePage() {
                           </div>
                         </TableCell>
                         <TableCell className="py-4 px-4">
-                          <p className="text-sm">{getLeaveTypeLabel(request.leaveType)}</p>
+                          <p className="text-sm">
+                            {getLeaveTypeLabel(request.leaveType)}
+                          </p>
                         </TableCell>
                         <TableCell className="py-4 px-4">
                           <p className="text-sm">
@@ -458,14 +489,19 @@ export default function ProviderStaffLeavePage() {
                               <> - {formatDate(request.endDate)}</>
                             )}
                           </p>
-                          {request.leaveType === "hours" && request.startTime && request.endTime && (
-                            <p className="text-xs text-muted-foreground">
-                              {request.startTime} - {request.endTime}
-                            </p>
-                          )}
+                          {request.leaveType === "hours" &&
+                            request.startTime &&
+                            request.endTime && (
+                              <p className="text-xs text-muted-foreground">
+                                {request.startTime} - {request.endTime}
+                              </p>
+                            )}
                         </TableCell>
                         <TableCell className="py-4 px-4">
-                          <p className="text-sm max-w-[200px] truncate" title={request.reason}>
+                          <p
+                            className="text-sm max-w-[200px] truncate"
+                            title={request.reason}
+                          >
                             {request.reason || "-"}
                           </p>
                           {request.rejectionReason && (
@@ -476,15 +512,24 @@ export default function ProviderStaffLeavePage() {
                         </TableCell>
                         <TableCell className="py-4 px-4">
                           <div className="flex items-center gap-2">
-                            <Badge className={statusConfig.className} variant="outline">
+                            <Badge
+                              className={statusConfig.className}
+                              variant="outline"
+                            >
                               {statusConfig.label}
                             </Badge>
-                            {request.hasConflicts && request.status === "pending" && (
-                              <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-300">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                {request.conflictingBookings?.length || 0} Booking(s)
-                              </Badge>
-                            )}
+                            {request.hasConflicts &&
+                              request.status === "pending" && (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-orange-100 text-orange-700 border-orange-300"
+                                >
+                                  <Calendar className="h-3 w-3 mr-1" />
+                                  {request.conflictingBookings?.length ||
+                                    0}{" "}
+                                  Booking(s)
+                                </Badge>
+                              )}
                           </div>
                         </TableCell>
                         <TableCell className="py-4 px-4">
@@ -501,7 +546,9 @@ export default function ProviderStaffLeavePage() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => openActionDialog(request, "approve")}
+                                  onClick={() =>
+                                    openActionDialog(request, "approve")
+                                  }
                                   className="h-8 px-3 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
                                 >
                                   <Check className="h-4 w-4" />
@@ -509,7 +556,9 @@ export default function ProviderStaffLeavePage() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => openActionDialog(request, "reject")}
+                                  onClick={() =>
+                                    openActionDialog(request, "reject")
+                                  }
                                   className="h-8 px-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
                                 >
                                   <X className="h-4 w-4" />
@@ -518,7 +567,11 @@ export default function ProviderStaffLeavePage() {
                             ) : (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                  >
                                     <MoreHorizontal className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
@@ -568,43 +621,67 @@ export default function ProviderStaffLeavePage() {
                 <>
                   <div className="space-y-2">
                     <p>
-                      <span className="font-medium">Staff:</span> {selectedRequest.staffName}
+                      <span className="font-medium">Staff:</span>{" "}
+                      {selectedRequest.staffName}
                     </p>
                     <p>
-                      <span className="font-medium">Leave Type:</span> {getLeaveTypeLabel(selectedRequest.leaveType)}
+                      <span className="font-medium">Leave Type:</span>{" "}
+                      {getLeaveTypeLabel(selectedRequest.leaveType)}
                     </p>
                     <p>
-                      <span className="font-medium">Duration:</span> {formatDate(selectedRequest.startDate)}
-                      {selectedRequest.startDate !== selectedRequest.endDate && (
+                      <span className="font-medium">Duration:</span>{" "}
+                      {formatDate(selectedRequest.startDate)}
+                      {selectedRequest.startDate !==
+                        selectedRequest.endDate && (
                         <> to {formatDate(selectedRequest.endDate)}</>
                       )}
                     </p>
                     {selectedRequest.reason && (
                       <p>
-                        <span className="font-medium">Reason:</span> {selectedRequest.reason}
+                        <span className="font-medium">Reason:</span>{" "}
+                        {selectedRequest.reason}
                       </p>
                     )}
                   </div>
 
                   {/* Show conflicting bookings warning */}
-                  {actionType === "approve" && selectedRequest.hasConflicts && selectedRequest.conflictingBookings && selectedRequest.conflictingBookings.length > 0 && (
-                    <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200 flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Conflicting Bookings ({selectedRequest.conflictingBookings.length})
-                      </p>
-                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                        This staff has {selectedRequest.conflictingBookings.length} booking(s) on these dates. Approving leave will automatically unassign the staff from these bookings.
-                      </p>
-                      <div className="mt-2 space-y-1">
-                        {selectedRequest.conflictingBookings.map((booking) => (
-                          <div key={booking.id} className="text-xs bg-background dark:bg-background/50 rounded px-2 py-1">
-                            <span className="font-medium">Booking #{booking.id}</span> - {new Date(booking.bookingDate).toLocaleDateString()} at {booking.startTime}
-                          </div>
-                        ))}
+                  {actionType === "approve" &&
+                    selectedRequest.hasConflicts &&
+                    selectedRequest.conflictingBookings &&
+                    selectedRequest.conflictingBookings.length > 0 && (
+                      <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                        <p className="text-sm font-medium text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          Conflicting Bookings (
+                          {selectedRequest.conflictingBookings.length})
+                        </p>
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                          This staff has{" "}
+                          {selectedRequest.conflictingBookings.length}{" "}
+                          booking(s) on these dates. Approving leave will
+                          automatically unassign the staff from these bookings.
+                        </p>
+                        <div className="mt-2 space-y-1">
+                          {selectedRequest.conflictingBookings.map(
+                            (booking) => (
+                              <div
+                                key={booking.id}
+                                className="text-xs bg-background dark:bg-background/50 rounded px-2 py-1"
+                              >
+                                <span className="font-medium">
+                                  Booking #{booking.id}
+                                </span>{" "}
+                                -{" "}
+                                {new Date(
+                                  booking.bookingDate,
+                                ).toLocaleDateString()}{" "}
+                                at {booking.startTime}
+                              </div>
+                            ),
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </>
               )}
             </AlertDialogDescription>
@@ -612,7 +689,9 @@ export default function ProviderStaffLeavePage() {
 
           {actionType === "reject" && (
             <div className="py-4">
-              <Label htmlFor="rejection-reason">Rejection Reason (Optional)</Label>
+              <Label htmlFor="rejection-reason">
+                Rejection Reason (Optional)
+              </Label>
               <Textarea
                 id="rejection-reason"
                 placeholder="Provide a reason for rejecting this leave request..."
@@ -624,7 +703,9 @@ export default function ProviderStaffLeavePage() {
           )}
 
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isProcessing}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleAction}
               disabled={isProcessing}

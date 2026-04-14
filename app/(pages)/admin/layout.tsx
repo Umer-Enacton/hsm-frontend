@@ -17,6 +17,8 @@ import {
   Crown,
   Users2,
   Clock,
+  Shield,
+  Scale,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -42,6 +44,8 @@ const navItems = [
     icon: Users2,
   },
   { label: "Schedule Jobs", href: "/admin/cron-jobs", icon: Clock },
+  { label: "Privacy Policies", href: "/admin/settings/privacy", icon: Shield },
+  { label: "Terms & Configs", href: "/admin/settings/terms", icon: Scale },
   { label: "Settings", href: "/admin/settings", icon: Settings },
   // Profile removed from sidebar - accessible via Header user menu
 ];

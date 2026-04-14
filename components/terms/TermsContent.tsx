@@ -1,42 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { FileText, AlertCircle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/lib/queries/query-keys";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { TermsSkeleton } from "@/components/terms/skeletons/TermsSkeleton";
 
 export function TermsContent() {
-  const [terms, setTerms] = useState<{
-    version: string;
-    content: string;
-    effectiveDate: string;
-  } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchTerms();
-  }, []);
-
-  const fetchTerms = async () => {
-    try {
-      setIsLoading(true);
+  const { data: terms, isLoading, error } = useQuery({
+    queryKey: [QUERY_KEYS.GLOBAL_TERMS_CONDITIONS],
+    queryFn: async () => {
       const response = await api.get<{
         version: string;
         content: string;
         effectiveDate: string;
       }>(API_ENDPOINTS.TERMS_ACTIVE);
-      if (response) {
-        setTerms(response);
-      }
-    } catch (err: any) {
-      console.error("Error fetching terms:", err);
-      setError("Failed to load terms & conditions");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return response;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   if (isLoading) {
     return <TermsSkeleton />;
@@ -47,7 +30,7 @@ export function TermsContent() {
       <Card>
         <CardContent className="flex items-center gap-3 py-12">
           <AlertCircle className="h-5 w-5 text-destructive" />
-          <p className="text-muted-foreground">{error || "No terms & conditions available"}</p>
+          <p className="text-muted-foreground">{error?.message || "No terms & conditions available"}</p>
         </CardContent>
       </Card>
     );

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { IndianRupee, Wallet, Shield, AlertCircle, Info, FileText, Scale } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { IndianRupee, Wallet, Shield, AlertCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { AdminSettingsSkeleton } from "@/components/admin/skeletons";
 import { api, API_ENDPOINTS } from "@/lib/api";
+import { QUERY_KEYS } from "@/lib/queries/query-keys";
 
 interface CancellationPolicySettings {
   refundPolicy: {
@@ -22,11 +24,32 @@ interface CancellationPolicySettings {
 }
 
 export default function AdminSettingsPage() {
-  // Fetch settings
-  const [settingsLoading, setSettingsLoading] = useState(true);
-  const [minBookingAmount, setMinBookingAmount] = useState(300);
+  const queryClient = useQueryClient();
 
-  // Cancellation Policy Settings
+  // Queries
+  const { data: platformSettings, isLoading: loadingPlatform } = useQuery({
+    queryKey: [QUERY_KEYS.ADMIN_SETTINGS, "platform"],
+    queryFn: async () => {
+      const res = await api.get<{
+        platformFeePercentage: number;
+        minimumPayoutAmount: number;
+      }>(API_ENDPOINTS.ADMIN_SETTINGS);
+      // Map to rupees for UI state
+      return { ...res, minBookingAmountUI: res.minimumPayoutAmount / 100 };
+    },
+  });
+
+  const { data: policySettings, isLoading: loadingPolicy } = useQuery({
+    queryKey: [QUERY_KEYS.ADMIN_SETTINGS, "cancellation_policy"],
+    queryFn: async () => {
+      return await api.get<CancellationPolicySettings>(
+        API_ENDPOINTS.ADMIN_CANCELLATION_POLICY
+      );
+    },
+  });
+
+  // Local state for UI changes
+  const [minBookingAmount, setMinBookingAmount] = useState(300);
   const [cancellationPolicy, setCancellationPolicy] = useState<CancellationPolicySettings>({
     refundPolicy: {
       above24h: 100,
@@ -36,74 +59,63 @@ export default function AdminSettingsPage() {
     },
   });
 
-  const [updateLoading, setUpdateLoading] = useState(false);
+  // Sync original fetch with local state
+  useEffect(() => {
+    if (platformSettings) {
+      setMinBookingAmount(platformSettings.minBookingAmountUI);
+    }
+  }, [platformSettings]);
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      setSettingsLoading(true);
-
-      // Fetch platform settings
-      const settingsResponse = await api.get<{
-        platformFeePercentage: number;
-        minimumPayoutAmount: number;
-      }>(API_ENDPOINTS.ADMIN_SETTINGS);
-      setMinBookingAmount(settingsResponse.minimumPayoutAmount / 100);
-
-      // Fetch cancellation policy settings
-      const policyResponse = await api.get<CancellationPolicySettings>(
-        API_ENDPOINTS.ADMIN_CANCELLATION_POLICY
-      );
-      setCancellationPolicy(policyResponse);
-    } catch (error) {
-      console.error("Error fetching settings:", error);
-      toast.error("Failed to load settings");
-    } finally {
-      setSettingsLoading(false);
+    if (policySettings) {
+      setCancellationPolicy(policySettings);
     }
-  };
+  }, [policySettings]);
 
-  const handleSaveCancellationPolicy = async () => {
-    try {
-      setUpdateLoading(true);
-
-      await api.put(API_ENDPOINTS.ADMIN_CANCELLATION_POLICY, {
-        refundPolicy: cancellationPolicy.refundPolicy,
-      });
-
-      toast.success("Cancellation policy updated! All customers and providers have been notified.");
-    } catch (error: any) {
-      console.error("Error updating cancellation policy:", error);
-      toast.error(error.response?.data?.message || "Failed to update cancellation policy");
-    } finally {
-      setUpdateLoading(false);
-    }
-  };
-
-  const handleSaveSettings = async () => {
-    try {
-      setUpdateLoading(true);
-
-      // Validate minimum payout
-      if (minBookingAmount < 300 || minBookingAmount > 1000) {
-        toast.error("Minimum payout must be between ₹300 and ₹1,000");
-        return;
-      }
-
-      await api.put(API_ENDPOINTS.ADMIN_SETTINGS, {
-        minBookingAmount: minBookingAmount * 100,
-      });
-
+  // Mutations
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (payload: { minBookingAmount: number }) => {
+      await api.put(API_ENDPOINTS.ADMIN_SETTINGS, payload);
+    },
+    onSuccess: () => {
       toast.success("Platform settings updated successfully");
-    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_SETTINGS, "platform"] });
+    },
+    onError: (error: any) => {
       console.error("Error updating settings:", error);
       toast.error(error.response?.data?.message || "Failed to update settings");
-    } finally {
-      setUpdateLoading(false);
+    },
+  });
+
+  const updatePolicyMutation = useMutation({
+    mutationFn: async (payload: { refundPolicy: CancellationPolicySettings["refundPolicy"] }) => {
+      await api.put(API_ENDPOINTS.ADMIN_CANCELLATION_POLICY, payload);
+    },
+    onSuccess: () => {
+      toast.success("Cancellation policy updated! All customers and providers have been notified.");
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_SETTINGS, "cancellation_policy"] });
+    },
+    onError: (error: any) => {
+      console.error("Error updating cancellation policy:", error);
+      toast.error(error.response?.data?.message || "Failed to update cancellation policy");
+    },
+  });
+
+  const handleSaveSettings = () => {
+    if (minBookingAmount < 300 || minBookingAmount > 1000) {
+      toast.error("Minimum payout must be between ₹300 and ₹1,000");
+      return;
     }
+
+    updateSettingsMutation.mutate({
+      minBookingAmount: minBookingAmount * 100,
+    });
+  };
+
+  const handleSaveCancellationPolicy = () => {
+    updatePolicyMutation.mutate({
+      refundPolicy: cancellationPolicy.refundPolicy,
+    });
   };
 
   const handleReset = () => {
@@ -117,7 +129,7 @@ export default function AdminSettingsPage() {
     });
   };
 
-  if (settingsLoading) {
+  if (loadingPlatform || loadingPolicy) {
     return <AdminSettingsSkeleton />;
   }
 
@@ -388,7 +400,7 @@ export default function AdminSettingsPage() {
         <Button
           variant="outline"
           onClick={handleReset}
-          disabled={updateLoading}
+          disabled={updateSettingsMutation.isPending || updatePolicyMutation.isPending}
           className="w-full sm:w-auto"
         >
           Reset to Defaults
@@ -397,71 +409,21 @@ export default function AdminSettingsPage() {
           <Button
             variant="default"
             onClick={handleSaveSettings}
-            disabled={updateLoading}
+            disabled={updateSettingsMutation.isPending || updatePolicyMutation.isPending}
             className="w-full sm:w-auto"
           >
-            {updateLoading ? "Saving..." : "Save Payout Settings"}
+            {updateSettingsMutation.isPending ? "Saving..." : "Save Payout Settings"}
           </Button>
           <Button
             variant="default"
             onClick={handleSaveCancellationPolicy}
-            disabled={updateLoading}
+            disabled={updateSettingsMutation.isPending || updatePolicyMutation.isPending}
             className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700"
           >
-            {updateLoading ? "Saving..." : "Save Cancellation Policy"}
+            {updatePolicyMutation.isPending ? "Saving..." : "Save Cancellation Policy"}
           </Button>
         </div>
       </div>
-
-      {/* Privacy Policy Management Card */}
-      <Card className="border-blue-200 dark:border-blue-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-blue-600" />
-            Privacy Policy Management
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Manage privacy policy versions and notify users of updates.
-          </p>
-          <Button
-            asChild
-            variant="outline"
-            className="border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:hover:bg-blue-900/20"
-          >
-            <a href="/admin/settings/privacy" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Manage Privacy Policies
-            </a>
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Terms & Conditions Management Card */}
-      <Card className="border-purple-200 dark:border-purple-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Scale className="h-5 w-5 text-purple-600" />
-            Terms & Conditions Management
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Manage terms & conditions versions and notify users of updates.
-          </p>
-          <Button
-            asChild
-            variant="outline"
-            className="border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-900/20"
-          >
-            <a href="/admin/settings/terms" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Manage Terms & Conditions
-            </a>
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   );
 }

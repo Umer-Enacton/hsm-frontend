@@ -1,7 +1,13 @@
 "use client";
 
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Calendar } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface PeriodSelectorProps {
   value: string;
@@ -9,31 +15,27 @@ export interface PeriodSelectorProps {
 }
 
 const periods = [
-  { value: "7d", label: "7D" },
-  { value: "30d", label: "30D" },
-  { value: "6m", label: "6M" },
-  { value: "12m", label: "12M" },
-  { value: "all", label: "All" },
+  { value: "7d", label: "Last 7 Days" },
+  { value: "30d", label: "Last 30 Days" },
+  { value: "6m", label: "Last 6 Months" },
+  { value: "12m", label: "Last 12 Months" },
+  { value: "all", label: "All Time" },
 ];
 
 export function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
   return (
-    <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-md w-fit max-w-full overflow-x-auto">
-      {periods.map((period) => (
-        <button
-          key={period.value}
-          onClick={() => onChange(period.value)}
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "sm" }),
-            "px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md transition-all whitespace-nowrap",
-            value === period.value
-              ? "bg-background shadow-sm text-foreground font-medium"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          {period.label}
-        </button>
-      ))}
-    </div>
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-[150px] sm:w-[165px]">
+        <Calendar className="h-4 w-4 mr-2 shrink-0" />
+        <SelectValue placeholder="Select period" />
+      </SelectTrigger>
+      <SelectContent>
+        {periods.map((period) => (
+          <SelectItem key={period.value} value={period.value}>
+            {period.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

@@ -14,6 +14,8 @@ import {
   Scale,
   Clock,
 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/lib/queries/query-keys";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { TiptapEditor } from "@/components/editor/TiptapEditor";
 import { StatCard } from "@/components/admin/shared/StatCard";
@@ -83,9 +85,20 @@ const getNextVersion = (versions: string[]): string => {
 };
 
 export default function AdminTermsPage() {
-  const [terms, setTerms] = useState<TermsCondition[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: termsData, isLoading } = useQuery({
+    queryKey: [QUERY_KEYS.ADMIN_TERMS_CONDITIONS],
+    queryFn: async () => {
+      const response = await api.get<{ terms: TermsCondition[] }>(
+        API_ENDPOINTS.ADMIN_TERMS_VERSIONS
+      );
+      return response.terms || [];
+    },
+  });
+
+  const terms = termsData || [];
+
   const [editingTerms, setEditingTerms] = useState<TermsCondition | null>(null);
   const [newVersion, setNewVersion] = useState("");
   const [newContent, setNewContent] = useState("");
@@ -95,24 +108,6 @@ export default function AdminTermsPage() {
   const [termsToDelete, setTermsToDelete] = useState<TermsCondition | null>(null);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [termsToActivate, setTermsToActivate] = useState<TermsCondition | null>(null);
-
-  const fetchTerms = async () => {
-    try {
-      const response = await api.get<{ terms: TermsCondition[] }>(
-        API_ENDPOINTS.ADMIN_TERMS_VERSIONS
-      );
-      setTerms(response.terms || []);
-    } catch (error) {
-      console.error("Error fetching terms:", error);
-      toast.error("Failed to load terms & conditions");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTerms();
-  }, []);
 
   // Auto-calculate next version when creating new
   useEffect(() => {
@@ -124,89 +119,100 @@ export default function AdminTermsPage() {
     }
   }, [terms, editingTerms]);
 
-  const handleCreate = async () => {
+  const createMutation = useMutation({
+    mutationFn: async (payload: { version: string; content: string }) => {
+      await api.post(API_ENDPOINTS.ADMIN_TERMS_VERSIONS, payload);
+    },
+    onSuccess: () => {
+      toast.success("Terms version created successfully");
+      setNewVersion("");
+      setNewContent("");
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_TERMS_CONDITIONS] });
+    },
+    onError: (error: any) => {
+      console.error("Error creating terms:", error);
+      toast.error(error.response?.data?.message || "Failed to create terms");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (payload: { id: number; content: string }) => {
+      await api.put(API_ENDPOINTS.ADMIN_TERMS_BY_ID(payload.id), {
+        content: payload.content,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Terms updated successfully");
+      setEditingTerms(null);
+      setNewContent("");
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_TERMS_CONDITIONS] });
+    },
+    onError: (error: any) => {
+      console.error("Error updating terms:", error);
+      toast.error(error.response?.data?.message || "Failed to update terms");
+    },
+  });
+
+  const activateMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await api.post(API_ENDPOINTS.ADMIN_TERMS_ACTIVATE(id), {});
+    },
+    onSuccess: () => {
+      toast.success("Terms activated and notifications sent to all users");
+      setActivateDialogOpen(false);
+      setTermsToActivate(null);
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_TERMS_CONDITIONS] });
+    },
+    onError: (error: any) => {
+      console.error("Error activating terms:", error);
+      toast.error(error.response?.data?.message || "Failed to activate terms");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(API_ENDPOINTS.ADMIN_TERMS_BY_ID(id));
+    },
+    onSuccess: () => {
+      toast.success("Terms deleted successfully");
+      setDeleteDialogOpen(false);
+      setTermsToDelete(null);
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_TERMS_CONDITIONS] });
+    },
+    onError: (error: any) => {
+      console.error("Error deleting terms:", error);
+      toast.error(error.response?.data?.message || "Failed to delete terms");
+    },
+  });
+
+  const handleCreate = () => {
     if (!newContent) {
       toast.error("Content is required");
       return;
     }
-
-    setIsSaving(true);
-    try {
-      await api.post(API_ENDPOINTS.ADMIN_TERMS_VERSIONS, {
-        version: newVersion,
-        content: newContent,
-      });
-
-      toast.success("Terms version created successfully");
-      setNewVersion("");
-      setNewContent("");
-      fetchTerms();
-    } catch (error: any) {
-      console.error("Error creating terms:", error);
-      toast.error(error.response?.data?.message || "Failed to create terms");
-    } finally {
-      setIsSaving(false);
-    }
+    createMutation.mutate({ version: newVersion, content: newContent });
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = () => {
     if (!editingTerms) return;
-
-    setIsSaving(true);
-    try {
-      await api.put(API_ENDPOINTS.ADMIN_TERMS_BY_ID(editingTerms.id), {
-        content: newContent,
-      });
-
-      toast.success("Terms updated successfully");
-      setEditingTerms(null);
-      setNewContent("");
-      fetchTerms();
-    } catch (error: any) {
-      console.error("Error updating terms:", error);
-      toast.error(error.response?.data?.message || "Failed to update terms");
-    } finally {
-      setIsSaving(false);
-    }
+    updateMutation.mutate({ id: editingTerms.id, content: newContent });
   };
 
-  const handleActivate = async () => {
+  const handleActivate = () => {
     if (!termsToActivate) return;
-
-    setIsSaving(true);
-    try {
-      await api.post(API_ENDPOINTS.ADMIN_TERMS_ACTIVATE(termsToActivate.id), {});
-
-      toast.success("Terms activated and notifications sent to all users");
-      setActivateDialogOpen(false);
-      setTermsToActivate(null);
-      fetchTerms();
-    } catch (error: any) {
-      console.error("Error activating terms:", error);
-      toast.error(error.response?.data?.message || "Failed to activate terms");
-    } finally {
-      setIsSaving(false);
-    }
+    activateMutation.mutate(termsToActivate.id);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!termsToDelete) return;
-
-    setIsSaving(true);
-    try {
-      await api.delete(API_ENDPOINTS.ADMIN_TERMS_BY_ID(termsToDelete.id));
-
-      toast.success("Terms deleted successfully");
-      setDeleteDialogOpen(false);
-      setTermsToDelete(null);
-      fetchTerms();
-    } catch (error: any) {
-      console.error("Error deleting terms:", error);
-      toast.error(error.response?.data?.message || "Failed to delete terms");
-    } finally {
-      setIsSaving(false);
-    }
+    deleteMutation.mutate(termsToDelete.id);
   };
+
+  const isSaving =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    activateMutation.isPending ||
+    deleteMutation.isPending;
 
   const startEdit = (termsItem: TermsCondition) => {
     setEditingTerms(termsItem);
@@ -240,8 +246,13 @@ export default function AdminTermsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6 animate-pulse">
+        <div className="h-8 bg-muted rounded w-1/3"></div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="h-32 bg-muted rounded-xl"></div>
+          <div className="h-32 bg-muted rounded-xl"></div>
+        </div>
+        <div className="h-[400px] bg-muted rounded-xl"></div>
       </div>
     );
   }

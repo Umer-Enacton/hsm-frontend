@@ -85,7 +85,10 @@ export default function StaffLayout({
             });
           }
         } catch (profileError) {
-          console.error("Failed to fetch staff profile, using token data:", profileError);
+          console.error(
+            "Failed to fetch staff profile, using token data:",
+            profileError,
+          );
           setUser({
             id: userData.id,
             name: userData.name || userData.email?.split("@")[0] || "Staff",

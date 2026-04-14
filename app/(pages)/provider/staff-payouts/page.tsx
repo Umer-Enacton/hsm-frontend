@@ -38,20 +38,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { api, API_ENDPOINTS } from "@/lib/api";
 import { cn } from "@/lib/utils";
-
-interface StaffPayoutSummary {
-  staffId: number;
-  staffName: string;
-  staffEmail: string;
-  staffAvatar?: string | null;
-  employeeId?: string;
-  upiId?: string;
-  bankAccount?: string;
-  totalPending: number;
-  payoutCount: number;
-}
+import {
+  useProviderStaffPayoutSummary,
+  useProcessProviderStaffPayout,
+  type StaffPayoutSummary,
+} from "@/lib/queries/use-staff-payouts";
+import { ProviderStaffPayoutsSkeleton } from "@/components/provider/skeletons";
 
 interface PayoutTotals {
   totalPendingAmount: number;
@@ -68,52 +61,22 @@ interface SummaryResponse {
 }
 
 export default function ProviderStaffPayoutsPage() {
-  const [summary, setSummary] = useState<SummaryResponse["data"] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<StaffPayoutSummary | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
-  const fetchSummary = async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.get<SummaryResponse>(
-        API_ENDPOINTS.STAFF_PAYOUTS_PROVIDER_SUMMARY,
-      );
-      setSummary(response.data);
-    } catch (error: any) {
-      console.error("Error fetching staff payouts:", error);
-      toast.error(error.message || "Failed to load staff payouts");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fetch summary on mount
-  useEffect(() => {
-    fetchSummary();
-  }, []);
+  // TanStack Queries & Mutations
+  const { data: summaryResponse, isLoading, refetch } = useProviderStaffPayoutSummary();
+  const processMutation = useProcessProviderStaffPayout();
 
   const handleProcessPayout = async () => {
     if (!selectedStaff) return;
 
-    setIsProcessing(true);
     try {
-      const response = await api.post(API_ENDPOINTS.STAFF_PAYOUTS_PROVIDER_PROCESS, {
-        staffId: selectedStaff.staffId,
-      });
-
-      toast.success(
-        `Payout of ₹${(selectedStaff.totalPending / 100).toFixed(2)} marked as paid`,
-      );
+      await processMutation.mutateAsync(selectedStaff.staffId);
       setConfirmDialogOpen(false);
       setSelectedStaff(null);
-      fetchSummary();
     } catch (error: any) {
-      console.error("Error processing payout:", error);
-      toast.error(error.message || "Failed to process payout");
-    } finally {
-      setIsProcessing(false);
+      // Error is handled in mutation
     }
   };
 
@@ -123,27 +86,10 @@ export default function ProviderStaffPayoutsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Staff Payouts</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage and process payouts to your staff members
-          </p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-4 bg-muted rounded w-24 mb-2" />
-                <div className="h-8 bg-muted rounded w-32" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+    return <ProviderStaffPayoutsSkeleton />;
   }
+
+  const summary = summaryResponse || null;
 
   const totals = summary?.totals || {
     totalPendingAmount: 0,
@@ -165,8 +111,8 @@ export default function ProviderStaffPayoutsPage() {
         <Button
           variant="outline"
           size="icon"
-          onClick={fetchSummary}
-          disabled={isLoading}
+          onClick={() => refetch()}
+          disabled={isLoading || processMutation.isPending}
         >
           <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
         </Button>
@@ -404,13 +350,15 @@ export default function ProviderStaffPayoutsPage() {
           )}
 
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={processMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleProcessPayout}
-              disabled={isProcessing}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+              disabled={processMutation.isPending}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {isProcessing ? (
+              {processMutation.isPending ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                   Processing...
@@ -418,7 +366,7 @@ export default function ProviderStaffPayoutsPage() {
               ) : (
                 <>
                   <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Confirm Paid
+                  Confirm Payment
                 </>
               )}
             </AlertDialogAction>

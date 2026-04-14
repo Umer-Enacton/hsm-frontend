@@ -17,6 +17,8 @@ import {
   LayoutGrid,
   List,
   SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import type { Category } from "@/types/category";
 
@@ -160,7 +162,7 @@ export function CategoryList({
               disabled={currentPage === 1}
               className="gap-1"
             >
-              <SlidersHorizontal className="h-4 w-4 sm:mr-1" />
+              <ChevronLeft className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Previous</span>
             </Button>
 
@@ -200,7 +202,7 @@ export function CategoryList({
               className="gap-1"
             >
               <span className="hidden sm:inline">Next</span>
-              <SlidersHorizontal className="h-4 w-4 sm:ml-1 rotate-180" />
+              <ChevronRight className="h-4 w-4 sm:ml-1 " />
             </Button>
           </div>
         </div>
