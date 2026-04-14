@@ -72,6 +72,7 @@ interface StaffLeaveRequest {
   staffName: string;
   staffEmail?: string;
   staffEmployeeId?: string;
+  staffAvatar?: string | null;
   leaveType: "full_day" | "half_day" | "hours";
   startDate: string;
   endDate: string;
