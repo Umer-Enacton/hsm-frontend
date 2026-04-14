@@ -56,7 +56,6 @@ export interface ServiceDetails extends CustomerService {
  * Booking status enum
  */
 export enum BookingStatus {
-  PENDING = "pending",
   CONFIRMED = "confirmed",
   COMPLETED = "completed",
   CANCELLED = "cancelled",
@@ -76,7 +75,6 @@ export interface CustomerBooking {
   addressId: number;
   status:
     | BookingStatus
-    | "pending"
     | "confirmed"
     | "completed"
     | "cancelled"
@@ -91,7 +89,7 @@ export interface CustomerBooking {
   // Reschedule tracking fields
   rescheduleCount?: number;
   lastRescheduleFee?: number;
-  rescheduleOutcome?: "pending" | "accepted" | "rejected" | "cancelled" | null;
+  rescheduleOutcome?: "accepted" | "rejected" | "cancelled" | null;
   previousSlotId?: number;
   previousSlotTime?: string; // "HH:mm:ss" format
   previousBookingDate?: string;

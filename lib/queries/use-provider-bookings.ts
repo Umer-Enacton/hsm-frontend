@@ -2,8 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   getProviderBookings,
-  acceptBooking,
-  rejectBooking,
   completeBooking,
   initiateCompletion,
   verifyCompletionOTP,
@@ -77,72 +75,6 @@ export function useProviderBooking(bookingId: number) {
 // MUTATIONS
 // ============================================================================
 
-/**
- * Accept a pending booking
- */
-export function useAcceptBooking() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (bookingId: number) => acceptBooking(bookingId),
-
-    onSuccess: () => {
-      // Invalidate ALL booking queries (customer, provider, admin)
-      invalidateBookingQueries(queryClient);
-      invalidateNotificationQueries(queryClient);
-      toast.success("Booking accepted successfully");
-    },
-
-    onError: (error: any) => {
-      console.error("Error accepting booking:", error);
-
-      // Check if booking is already in a terminal state
-      if (error.message?.includes("Current status:")) {
-        invalidateBookingQueries(queryClient);
-        toast.error(
-          error.message ||
-            "This booking has already been processed. Refreshing...",
-        );
-      } else {
-        toast.error(error.message || "Failed to accept booking");
-      }
-    },
-  });
-}
-
-/**
- * Reject a pending booking
- */
-export function useRejectBooking() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (bookingId: number) => rejectBooking(bookingId),
-
-    onSuccess: () => {
-      // Invalidate ALL booking queries
-      invalidateBookingQueries(queryClient);
-      invalidateNotificationQueries(queryClient);
-      toast.success("Booking rejected successfully");
-    },
-
-    onError: (error: any) => {
-      console.error("Error rejecting booking:", error);
-
-      // Check if booking is already in a terminal state
-      if (error.message?.includes("Current status:")) {
-        // Refresh data to show current state
-        invalidateBookingQueries(queryClient);
-        toast.error(
-          error.message ||
-            "This booking has already been processed. Refreshing...",
-        );
-      } else {
-        toast.error(error.message || "Failed to reject booking");
-      }
-    },
-  });
-}
 
 /**
  * Complete a confirmed booking

@@ -359,24 +359,6 @@ export default function CustomerBookingsPage() {
     // Show reschedule fee badge for bookings with reschedule outcome
     if (booking.rescheduleOutcome) {
       if (
-        booking.rescheduleOutcome === "pending" ||
-        booking.rescheduleOutcome === "accepted"
-      ) {
-        return (
-          <div className="flex flex-col gap-1">
-            {baseBadge}
-            <Badge
-              variant="outline"
-              className="text-xs px-2 py-0 h-6 bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800"
-            >
-              <History className="h-2.5 w-2.5 mr-1" />
-              Reschedule Fee: ₹100 paid
-            </Badge>
-          </div>
-        );
-      }
-      if (
-        booking.rescheduleOutcome === "rejected" ||
         booking.rescheduleOutcome === "cancelled"
       ) {
         return (
@@ -1153,15 +1135,9 @@ export default function CustomerBookingsPage() {
                                             <div className="flex items-center gap-2 text-sm">
                                               <span className="text-muted-foreground">
                                                 {booking.rescheduleOutcome ===
-                                                "pending"
-                                                  ? "Requested:"
-                                                  : booking.rescheduleOutcome ===
-                                                      "accepted"
-                                                    ? "Confirmed:"
-                                                    : booking.rescheduleOutcome ===
-                                                        "rejected"
-                                                      ? "Declined (reverted):"
-                                                      : "Cancelled (reverted):"}
+                                                "accepted"
+                                                  ? "Confirmed:"
+                                                  : "Cancelled (reverted):"}
                                               </span>
                                               <span className="font-medium">
                                                 {formatDate(
@@ -1176,14 +1152,8 @@ export default function CustomerBookingsPage() {
                                           </div>
                                           <div className="text-xs text-muted-foreground">
                                             {booking.rescheduleOutcome ===
-                                              "pending" &&
-                                              "Waiting for provider approval"}
-                                            {booking.rescheduleOutcome ===
                                               "accepted" &&
                                               "Provider approved your reschedule request"}
-                                            {booking.rescheduleOutcome ===
-                                              "rejected" &&
-                                              "Provider declined - refund initiated"}
                                             {booking.rescheduleOutcome ===
                                               "cancelled" &&
                                               "You cancelled the reschedule request"}

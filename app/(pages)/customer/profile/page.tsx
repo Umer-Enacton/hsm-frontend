@@ -25,7 +25,6 @@ import {
 } from "@/lib/queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/lib/queries/query-keys";
-import type { User } from "@/types/auth";
 import type { Address } from "@/types/customer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -129,7 +128,7 @@ export default function CustomerProfilePage() {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PROFILE] });
       await queryClient.invalidateQueries({ queryKey: ["addresses"] });
       toast.success("Profile refreshed");
-    } catch (err) {
+    } catch {
       toast.error("Failed to refresh profile");
     } finally {
       setIsRefreshing(false);
@@ -589,7 +588,7 @@ export default function CustomerProfilePage() {
                 <Label>Address Type *</Label>
                 <Select
                   value={addressForm.addressType}
-                  onValueChange={(value: any) =>
+                  onValueChange={(value: Address["addressType"]) =>
                     setAddressForm({ ...addressForm, addressType: value })
                   }
                 >

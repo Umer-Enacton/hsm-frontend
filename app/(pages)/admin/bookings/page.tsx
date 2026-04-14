@@ -39,8 +39,6 @@ import { History as HistoryIcon } from "lucide-react";
 import {
   AdminBooking,
   useAdminBookings,
-  useAcceptBooking,
-  useRejectBooking,
   useCancelBooking,
 } from "@/lib/queries";
 
@@ -85,9 +83,8 @@ export default function AdminBookingsPage() {
   }, [response]);
 
   // Mutations
-  const acceptMutation = useAcceptBooking();
-  const rejectMutation = useRejectBooking();
   const cancelMutation = useCancelBooking();
+// No longer using accept/reject mutations as bookings are confirmed by default
 
   // Image lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -115,18 +112,8 @@ export default function AdminBookingsPage() {
         return { label: "Completed", color: "bg-green-100 text-green-700" };
       case "cancelled":
         return { label: "Cancelled", color: "bg-red-100 text-red-700" };
-      case "rejected":
-        return {
-          label: "Rejected",
-          color: "bg-orange-100 text-orange-700 font-bold",
-        };
-      case "reschedule_pending":
-        return {
-          label: "Reschedule Pending",
-          color: "bg-orange-100 text-orange-700",
-        };
       default:
-        return { label: status, color: "bg-gray-100 text-gray-700" };
+        return { label: status, color: "bg-gray-100 text-gray-700 font-medium" };
     }
   };
 
@@ -258,9 +245,6 @@ export default function AdminBookingsPage() {
                   <SelectItem value="confirmed">Confirmed</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
-                  {/* <SelectItem value="reschedule_pending">
-                    Reschedule Pending
-                  </SelectItem> */}
                 </SelectContent>
               </Select>
             </div>

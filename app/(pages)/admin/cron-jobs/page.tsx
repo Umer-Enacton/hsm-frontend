@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, API_ENDPOINTS } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -858,7 +859,28 @@ export default function AdminCronJobsPage() {
         title="Schedule Jobs"
         description="Manage and monitor all scheduled background jobs"
         actions={
-          <>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                refetchJobs();
+                refetchStats();
+                queryClient.invalidateQueries({
+                  queryKey: ["admin", "cron-logs-all"],
+                });
+                toast.success("Refetching jobs and logs...");
+              }}
+              disabled={isLoadingJobs || isLoadingStats}
+            >
+              <RefreshCw
+                className={cn(
+                  "h-4 w-4 mr-2",
+                  (isLoadingJobs || isLoadingStats) && "animate-spin",
+                )}
+              />
+              Refresh All
+            </Button>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
@@ -876,13 +898,9 @@ export default function AdminCronJobsPage() {
                 onCancel={() => setIsAddDialogOpen(false)}
               />
             </Dialog>
-          </>
+          </div>
         }
-        onRefresh={() => {
-          refetchJobs();
-          refetchStats();
-        }}
-        isRefreshing={isLoadingJobs}
+        showRefresh={false} // Hiding the default icon-only refresh button in favor of our custom one
       />
 
       {/* Stats Cards */}
