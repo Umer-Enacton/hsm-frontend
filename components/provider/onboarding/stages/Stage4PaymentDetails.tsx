@@ -139,32 +139,6 @@ export function Stage4PaymentDetails({
     }
   };
 
-  const handleSetActive = async (id: number) => {
-    try {
-      await api.put(API_ENDPOINTS.PAYMENT_DETAILS_SET_ACTIVE(id), {});
-      toast.success("Payment method activated");
-      fetchPaymentDetails();
-    } catch (error: any) {
-      console.error("Error activating payment method:", error);
-      toast.error("Failed to activate payment method");
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this payment method?")) {
-      return;
-    }
-
-    try {
-      await api.delete(API_ENDPOINTS.PAYMENT_DETAILS_DELETE(id));
-      toast.success("Payment method deleted");
-      fetchPaymentDetails();
-    } catch (error: any) {
-      console.error("Error deleting payment method:", error);
-      toast.error("Failed to delete payment method");
-    }
-  };
-
   const hasActivePaymentMethod = paymentDetails.some((d) => d.isActive);
 
   return (

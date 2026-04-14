@@ -37,6 +37,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -217,7 +228,6 @@ export default function CustomerProfilePage() {
   };
 
   const handleDeleteAddress = (addressId: number) => {
-    if (!confirm("Are you sure you want to delete this address?")) return;
     deleteAddressMutation.mutate(addressId);
   };
 
@@ -424,15 +434,35 @@ export default function CustomerProfilePage() {
                           <Edit className="h-4 w-4 mr-1" />
                           Edit
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteAddress(address.id)}
-                          className="h-8 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this address?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteAddress(address.id)}
+                                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   </div>
@@ -496,15 +526,35 @@ export default function CustomerProfilePage() {
                           <Edit className="h-4 w-4 mr-1" />
                           Edit
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteAddress(address.id)}
-                          className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this address?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteAddress(address.id)}
+                                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   </div>
@@ -567,8 +617,11 @@ export default function CustomerProfilePage() {
                       const trimmed = e.target.value.trim();
                       setAddressErrors((prev) => ({
                         ...prev,
-                        street: !trimmed ? "Street address is required" :
-                          trimmed.length > 200 ? "Street address cannot exceed 200 characters" : "",
+                        street: !trimmed
+                          ? "Street address is required"
+                          : trimmed.length > 200
+                            ? "Street address cannot exceed 200 characters"
+                            : "",
                       }));
                     }
                   }}
@@ -577,15 +630,24 @@ export default function CustomerProfilePage() {
                     const trimmed = addressForm.street.trim();
                     setAddressErrors((prev) => ({
                       ...prev,
-                      street: !trimmed ? "Street address is required" :
-                        trimmed.length > 200 ? "Street address cannot exceed 200 characters" : "",
+                      street: !trimmed
+                        ? "Street address is required"
+                        : trimmed.length > 200
+                          ? "Street address cannot exceed 200 characters"
+                          : "",
                     }));
                   }}
-                  className={addressTouched.street && addressErrors.street ? "border-destructive" : ""}
+                  className={
+                    addressTouched.street && addressErrors.street
+                      ? "border-destructive"
+                      : ""
+                  }
                   required
                 />
                 {addressTouched.street && addressErrors.street && (
-                  <p className="text-xs text-destructive">{addressErrors.street}</p>
+                  <p className="text-xs text-destructive">
+                    {addressErrors.street}
+                  </p>
                 )}
                 <p className="text-xs text-muted-foreground">
                   {addressForm.street.length}/200 characters
@@ -648,12 +710,15 @@ export default function CustomerProfilePage() {
                   value={addressForm.zipCode}
                   onChange={(e) => {
                     // Only digits allowed, max 6
-                    const value = e.target.value.replace(/[^\d]/g, "").slice(0, 6);
+                    const value = e.target.value
+                      .replace(/[^\d]/g, "")
+                      .slice(0, 6);
                     setAddressForm({ ...addressForm, zipCode: value });
                     if (addressTouched.zipCode) {
                       setAddressErrors((prev) => ({
                         ...prev,
-                        zipCode: value.length !== 6 ? "Zip code must be 6 digits" : "",
+                        zipCode:
+                          value.length !== 6 ? "Zip code must be 6 digits" : "",
                       }));
                     }
                   }}
@@ -661,15 +726,24 @@ export default function CustomerProfilePage() {
                     setAddressTouched((prev) => ({ ...prev, zipCode: true }));
                     setAddressErrors((prev) => ({
                       ...prev,
-                      zipCode: addressForm.zipCode.length !== 6 ? "Zip code must be 6 digits" : "",
+                      zipCode:
+                        addressForm.zipCode.length !== 6
+                          ? "Zip code must be 6 digits"
+                          : "",
                     }));
                   }}
-                  className={addressTouched.zipCode && addressErrors.zipCode ? "border-destructive" : ""}
+                  className={
+                    addressTouched.zipCode && addressErrors.zipCode
+                      ? "border-destructive"
+                      : ""
+                  }
                   maxLength={6}
                   required
                 />
                 {addressTouched.zipCode && addressErrors.zipCode && (
-                  <p className="text-xs text-destructive">{addressErrors.zipCode}</p>
+                  <p className="text-xs text-destructive">
+                    {addressErrors.zipCode}
+                  </p>
                 )}
                 <p className="text-xs text-muted-foreground">
                   6 digits (India PIN code)

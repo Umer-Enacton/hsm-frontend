@@ -12,6 +12,17 @@ import { useProviderSlots, useCreateSlot, useDeleteSlot } from "@/lib/queries";
 import { useProviderBusinessProfile } from "@/lib/queries/use-provider-business-profile";
 import { getUserData } from "@/lib/auth-utils";
 import type { Slot } from "@/lib/queries/use-provider-slots";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function ProviderAvailabilityPage() {
   const router = useRouter();
@@ -63,9 +74,6 @@ export default function ProviderAvailabilityPage() {
 
   const handleDeleteSlot = async (slotId: number) => {
     if (!business?.id) return;
-    if (!confirm("Are you sure you want to delete this time slot?")) {
-      return;
-    }
 
     deleteSlotMutation.mutate(
       { businessId: business.id, slotId },
@@ -187,12 +195,32 @@ function SlotCard({
           <span className="text-base font-semibold">
             {formatTime12Hour(slot.startTime)}
           </span>
-          <button
-            onClick={() => onDelete(slot.id)}
-            className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded hover:bg-destructive/10"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this time slot?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={() => onDelete(slot.id)}
+                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </Card>

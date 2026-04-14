@@ -15,7 +15,13 @@ import type { User } from "@/types/auth";
 import { useProfile, useUpdateProfile, useUploadAvatar } from "@/lib/queries";
 import { StaffProfileSkeleton } from "@/components/staff/skeletons";
 import { api, API_ENDPOINTS } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Wallet, Calendar, Briefcase, IndianRupee } from "lucide-react";
 
@@ -53,9 +59,10 @@ export default function StaffProfilePage() {
   useEffect(() => {
     const fetchStaffData = async () => {
       try {
-        const response = await api.get<{ message: string; data: StaffEarnings & StaffWorkInfo }>(
-          API_ENDPOINTS.STAFF_ME,
-        );
+        const response = await api.get<{
+          message: string;
+          data: StaffEarnings & StaffWorkInfo;
+        }>(API_ENDPOINTS.STAFF_ME);
         setEarnings({
           totalEarnings: response.data.totalEarnings,
           pendingPayout: response.data.pendingPayout,
@@ -126,7 +133,9 @@ export default function StaffProfilePage() {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Total Earnings</span>
+                  <span className="text-sm text-muted-foreground">
+                    Total Earnings
+                  </span>
                   <span className="font-semibold flex items-center gap-1">
                     <IndianRupee className="h-3 w-3" />
                     {(earnings.totalEarnings / 100).toFixed(2)}
@@ -167,7 +176,9 @@ export default function StaffProfilePage() {
                   <p className="text-xs text-muted-foreground">Business</p>
                   <div className="flex items-center gap-1">
                     <Briefcase className="h-3 w-3 text-muted-foreground" />
-                    <p className="font-medium text-sm">{workInfo.businessName || "N/A"}</p>
+                    <p className="font-medium text-sm">
+                      {workInfo.businessName || "N/A"}
+                    </p>
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -197,12 +208,19 @@ export default function StaffProfilePage() {
       </div>
 
       {/* Tabs */}
-      <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} showAddresses={false} />
+      <ProfileTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        showAddresses={false}
+      />
 
       {/* Tab Content */}
       <div className="mt-6">
         {activeTab === "overview" && (
-          <ProfileOverview user={user} onEditClick={() => setIsEditModalOpen(true)} />
+          <ProfileOverview
+            user={user}
+            onEditClick={() => setIsEditModalOpen(true)}
+          />
         )}
         {activeTab === "security" && <PasswordChangeForm />}
       </div>

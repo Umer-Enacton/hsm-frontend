@@ -70,12 +70,19 @@ export default function ProfilePage() {
       <ProfileHeader user={user} />
 
       {/* Tabs */}
-      <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} showAddresses={false} />
+      <ProfileTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        showAddresses={false}
+      />
 
       {/* Tab Content */}
       <div className="mt-6">
         {activeTab === "overview" && (
-          <ProfileOverview user={user} onEditClick={() => setIsEditModalOpen(true)} />
+          <ProfileOverview
+            user={user}
+            onEditClick={() => setIsEditModalOpen(true)}
+          />
         )}
         {activeTab === "security" && <PasswordChangeForm />}
       </div>

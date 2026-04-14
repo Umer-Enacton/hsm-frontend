@@ -44,6 +44,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -122,6 +132,7 @@ export default function AdminProviderSubscriptionsPage() {
   const [extendDays, setExtendDays] = useState(30);
   const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
   const [selectedForAction, setSelectedForAction] = useState<ProviderSubscription | null>(null);
+  const [confirmDialogAction, setConfirmDialogAction] = useState<"cancel" | "renew" | "refund" | null>(null);
 
   // Debounce search to avoid excessive re-renders
   const debouncedSearch = useDebounce(searchQuery, 300);
@@ -237,16 +248,14 @@ export default function AdminProviderSubscriptionsPage() {
   // ============================================
 
   // Cancel subscription
-  const handleCancelSubscription = async (subscription: ProviderSubscription) => {
-    if (!confirm(`Are you sure you want to cancel ${subscription.providerName}'s ${subscription.planName} subscription?`)) {
-      return;
-    }
-
+  const handleCancelSubscription = async () => {
+    if (!selectedForAction) return;
     setActionLoading(true);
     try {
-      await api.delete(API_ENDPOINTS.ADMIN_SUBSCRIPTION_CANCEL(subscription.id));
+      await api.delete(API_ENDPOINTS.ADMIN_SUBSCRIPTION_CANCEL(selectedForAction.id));
       toast.success("Subscription cancelled successfully");
       fetchSubscriptions();
+      setConfirmDialogAction(null);
     } catch (err: any) {
       toast.error(err?.message || "Failed to cancel subscription");
     } finally {
@@ -255,19 +264,17 @@ export default function AdminProviderSubscriptionsPage() {
   };
 
   // Toggle auto-renew
-  const handleToggleAutoRenew = async (subscription: ProviderSubscription) => {
-    const newAutoRenew = !subscription.autoRenew;
-    if (!confirm(`Are you sure you want to ${newAutoRenew ? "enable" : "disable"} auto-renew for ${subscription.providerName}?`)) {
-      return;
-    }
-
+  const handleToggleAutoRenew = async () => {
+    if (!selectedForAction) return;
+    const newAutoRenew = !selectedForAction.autoRenew;
     setActionLoading(true);
     try {
-      await api.post(API_ENDPOINTS.ADMIN_SUBSCRIPTION_TOGGLE_AUTO_RENEW(subscription.id), {
+      await api.post(API_ENDPOINTS.ADMIN_SUBSCRIPTION_TOGGLE_AUTO_RENEW(selectedForAction.id), {
         enable: newAutoRenew,
       });
       toast.success(`Auto-renew ${newAutoRenew ? "enabled" : "disabled"} successfully`);
       fetchSubscriptions();
+      setConfirmDialogAction(null);
     } catch (err: any) {
       toast.error(err?.message || "Failed to update auto-renew");
     } finally {
@@ -296,16 +303,14 @@ export default function AdminProviderSubscriptionsPage() {
   };
 
   // Refund subscription
-  const handleRefundSubscription = async (subscription: ProviderSubscription) => {
-    if (!confirm(`Are you sure you want to refund ${subscription.providerName}'s subscription? This will cancel the subscription and process a refund.`)) {
-      return;
-    }
-
+  const handleRefundSubscription = async () => {
+    if (!selectedForAction) return;
     setActionLoading(true);
     try {
-      await api.post(API_ENDPOINTS.ADMIN_SUBSCRIPTION_REFUND(subscription.id), {});
+      await api.post(API_ENDPOINTS.ADMIN_SUBSCRIPTION_REFUND(selectedForAction.id), {});
       toast.success("Refund processed successfully");
       fetchSubscriptions();
+      setConfirmDialogAction(null);
     } catch (err: any) {
       toast.error(err?.message || "Failed to process refund");
     } finally {
@@ -559,7 +564,7 @@ export default function AdminProviderSubscriptionsPage() {
                         <DropdownMenuSeparator />
 
                         {/* Auto-Renew Toggle */}
-                        <DropdownMenuItem onClick={() => handleToggleAutoRenew(sub)}>
+                        <DropdownMenuItem onClick={() => { setSelectedForAction(sub); setConfirmDialogAction("renew"); }}>
                           <Power className="h-4 w-4 mr-2" />
                           {sub.autoRenew ? "Disable Auto-renew" : "Enable Auto-renew"}
                         </DropdownMenuItem>
@@ -574,14 +579,14 @@ export default function AdminProviderSubscriptionsPage() {
 
                         {/* Cancel & Refund */}
                         <DropdownMenuItem
-                          onClick={() => handleCancelSubscription(sub)}
+                          onClick={() => { setSelectedForAction(sub); setConfirmDialogAction("cancel"); }}
                           className="text-orange-600 focus:text-orange-600"
                         >
                           <Ban className="h-4 w-4 mr-2" />
                           Cancel Subscription
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleRefundSubscription(sub)}
+                          onClick={() => { setSelectedForAction(sub); setConfirmDialogAction("refund"); }}
                           className="text-red-600 focus:text-red-600"
                         >
                           <RotateCcw className="h-4 w-4 mr-2" />
@@ -805,6 +810,69 @@ export default function AdminProviderSubscriptionsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialogs */}
+      <AlertDialog open={confirmDialogAction === "cancel"} onOpenChange={(open) => !open && setConfirmDialogAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel {selectedForAction?.providerName}'s {selectedForAction?.planName} subscription?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading}>Go Back</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleCancelSubscription}
+              className="bg-orange-600 hover:bg-orange-700"
+              disabled={actionLoading}
+            >
+              Confirm Cancel
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmDialogAction === "renew"} onOpenChange={(open) => !open && setConfirmDialogAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Toggle Auto-Renew</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to {selectedForAction?.autoRenew ? "disable" : "enable"} auto-renew for {selectedForAction?.providerName}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleToggleAutoRenew}
+              disabled={actionLoading}
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmDialogAction === "refund"} onOpenChange={(open) => !open && setConfirmDialogAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Refund Subscription?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to refund {selectedForAction?.providerName}'s subscription? This will cancel the subscription and process a refund.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading}>Go Back</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleRefundSubscription}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={actionLoading}
+            >
+              Process Refund
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

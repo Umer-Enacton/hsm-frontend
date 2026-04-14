@@ -244,7 +244,8 @@ export default function ProviderBookingsPage() {
     // Handle 'reassign' parameter (multiple bookings - comma separated)
     const reassignParam = searchParams.get("reassign");
     if (reassignParam) {
-      const bookingIds = reassignParam.split(",")
+      const bookingIds = reassignParam
+        .split(",")
         .map((id) => parseInt(id.trim(), 10))
         .filter((id) => !isNaN(id));
 

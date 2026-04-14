@@ -22,6 +22,16 @@ import { Progress } from "@/components/ui/progress";
 import type { Service } from "@/types/provider";
 import type { ServiceStats } from "@/lib/provider/services";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ServiceFilters,
   ServiceList,
   ServiceStats as ServiceStatsComponent,
@@ -57,6 +67,9 @@ export default function ProviderServicesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [sortBy, setSortBy] = useState<"name" | "price" | "createdAt">("createdAt");
+
+  // Deletion state
+  const [serviceToDelete, setServiceToDelete] = useState<number | null>(null);
 
   // Fetch business profile (includes business and isVerified status)
   const { business, isLoading: isLoadingBusiness } = useProviderBusinessProfile(userData?.id);
@@ -188,19 +201,14 @@ export default function ProviderServicesPage() {
     );
   };
 
-  const handleDeleteService = async (serviceId: number) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this service? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
+  const handleDeleteService = async () => {
+    if (!serviceToDelete) return;
 
     deleteServiceMutation.mutate(
-      { serviceId, businessId: business?.id },
+      { serviceId: serviceToDelete, businessId: business?.id },
       {
         onSuccess: () => {
+          setServiceToDelete(null);
           // Service deleted, cache invalidated automatically
         },
       }
@@ -461,7 +469,7 @@ export default function ProviderServicesPage() {
         isLoading={isLoading}
         viewMode={viewMode}
         onEdit={handleOpenEditDialog}
-        onDelete={handleDeleteService}
+        onDelete={(id) => setServiceToDelete(id)}
         onToggleStatus={handleToggleStatus}
         onViewReviews={handleViewReviews}
       />
@@ -483,6 +491,28 @@ export default function ProviderServicesPage() {
         open={isReviewsDialogOpen}
         onOpenChange={setIsReviewsDialogOpen}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={serviceToDelete !== null} onOpenChange={(open) => !open && setServiceToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this service? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteServiceMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteService}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              disabled={deleteServiceMutation.isPending}
+            >
+              Confirm Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

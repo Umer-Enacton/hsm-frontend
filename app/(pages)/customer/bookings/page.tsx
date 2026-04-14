@@ -38,13 +38,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { BookingActions } from "@/components/customer/bookings/BookingActions";
 import { BookingHistoryTimeline } from "@/components/customer/bookings/BookingHistoryTimeline";
-import { CustomerBookingsSkeleton, CustomerBookingsTableSkeleton } from "@/components/customer/skeletons";
+import {
+  CustomerBookingsSkeleton,
+  CustomerBookingsTableSkeleton,
+} from "@/components/customer/skeletons";
 import { useBookings } from "@/lib/queries/use-bookings";
 import { useService } from "@/lib/queries/use-services";
-import {
-  type CustomerBooking,
-  BookingStatus,
-} from "@/types/customer";
+import { type CustomerBooking, BookingStatus } from "@/types/customer";
 import { ImageLightbox, DataTablePagination } from "@/components/common";
 
 // Local types for UI-specific data structures
@@ -62,7 +62,11 @@ export default function CustomerBookingsPage() {
 
   // Local state for UI-only concerns (must be declared before hooks that use them)
   const [activeTab, setActiveTab] = useState<
-    "all" | BookingStatus.CONFIRMED | BookingStatus.COMPLETED | BookingStatus.CANCELLED | BookingStatus.MISSED
+    | "all"
+    | BookingStatus.CONFIRMED
+    | BookingStatus.COMPLETED
+    | BookingStatus.CANCELLED
+    | BookingStatus.MISSED
   >("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
@@ -101,15 +105,20 @@ export default function CustomerBookingsPage() {
     }
   }, [isRefreshing, isInitialLoading]);
 
-
-
   // Image lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   // Sync tab to URL
   const updateTab = (newTab: string) => {
-    setActiveTab(newTab as "all" | BookingStatus.CONFIRMED | BookingStatus.COMPLETED | BookingStatus.CANCELLED | BookingStatus.MISSED);
+    setActiveTab(
+      newTab as
+        | "all"
+        | BookingStatus.CONFIRMED
+        | BookingStatus.COMPLETED
+        | BookingStatus.CANCELLED
+        | BookingStatus.MISSED,
+    );
     setCurrentPage(1); // Reset page when tab changes
     const params = new URLSearchParams(searchParams.toString());
     if (newTab === "all") {
@@ -140,7 +149,11 @@ export default function CustomerBookingsPage() {
         bookingStatus,
       });
 
-      if (["confirmed", "completed", "cancelled", "missed"].includes(bookingStatus)) {
+      if (
+        ["confirmed", "completed", "cancelled", "missed"].includes(
+          bookingStatus,
+        )
+      ) {
         if (activeTab === bookingStatus) {
           // Already on correct tab, expand directly
           console.log(
@@ -677,7 +690,11 @@ export default function CustomerBookingsPage() {
       {/* Results count */}
       <div className="text-sm text-muted-foreground">
         Showing <span className="font-medium">{filteredBookings.length}</span>{" "}
-        of <span className="font-medium">{bookingsData?.pagination?.total || 0}</span> bookings
+        of{" "}
+        <span className="font-medium">
+          {bookingsData?.pagination?.total || 0}
+        </span>{" "}
+        bookings
       </div>
 
       {/* Bookings Table */}
