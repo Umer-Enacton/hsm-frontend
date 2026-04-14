@@ -76,8 +76,33 @@ export default function StaffLeavePage() {
     };
 
     try {
-      await api.post(API_ENDPOINTS.STAFF_LEAVE, leaveData);
-      toast.success("Leave request submitted successfully");
+      const response = await api.post<{
+        message: string;
+        data: LeaveRequest;
+        warning?: {
+          type: string;
+          message: string;
+          bookings: Array<{
+            id: number;
+            bookingDate: string;
+            startTime: string;
+            endTime: string;
+            serviceName: string;
+          }>;
+        };
+      }>(API_ENDPOINTS.STAFF_LEAVE, leaveData);
+
+      // Show success message
+      toast.success(response.message || "Leave request submitted successfully");
+
+      // Show warning if there are existing bookings
+      if (response.warning) {
+        toast.warning(response.warning.message, {
+          description: `${response.warning.bookings.length} booking(s) found on these dates. Provider will be notified.`,
+          duration: 5000,
+        });
+      }
+
       setShowRequestDialog(false);
       setIsMultiDay(false);
       fetchLeaveHistory();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Calendar,
   Check,
@@ -12,6 +13,7 @@ import {
   RefreshCw,
   Filter,
   MoreHorizontal,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -71,16 +73,27 @@ interface StaffLeaveRequest {
   rejectionReason?: string;
   createdAt: string;
   approvedAt?: string;
+  conflictingBookings?: Array<{
+    id: number;
+    bookingDate: string;
+    startTime: string;
+    endTime: string;
+    customerName: string;
+    status: string;
+  }>;
+  hasConflicts?: boolean;
 }
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 
 export default function ProviderStaffLeavePage() {
+  const router = useRouter();
   const [leaveRequests, setLeaveRequests] = useState<StaffLeaveRequest[]>([]);
   const [filteredRequests, setFilteredRequests] = useState<StaffLeaveRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   const [searchTerm, setSearchTerm] = useState("");
+  const [unassignedBookings, setUnassignedBookings] = useState<number[]>([]);
 
   // Dialog states
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
@@ -152,8 +165,23 @@ export default function ProviderStaffLeavePage() {
     setIsProcessing(true);
     try {
       if (actionType === "approve") {
-        await api.put(API_ENDPOINTS.STAFF_LEAVE_APPROVE(selectedRequest.id), {});
-        toast.success("Leave request approved");
+        const response = await api.put<{
+          message: string;
+          data: StaffLeaveRequest;
+          unassignedBookings?: number[];
+          needsReassignment?: boolean;
+        }>(API_ENDPOINTS.STAFF_LEAVE_APPROVE(selectedRequest.id), {});
+
+        toast.success(response.message || "Leave request approved");
+
+        // Store unassigned bookings for reassignment
+        if (response.needsReassignment && response.unassignedBookings) {
+          setUnassignedBookings(response.unassignedBookings);
+          toast.info(
+            `${response.unassignedBookings.length} booking(s) unassigned. Click "Reassign Staff" to assign new staff.`,
+            { duration: 6000 }
+          );
+        }
       } else {
         await api.put(API_ENDPOINTS.STAFF_LEAVE_REJECT(selectedRequest.id), {
           rejectionReason: rejectionReason || "No reason provided",
@@ -171,6 +199,12 @@ export default function ProviderStaffLeavePage() {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const goToReassignBookings = () => {
+    // Navigate to bookings page with unassigned booking IDs to auto-expand
+    const bookingIdsParam = unassignedBookings.join(",");
+    router.push(`/provider/bookings?reassign=${bookingIdsParam}`);
   };
 
   const getStatusBadge = (status: string) => {
@@ -219,6 +253,36 @@ export default function ProviderStaffLeavePage() {
           <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
         </Button>
       </div>
+
+      {/* Unassigned Bookings Banner */}
+      {unassignedBookings.length > 0 && (
+        <Card className="bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                  <User className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-orange-900 dark:text-orange-100">
+                    {unassignedBookings.length} Booking(s) Need Staff Reassignment
+                  </p>
+                  <p className="text-sm text-orange-700 dark:text-orange-300">
+                    Staff was unassigned due to approved leave
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={goToReassignBookings}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                Reassign Staff
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -411,9 +475,17 @@ export default function ProviderStaffLeavePage() {
                           )}
                         </TableCell>
                         <TableCell className="py-4 px-4">
-                          <Badge className={statusConfig.className} variant="outline">
-                            {statusConfig.label}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge className={statusConfig.className} variant="outline">
+                              {statusConfig.label}
+                            </Badge>
+                            {request.hasConflicts && request.status === "pending" && (
+                              <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-300">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {request.conflictingBookings?.length || 0} Booking(s)
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="py-4 px-4">
                           <p className="text-xs text-muted-foreground">
@@ -491,25 +563,47 @@ export default function ProviderStaffLeavePage() {
                 </>
               )}
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
+            <AlertDialogDescription className="space-y-3">
               {selectedRequest && (
                 <>
-                  <p>
-                    <span className="font-medium">Staff:</span> {selectedRequest.staffName}
-                  </p>
-                  <p>
-                    <span className="font-medium">Leave Type:</span> {getLeaveTypeLabel(selectedRequest.leaveType)}
-                  </p>
-                  <p>
-                    <span className="font-medium">Duration:</span> {formatDate(selectedRequest.startDate)}
-                    {selectedRequest.startDate !== selectedRequest.endDate && (
-                      <> to {formatDate(selectedRequest.endDate)}</>
-                    )}
-                  </p>
-                  {selectedRequest.reason && (
+                  <div className="space-y-2">
                     <p>
-                      <span className="font-medium">Reason:</span> {selectedRequest.reason}
+                      <span className="font-medium">Staff:</span> {selectedRequest.staffName}
                     </p>
+                    <p>
+                      <span className="font-medium">Leave Type:</span> {getLeaveTypeLabel(selectedRequest.leaveType)}
+                    </p>
+                    <p>
+                      <span className="font-medium">Duration:</span> {formatDate(selectedRequest.startDate)}
+                      {selectedRequest.startDate !== selectedRequest.endDate && (
+                        <> to {formatDate(selectedRequest.endDate)}</>
+                      )}
+                    </p>
+                    {selectedRequest.reason && (
+                      <p>
+                        <span className="font-medium">Reason:</span> {selectedRequest.reason}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Show conflicting bookings warning */}
+                  {actionType === "approve" && selectedRequest.hasConflicts && selectedRequest.conflictingBookings && selectedRequest.conflictingBookings.length > 0 && (
+                    <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Conflicting Bookings ({selectedRequest.conflictingBookings.length})
+                      </p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                        This staff has {selectedRequest.conflictingBookings.length} booking(s) on these dates. Approving leave will automatically unassign the staff from these bookings.
+                      </p>
+                      <div className="mt-2 space-y-1">
+                        {selectedRequest.conflictingBookings.map((booking) => (
+                          <div key={booking.id} className="text-xs bg-background dark:bg-background/50 rounded px-2 py-1">
+                            <span className="font-medium">Booking #{booking.id}</span> - {new Date(booking.bookingDate).toLocaleDateString()} at {booking.startTime}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </>
               )}

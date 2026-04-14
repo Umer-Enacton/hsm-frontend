@@ -27,22 +27,21 @@ export function parseToken(token: string): TokenPayload | null {
       return null;
     }
 
-    // Try base64url first (standard JWT format)
     let payload: any;
     try {
-      payload = JSON.parse(
-        Buffer.from(parts[1], "base64url").toString("utf-8")
-      );
-    } catch {
-      // Fallback to regular base64
-      try {
-        payload = JSON.parse(
-          Buffer.from(parts[1], "base64").toString("utf-8")
-        );
-      } catch (e) {
-        console.error("Failed to decode token payload:", e);
-        return null;
+      // Browser-safe base64url decode (Buffer is not defined in Next.js client production)
+      const base64Url = parts[1];
+      let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const pad = base64.length % 4;
+      if (pad) {
+        if (pad === 1) throw new Error('InvalidLengthError');
+        base64 += new Array(5 - pad).join('=');
       }
+      // decodeURIComponent(escape(atob(...))) handles UTF-8 characters properly
+      payload = JSON.parse(decodeURIComponent(escape(atob(base64))));
+    } catch (e) {
+      console.error("Failed to decode token payload:", e);
+      return null;
     }
 
     console.log("Parsed token payload:", payload);
@@ -137,6 +136,9 @@ export function clearAuthData(): void {
   localStorage.removeItem("rememberedEmail");
   sessionStorage.removeItem("token");
   sessionStorage.removeItem("userData");
+  
+  // Clear the cookie for Next.js middleware
+  document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 }
 
 /**
@@ -160,6 +162,11 @@ export function storeAuthData(
   // Store in chosen storage
   storage.setItem("token", token);
   storage.setItem("userData", JSON.stringify(user));
+  
+  // Store token in cookie for Next.js middleware
+  // If remember is true, set cookie for 30 days, else session cookie
+  const maxAge = remember ? "max-age=" + (30 * 24 * 60 * 60) + "; " : "";
+  document.cookie = `token=${token}; ${maxAge}path=/; samesite=lax; secure`;
 }
 
 /**

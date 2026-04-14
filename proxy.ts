@@ -32,11 +32,12 @@ const PROTECTED_ROUTES = {
       "/admin/business",
       "/admin/business/",
       "/admin/services",
-      "/admin/services/",
+      // "/admin/services/",
       "/admin/bookings",
       "/admin/revenue",
       "/admin/payouts",
       "/admin/settings",
+      "/admin/settings/",
       "/admin/subscriptions",
       "/admin/cron-jobs",
       "/admin/payments",
@@ -109,7 +110,7 @@ function verifyToken(token: string): { valid: boolean; payload?: any } {
     }
 
     const payload = JSON.parse(
-      Buffer.from(parts[1], "base64url").toString("utf-8")
+      Buffer.from(parts[1], "base64url").toString("utf-8"),
     );
 
     if (payload.exp && payload.exp < Date.now() / 1000) {
@@ -165,11 +166,19 @@ export function proxy(request: NextRequest) {
   const isAuthenticated = Boolean(token && verifyToken(token).valid);
 
   // Get user role if authenticated
-  const userRole = isAuthenticated && token ? getUserRoleFromToken(token) : null;
+  const userRole =
+    isAuthenticated && token ? getUserRoleFromToken(token) : null;
 
   // Debug logging (only in development)
   if (process.env.NODE_ENV === "development") {
-    console.log("[Middleware] Path:", pathname, "| Auth:", isAuthenticated, "| Role:", userRole);
+    console.log(
+      "[Middleware] Path:",
+      pathname,
+      "| Auth:",
+      isAuthenticated,
+      "| Role:",
+      userRole,
+    );
   }
 
   // Scenario 0: Handle root path "/"
@@ -201,7 +210,11 @@ export function proxy(request: NextRequest) {
   }
 
   // Allow access to public routes without auth
-  if (PUBLIC_ROUTES.some(route => pathname === route || pathname.startsWith(route + "/"))) {
+  if (
+    PUBLIC_ROUTES.some(
+      (route) => pathname === route || pathname.startsWith(route + "/"),
+    )
+  ) {
     return NextResponse.next();
   }
 

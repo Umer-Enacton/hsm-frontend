@@ -229,13 +229,38 @@ export default function ProviderBookingsPage() {
   useEffect(() => {
     if (processedInitialParams) return;
 
+    // Handle 'expand' parameter (single booking)
     const expandParam = searchParams.get("expand");
-
     if (expandParam) {
       const bookingId = parseInt(expandParam, 10);
       if (!isNaN(bookingId) && !isLoading) {
         // Wait for bookings to load, then find and switch tab
         switchToBookingTabAndExpand(bookingId);
+        setProcessedInitialParams(true);
+        return;
+      }
+    }
+
+    // Handle 'reassign' parameter (multiple bookings - comma separated)
+    const reassignParam = searchParams.get("reassign");
+    if (reassignParam) {
+      const bookingIds = reassignParam.split(",")
+        .map((id) => parseInt(id.trim(), 10))
+        .filter((id) => !isNaN(id));
+
+      if (bookingIds.length > 0 && !isLoading) {
+        // Show toast notification
+        toast.info(`${bookingIds.length} booking(s) need staff reassignment`, {
+          description: "Please assign staff to these bookings",
+          duration: 5000,
+        });
+
+        // Expand the first booking and switch to its tab
+        const firstBookingId = bookingIds[0];
+        switchToBookingTabAndExpand(firstBookingId);
+
+        // Clear the URL parameter
+        router.replace("/provider/bookings", { scroll: false });
       }
     }
 
