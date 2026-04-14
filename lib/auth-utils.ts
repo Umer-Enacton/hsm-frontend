@@ -137,7 +137,8 @@ export function clearAuthData(): void {
   sessionStorage.removeItem("token");
   sessionStorage.removeItem("userData");
   
-  // Clear the cookie for Next.js middleware
+  // Clear the cookies for Next.js middleware
+  document.cookie = "hsm_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
   document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 }
 
@@ -151,22 +152,18 @@ export function storeAuthData(
 ): void {
   if (typeof window === "undefined") return;
 
-  const storage = remember ? localStorage : sessionStorage;
+  // Clear ALL previous auth data across all storages to prevent role conflicts
+  clearAuthData();
 
-  // Clear previous data from both storages
-  localStorage.removeItem("token");
-  localStorage.removeItem("userData");
-  sessionStorage.removeItem("token");
-  sessionStorage.removeItem("userData");
+  const storage = remember ? localStorage : sessionStorage;
 
   // Store in chosen storage
   storage.setItem("token", token);
   storage.setItem("userData", JSON.stringify(user));
   
-  // Store token in cookie for Next.js middleware
-  // If remember is true, set cookie for 30 days, else session cookie
+  // Store token in cookie for Next.js middleware (use custom name to prevent HttpOnly conflicts)
   const maxAge = remember ? "max-age=" + (30 * 24 * 60 * 60) + "; " : "";
-  document.cookie = `token=${token}; ${maxAge}path=/; samesite=lax; secure`;
+  document.cookie = `hsm_token=${token}; ${maxAge}path=/; samesite=lax; secure`;
 }
 
 /**
