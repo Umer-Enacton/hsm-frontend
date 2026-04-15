@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
   Plus,
   Save,
@@ -12,7 +12,6 @@ import {
   Calendar,
   FileText,
   Shield,
-  Clock,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/lib/queries/query-keys";
@@ -20,7 +19,6 @@ import { api, API_ENDPOINTS } from "@/lib/api";
 import { TiptapEditor } from "@/components/editor/TiptapEditor";
 import { StatCard } from "@/components/admin/shared/StatCard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -97,10 +95,9 @@ export default function AdminPrivacyPolicyPage() {
     },
   });
 
-  const policies = policiesData || [];
+  const policies = useMemo(() => policiesData || [], [policiesData]);
 
   const [editingPolicy, setEditingPolicy] = useState<PrivacyPolicy | null>(null);
-  const [newVersion, setNewVersion] = useState("");
   const [newContent, setNewContent] = useState("");
   const [previewPolicy, setPreviewPolicy] = useState<PrivacyPolicy | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -108,30 +105,35 @@ export default function AdminPrivacyPolicyPage() {
   const [policyToDelete, setPolicyToDelete] = useState<PrivacyPolicy | null>(null);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [policyToActivate, setPolicyToActivate] = useState<PrivacyPolicy | null>(null);
+  const [showActivateAfterCreate, setShowActivateAfterCreate] = useState(false);
+  const [newlyCreatedVersion, setNewlyCreatedVersion] = useState<PrivacyPolicy | null>(null);
 
-  // Auto-calculate next version when creating new
-  useEffect(() => {
-    if (!editingPolicy && policies.length > 0) {
-      const versions = policies.map((p) => p.version);
-      setNewVersion(getNextVersion(versions));
-    } else if (!editingPolicy && policies.length === 0) {
-      setNewVersion("1.0");
-    }
+  // Compute next version without an effect — derived from existing policies
+  const newVersion = useMemo(() => {
+    if (editingPolicy) return "";
+    return policies.length > 0
+      ? getNextVersion(policies.map((p) => p.version))
+      : "1.0";
   }, [policies, editingPolicy]);
+
+  type ApiError = Error;
 
   const createMutation = useMutation({
     mutationFn: async (payload: { version: string; content: string }) => {
-      await api.post(API_ENDPOINTS.ADMIN_PRIVACY_POLICIES, payload);
+      const response = await api.post<{ policy: PrivacyPolicy }>(API_ENDPOINTS.ADMIN_PRIVACY_POLICY_CREATE, payload);
+      return response.policy;
     },
-    onSuccess: () => {
+    onSuccess: (newPolicy) => {
       toast.success("Policy version created successfully");
-      setNewVersion("");
       setNewContent("");
+      // Show activate dialog for the newly created version
+      setNewlyCreatedVersion(newPolicy);
+      setShowActivateAfterCreate(true);
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_PRIVACY_POLICIES] });
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       console.error("Error creating policy:", error);
-      toast.error(error.response?.data?.message || "Failed to create policy");
+      toast.error(error.message || "Failed to create policy");
     },
   });
 
@@ -147,9 +149,9 @@ export default function AdminPrivacyPolicyPage() {
       setNewContent("");
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_PRIVACY_POLICIES] });
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       console.error("Error updating policy:", error);
-      toast.error(error.response?.data?.message || "Failed to update policy");
+      toast.error(error.message || "Failed to update policy");
     },
   });
 
@@ -163,9 +165,9 @@ export default function AdminPrivacyPolicyPage() {
       setPolicyToActivate(null);
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_PRIVACY_POLICIES] });
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       console.error("Error activating policy:", error);
-      toast.error(error.response?.data?.message || "Failed to activate policy");
+      toast.error(error.message || "Failed to activate policy");
     },
   });
 
@@ -179,9 +181,9 @@ export default function AdminPrivacyPolicyPage() {
       setPolicyToDelete(null);
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_PRIVACY_POLICIES] });
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       console.error("Error deleting policy:", error);
-      toast.error(error.response?.data?.message || "Failed to delete policy");
+      toast.error(error.message || "Failed to delete policy");
     },
   });
 
@@ -247,7 +249,6 @@ export default function AdminPrivacyPolicyPage() {
   };
 
   const activePolicy = policies.find((p) => p.isActive);
-  const nextVersion = editingPolicy ? null : getNextVersion(policies.map((p) => p.version));
 
   if (isLoading) {
     return (
@@ -596,6 +597,50 @@ export default function AdminPrivacyPolicyPage() {
             </Button>
             <Button
               onClick={handleActivate}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Activating...
+                </>
+              ) : (
+                "Activate & Notify Users"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Activate After Create Dialog */}
+      <Dialog open={showActivateAfterCreate} onOpenChange={setShowActivateAfterCreate}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Activate New Version?</DialogTitle>
+            <DialogDescription>
+              Version {newlyCreatedVersion?.version} has been created successfully. 
+              Would you like to activate it now and send notifications to all users?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowActivateAfterCreate(false);
+                setNewlyCreatedVersion(null);
+              }}
+              disabled={isSaving}
+            >
+              Not Now
+            </Button>
+            <Button
+              onClick={() => {
+                if (newlyCreatedVersion) {
+                  activateMutation.mutate(newlyCreatedVersion.id);
+                }
+                setShowActivateAfterCreate(false);
+                setNewlyCreatedVersion(null);
+              }}
               disabled={isSaving}
             >
               {isSaving ? (

@@ -170,6 +170,7 @@ export const API_ENDPOINTS = {
   PRIVACY_POLICY_ACTIVE: "/privacy-policies/active",
   ADMIN_PRIVACY_POLICIES: "/privacy-policies/versions",
   ADMIN_PRIVACY_POLICY_BY_ID: (id: string | number) => `/privacy-policies/versions/${id}`,
+  ADMIN_PRIVACY_POLICY_CREATE: "/privacy-policies",
   ADMIN_PRIVACY_POLICY_UPDATE: (id: string | number) => `/privacy-policies/${id}`,
   ADMIN_PRIVACY_POLICY_ACTIVATE: (id: string | number) => `/privacy-policies/${id}/activate`,
   ADMIN_PRIVACY_POLICY_DELETE: (id: string | number) => `/privacy-policies/${id}`,
@@ -177,6 +178,7 @@ export const API_ENDPOINTS = {
   TERMS_ACTIVE: "/terms-conditions/active",
   ADMIN_TERMS_VERSIONS: "/terms-conditions/versions",
   ADMIN_TERMS_BY_ID: (id: string | number) => `/terms-conditions/versions/${id}`,
+  ADMIN_TERMS_CREATE: "/terms-conditions",
   ADMIN_TERMS_UPDATE: (id: string | number) => `/terms-conditions/${id}`,
   ADMIN_TERMS_ACTIVATE: (id: string | number) => `/terms-conditions/${id}/activate`,
   ADMIN_TERMS_DELETE: (id: string | number) => `/terms-conditions/${id}`,
@@ -334,7 +336,7 @@ export const getAuthHeaders = () => {
  * @param options - Fetch options
  * @returns Promise with response data
  */
-export const apiRequest = async <T = any>(
+export const apiRequest = async <T = unknown>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> => {
@@ -370,7 +372,7 @@ export const apiRequest = async <T = any>(
     }));
 
     // Create enhanced error with all response properties
-    const enhancedError = new Error(error.message || "Request failed") as any;
+    const enhancedError = new Error(error.message || "Request failed") as Error & Record<string, unknown>;
     enhancedError.code = error.code;
     enhancedError.statusCode = response.status;
     enhancedError.retryable = error.retryable;
@@ -386,25 +388,25 @@ export const apiRequest = async <T = any>(
  * API utility functions for common operations
  */
 export const api = {
-  get: <T = any>(endpoint: string) =>
+  get: <T = unknown>(endpoint: string) =>
     apiRequest<T>(endpoint, { method: "GET" }),
 
-  post: <T = any>(endpoint: string, data: any) =>
+  post: <T = unknown>(endpoint: string, data: unknown) =>
     apiRequest<T>(endpoint, {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
-  put: <T = any>(endpoint: string, data: any) =>
+  put: <T = unknown>(endpoint: string, data: unknown) =>
     apiRequest<T>(endpoint, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
-  delete: <T = any>(endpoint: string) =>
+  delete: <T = unknown>(endpoint: string) =>
     apiRequest<T>(endpoint, { method: "DELETE" }),
 
-  patch: <T = any>(endpoint: string, data: any) =>
+  patch: <T = unknown>(endpoint: string, data: unknown) =>
     apiRequest<T>(endpoint, {
       method: "PATCH",
       body: JSON.stringify(data),

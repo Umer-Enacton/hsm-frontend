@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
   Plus,
   Save,
@@ -12,7 +12,6 @@ import {
   Calendar,
   FileText,
   Scale,
-  Clock,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/lib/queries/query-keys";
@@ -20,7 +19,6 @@ import { api, API_ENDPOINTS } from "@/lib/api";
 import { TiptapEditor } from "@/components/editor/TiptapEditor";
 import { StatCard } from "@/components/admin/shared/StatCard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -97,10 +95,9 @@ export default function AdminTermsPage() {
     },
   });
 
-  const terms = termsData || [];
+  const terms = useMemo(() => termsData || [], [termsData]);
 
   const [editingTerms, setEditingTerms] = useState<TermsCondition | null>(null);
-  const [newVersion, setNewVersion] = useState("");
   const [newContent, setNewContent] = useState("");
   const [previewTerms, setPreviewTerms] = useState<TermsCondition | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -108,30 +105,35 @@ export default function AdminTermsPage() {
   const [termsToDelete, setTermsToDelete] = useState<TermsCondition | null>(null);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [termsToActivate, setTermsToActivate] = useState<TermsCondition | null>(null);
+  const [showActivateAfterCreate, setShowActivateAfterCreate] = useState(false);
+  const [newlyCreatedVersion, setNewlyCreatedVersion] = useState<TermsCondition | null>(null);
 
-  // Auto-calculate next version when creating new
-  useEffect(() => {
-    if (!editingTerms && terms.length > 0) {
-      const versions = terms.map((t) => t.version);
-      setNewVersion(getNextVersion(versions));
-    } else if (!editingTerms && terms.length === 0) {
-      setNewVersion("1.0");
-    }
+  // Compute next version without an effect — derived from existing terms
+  const newVersion = useMemo(() => {
+    if (editingTerms) return "";
+    return terms.length > 0
+      ? getNextVersion(terms.map((t) => t.version))
+      : "1.0";
   }, [terms, editingTerms]);
+
+  type ApiError = Error;
 
   const createMutation = useMutation({
     mutationFn: async (payload: { version: string; content: string }) => {
-      await api.post(API_ENDPOINTS.ADMIN_TERMS_VERSIONS, payload);
+      const response = await api.post<{ terms: TermsCondition }>(API_ENDPOINTS.ADMIN_TERMS_CREATE, payload);
+      return response.terms;
     },
-    onSuccess: () => {
+    onSuccess: (newTerms) => {
       toast.success("Terms version created successfully");
-      setNewVersion("");
       setNewContent("");
+      // Show activate dialog for the newly created version
+      setNewlyCreatedVersion(newTerms);
+      setShowActivateAfterCreate(true);
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_TERMS_CONDITIONS] });
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       console.error("Error creating terms:", error);
-      toast.error(error.response?.data?.message || "Failed to create terms");
+      toast.error(error.message || "Failed to create terms");
     },
   });
 
@@ -147,9 +149,9 @@ export default function AdminTermsPage() {
       setNewContent("");
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_TERMS_CONDITIONS] });
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       console.error("Error updating terms:", error);
-      toast.error(error.response?.data?.message || "Failed to update terms");
+      toast.error(error.message || "Failed to update terms");
     },
   });
 
@@ -163,9 +165,9 @@ export default function AdminTermsPage() {
       setTermsToActivate(null);
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_TERMS_CONDITIONS] });
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       console.error("Error activating terms:", error);
-      toast.error(error.response?.data?.message || "Failed to activate terms");
+      toast.error(error.message || "Failed to activate terms");
     },
   });
 
@@ -179,9 +181,9 @@ export default function AdminTermsPage() {
       setTermsToDelete(null);
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN_TERMS_CONDITIONS] });
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       console.error("Error deleting terms:", error);
-      toast.error(error.response?.data?.message || "Failed to delete terms");
+      toast.error(error.message || "Failed to delete terms");
     },
   });
 
@@ -247,7 +249,6 @@ export default function AdminTermsPage() {
   };
 
   const activeTerms = terms.find((t) => t.isActive);
-  const nextVersion = editingTerms ? null : getNextVersion(terms.map((t) => t.version));
 
   if (isLoading) {
     return (
@@ -596,6 +597,50 @@ export default function AdminTermsPage() {
             </Button>
             <Button
               onClick={handleActivate}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Activating...
+                </>
+              ) : (
+                "Activate & Notify Users"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Activate After Create Dialog */}
+      <Dialog open={showActivateAfterCreate} onOpenChange={setShowActivateAfterCreate}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Activate New Version?</DialogTitle>
+            <DialogDescription>
+              Version {newlyCreatedVersion?.version} has been created successfully. 
+              Would you like to activate it now and send notifications to all users?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowActivateAfterCreate(false);
+                setNewlyCreatedVersion(null);
+              }}
+              disabled={isSaving}
+            >
+              Not Now
+            </Button>
+            <Button
+              onClick={() => {
+                if (newlyCreatedVersion) {
+                  activateMutation.mutate(newlyCreatedVersion.id);
+                }
+                setShowActivateAfterCreate(false);
+                setNewlyCreatedVersion(null);
+              }}
               disabled={isSaving}
             >
               {isSaving ? (

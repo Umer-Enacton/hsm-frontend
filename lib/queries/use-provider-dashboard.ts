@@ -33,7 +33,7 @@ export function useProviderServices(businessId?: number) {
     queryKey: [QUERY_KEYS.PROVIDER_SERVICES, businessId || 0],
     queryFn: async () => {
       if (!businessId) return [];
-      const response = await api.get(`/services/business/${businessId}`);
+      const response = await api.get<{ services?: any[] }>(`/services/business/${businessId}`);
       return Array.isArray(response) ? response : (response?.services || []);
     },
     enabled: !!businessId,

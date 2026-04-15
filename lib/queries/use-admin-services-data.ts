@@ -298,7 +298,7 @@ export function useBusinessById(businessId?: string | number) {
     queryKey: [QUERY_KEYS.ADMIN_BUSINESSES, 'detail', businessId],
     queryFn: async () => {
       if (!businessId) return null;
-      const response = await api.get(API_ENDPOINTS.BUSINESS_BY_ID(String(businessId)));
+      const response = await api.get<{ business: AdminBusiness }>(API_ENDPOINTS.BUSINESS_BY_ID(String(businessId)));
       return response.business || response;
     },
     enabled: !!businessId,
@@ -315,8 +315,8 @@ export function useServicesByBusiness(businessId?: string | number) {
     queryKey: [QUERY_KEYS.ADMIN_SERVICES, 'business', businessId],
     queryFn: async () => {
       if (!businessId) return [];
-      const response = await api.get(API_ENDPOINTS.SERVICES_BY_BUSINESS(String(businessId)));
-      return Array.isArray(response) ? response : response?.services || response?.data || [];
+      const response = await api.get<{ services?: AdminService[] }>(API_ENDPOINTS.SERVICES_BY_BUSINESS(String(businessId)));
+      return Array.isArray(response) ? response : response?.services || [];
     },
     enabled: !!businessId,
     staleTime: 5 * 60 * 1000,

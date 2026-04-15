@@ -740,7 +740,7 @@ export default function AdminCronJobsPage() {
   // Sync single job mutation
   const syncJobMutation = useMutation({
     mutationFn: async (jobId: number) => {
-      return api.post(API_ENDPOINTS.ADMIN_CRON_JOB_SYNC(jobId), {});
+      return api.post<{ data: { success: boolean; error?: string } }>(API_ENDPOINTS.ADMIN_CRON_JOB_SYNC(jobId), {});
     },
     onSuccess: (data, variables) => {
       const job = jobs?.find((j) => j.id === variables);
@@ -766,7 +766,7 @@ export default function AdminCronJobsPage() {
   // Sync all jobs mutation
   const syncAllMutation = useMutation({
     mutationFn: async () => {
-      return api.post(API_ENDPOINTS.ADMIN_CRON_JOBS_SYNC_ALL, {});
+      return api.post<{ data: { synced: number; failed: number } }>(API_ENDPOINTS.ADMIN_CRON_JOBS_SYNC_ALL, {});
     },
     onSuccess: (data) => {
       const result = data.data;

@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils";
 import type { HeaderUser } from "@/components/common/Header";
 import { useNotifications } from "@/lib/queries/use-notifications";
 import { formatDistanceToNow } from "date-fns";
+import { getUserRole } from "@/lib/auth-utils";
 
 interface CustomerHeaderProps {
   user?: HeaderUser;
@@ -213,11 +214,26 @@ export function CustomerHeader({
                             // Get booking info from notification
                             const actionUrl = n.data?.actionUrl;
                             const bookingId = n.data?.bookingId;
+                            const policyType = n.data?.policyType;
 
-                            if (!actionUrl) return;
+                            // Get user role for role-based redirects
+                            const roleId = getUserRole();
+                            const rolePrefix = roleId === 1 ? "/customer" : roleId === 2 ? "/provider" : roleId === 3 ? "/admin" : "/staff";
+
+                            // Fallback for policy update notifications - use role-based paths
+                            let finalActionUrl = actionUrl;
+                            if (!actionUrl && policyType === "privacy") {
+                              finalActionUrl = `${rolePrefix}/privacy`;
+                            } else if (!actionUrl && policyType === "terms") {
+                              finalActionUrl = `${rolePrefix}/terms`;
+                            } else if (!actionUrl && policyType === "cancellation") {
+                              finalActionUrl = `${rolePrefix}/terms`;
+                            }
+
+                            if (!finalActionUrl) return;
 
                             const targetPath = new URL(
-                              actionUrl,
+                              finalActionUrl,
                               window.location.origin,
                             ).pathname;
 

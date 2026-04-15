@@ -83,7 +83,7 @@ export function useRazorpay({
           `🔍 Validating payment intent ${paymentIntentId} before opening Razorpay...`,
         );
 
-        const validationResponse = await api.post(
+        const validationResponse = await api.post<{ valid: boolean; message?: string; data?: { timeRemaining: number } }>(
           API_ENDPOINTS.PAYMENT.VALIDATE_INTENT,
           {
             paymentIntentId,

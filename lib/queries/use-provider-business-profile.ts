@@ -116,7 +116,7 @@ export function useProviderBusinessProfile(userId?: number) {
     queryKey: [QUERY_KEYS.PROVIDER_BOOKINGS, 'list', { businessId }],
     queryFn: async () => {
       if (!businessId) return [];
-      const response = await api.get(API_ENDPOINTS.PROVIDER_BOOKINGS);
+      const response = await api.get<{ bookings?: any[] }>(API_ENDPOINTS.PROVIDER_BOOKINGS);
       return Array.isArray(response) ? response : response?.bookings || [];
     },
     enabled: !!businessId,
