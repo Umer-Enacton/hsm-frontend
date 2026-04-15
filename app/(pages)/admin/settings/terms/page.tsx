@@ -195,7 +195,12 @@ export default function AdminTermsPage() {
 
   const handleUpdate = () => {
     if (!editingTerms) return;
-    updateMutation.mutate({ id: editingTerms.id, content: newContent });
+    // Create a new version instead of updating existing one
+    const currentVersions = terms.map((t) => t.version);
+    const nextVer = getNextVersion(currentVersions);
+    createMutation.mutate({ version: nextVer, content: newContent });
+    setEditingTerms(null);
+    setNewContent("");
   };
 
   const handleActivate = () => {

@@ -195,7 +195,12 @@ export default function AdminPrivacyPolicyPage() {
 
   const handleUpdate = () => {
     if (!editingPolicy) return;
-    updateMutation.mutate({ id: editingPolicy.id, content: newContent });
+    // Create a new version instead of updating existing one
+    const currentVersions = policies.map((p) => p.version);
+    const nextVer = getNextVersion(currentVersions);
+    createMutation.mutate({ version: nextVer, content: newContent });
+    setEditingPolicy(null);
+    setNewContent("");
   };
 
   const handleActivate = () => {
