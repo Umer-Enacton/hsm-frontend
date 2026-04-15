@@ -1003,10 +1003,8 @@ export default function ServiceDetailsPage({
 
                           return (
                             <div className="grid grid-cols-3 sm:grid-cols-3 gap-2">
-                              {availableSlots.map((slot) => {
-                                const isBooked =
-                                  slot.status === "booked" ||
-                                  slot.isAvailable === false;
+                                {availableSlots.map((slot) => {
+                                  const isBooked = slot.isAvailable === false;
                                 const isSelected = selectedSlot?.id === slot.id;
 
                                 return (

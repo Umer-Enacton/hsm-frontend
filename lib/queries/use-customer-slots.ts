@@ -4,18 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { api, API_ENDPOINTS } from "@/lib/api";
 import { QUERY_KEYS } from "./query-keys";
 
+import { Slot } from '@/types/customer';
+
 // ============================================================================
 // Types
 // ============================================================================
-
-export interface Slot {
-  id: number;
-  businessId: number;
-  date: string;
-  startTime: string;
-  endTime: string;
-  isAvailable: boolean;
-}
 
 export interface Feedback {
   id: number;
