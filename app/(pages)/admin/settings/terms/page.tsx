@@ -137,7 +137,7 @@ export default function AdminTermsPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (payload: { id: number; content: string }) => {
-      await api.put(API_ENDPOINTS.ADMIN_TERMS_BY_ID(payload.id), {
+      await api.put(API_ENDPOINTS.ADMIN_TERMS_UPDATE(payload.id), {
         content: payload.content,
       });
     },
@@ -171,7 +171,7 @@ export default function AdminTermsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await api.delete(API_ENDPOINTS.ADMIN_TERMS_BY_ID(id));
+      await api.delete(API_ENDPOINTS.ADMIN_TERMS_DELETE(id));
     },
     onSuccess: () => {
       toast.success("Terms deleted successfully");
