@@ -37,7 +37,7 @@ export function DashboardLayout({
 
   return (
     <div
-      className={cn("flex h-screen overflow-hidden bg-background", className)}
+      className={cn("flex h-[100dvh] overflow-hidden bg-background", className)}
     >
       {/* Mobile Backdrop */}
       {isMobileOpen && (

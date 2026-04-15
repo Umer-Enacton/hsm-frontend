@@ -183,7 +183,7 @@ export function Sidebar({
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "flex h-screen flex-col border-r bg-card transition-all duration-300 ease-in-out",
+          "flex h-[100dvh] flex-col border-r bg-card transition-all duration-300 ease-in-out",
           "fixed inset-y-0 left-0 z-50 md:relative",
           isMobileOpen
             ? "translate-x-0 w-[240px]"
@@ -218,7 +218,7 @@ export function Sidebar({
         </div>
 
         {/* Nav */}
-        <ScrollArea className="flex-1 py-3">
+        <ScrollArea className="flex-1 py-3 min-h-0">
           <nav
             className={cn("flex flex-col gap-1", collapsed ? "px-2" : "px-3")}
           >
