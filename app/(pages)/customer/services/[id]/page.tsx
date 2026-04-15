@@ -88,15 +88,18 @@ export default function ServiceDetailsPage({
 
   const { data: feedbacks = [], isLoading: isLoadingFeedback } = useServiceFeedback(parseInt(id), 10);
 
-  // Local state for slots (needs dynamic refetching based on date selection)
-  const [allSlots, setAllSlots] = useState<Slot[]>([]);
-  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
-
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [isBooking, setIsBooking] = useState(false);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+
+  // Use TanStack query hook for slots based on current selections
+  const { data: allSlots = [], isLoading: isLoadingSlots } = useBusinessSlots(
+    service?.provider?.id,
+    selectedDate,
+    service?.id
+  );
 
   // Payment order data (created when slot is available)
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -114,12 +117,13 @@ export default function ServiceDetailsPage({
     }
   }, [addresses]);
 
-  // Initialize today's date and load initial slots when service is loaded
+  // Initialize today's date when service is loaded
   useEffect(() => {
     if (service?.provider?.id) {
-      const today = new Date().toISOString().split("T")[0];
-      setSelectedDate(today);
-      loadSlots(service.provider?.id, today, service.id);
+      if (!selectedDate) {
+        const today = new Date().toISOString().split("T")[0];
+        setSelectedDate(today);
+      }
       setHasLoadedOnce(true);
     }
   }, [service]);
@@ -177,24 +181,6 @@ export default function ServiceDetailsPage({
     autoScrollPausedRef.current = false;
   };
 
-  const loadSlots = async (
-    businessId: number,
-    date?: string,
-    serviceId?: number,
-  ) => {
-    try {
-      setIsLoadingSlots(true);
-      const slotData = await getAvailableSlots(businessId, date, serviceId);
-      setAllSlots(Array.isArray(slotData) ? slotData : []);
-    } catch (error) {
-      console.error("Error loading slots:", error);
-      toast.error("Failed to load available slots");
-      setAllSlots([]);
-    } finally {
-      setIsLoadingSlots(false);
-    }
-  };
-
   // Get next 3 days only (Today, Tomorrow, Overmorrow)
   const getNext3Days = () => {
     const days = [];
@@ -245,18 +231,10 @@ export default function ServiceDetailsPage({
   };
 
   // Handlers
-  const handleDateChange = async (date: string) => {
+  const handleDateChange = (date: string) => {
     console.log(`📅 Date changed to: ${date}`);
     setSelectedDate(date);
     setSelectedSlot(null);
-
-    // Reload slots for the new date (with availability)
-    if (service?.provider?.id) {
-      console.log(
-        `🔄 Loading slots for business ${service.provider?.id}, service ${service.id} on ${date}`,
-      );
-      await loadSlots(service.provider?.id, date, service.id); // Pass serviceId for per-service filtering
-    }
   };
 
   const handleSlotSelect = (slot: Slot) => {
