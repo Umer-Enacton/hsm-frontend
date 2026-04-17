@@ -114,6 +114,7 @@ export function CustomerHeader({
 
             {/* Logo - Mobile */}
             <button
+              data-tour-mobile-menu-btn=""
               className="flex md:hidden items-center space-x-2 cursor-pointer p-0 bg-transparent border-none"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               type="button"
@@ -421,6 +422,12 @@ export function CustomerHeader({
             <button
               key={item.href}
               onClick={() => handleNavClick(item.href)}
+              {...(item.href === "/customer/services"
+                ? { "data-tour-mobile-nav-browse": "" }
+                : {})}
+              {...(item.href === "/customer/bookings"
+                ? { "data-tour-mobile-nav-bookings": "" }
+                : {})}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200 w-full text-left",
                 "hover:bg-accent hover:text-accent-foreground",

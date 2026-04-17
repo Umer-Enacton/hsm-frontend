@@ -20,7 +20,12 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useTourRunner } from "./TourRunner";
-import { getToursByPage, TOURS_BY_ID, type TourDefinition } from "./tours";
+import {
+  getToursByPage,
+  TOURS_BY_ID,
+  resolveSteps,
+  type TourDefinition,
+} from "./tours";
 import { useBookings } from "@/lib/queries/use-bookings";
 import { cn } from "@/lib/utils";
 
@@ -240,7 +245,7 @@ export function HelpButton() {
         return;
       }
 
-      const stepDef = tour.steps[step];
+      const stepDef = resolveSteps(tour)[step];
       const selector =
         typeof stepDef?.element === "string" ? stepDef.element : null;
 
@@ -258,7 +263,7 @@ export function HelpButton() {
       );
       clearResume(); // consumed; prevents accidental double-resume
       activeTourRef.current = { tour, step };
-      startTour(tour.steps, step);
+      startTour(resolveSteps(tour), step);
     };
 
     resume();
@@ -320,7 +325,7 @@ export function HelpButton() {
         // Already here — short delay lets the popover close and unmount
         // cleanly before driver.js mounts its overlay
         setTimeout(() => {
-          startTour(tour.steps, 0);
+          startTour(resolveSteps(tour), 0);
         }, 300);
       } else {
         // We're navigating ourselves — flag it so the pathname effect skips
@@ -328,7 +333,7 @@ export function HelpButton() {
         router.push(tour.targetPath);
         setTimeout(() => {
           intentionalNavRef.current = false;
-          startTour(tour.steps, 0);
+          startTour(resolveSteps(tour), 0);
         }, 700);
       }
     },

@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { ExtendedDriveStep } from "../TourRunner";
 import {
   LayoutDashboard,
   Search,
@@ -12,7 +13,7 @@ import {
   Lock,
 } from "lucide-react";
 
-import { dashboardSteps } from "./dashboard-tour";
+import { getDashboardSteps } from "./dashboard-tour";
 import { browseServicesSteps } from "./browse-services-tour";
 import { bookServiceSteps } from "./book-service-tour";
 import { bookingsOverviewSteps } from "./bookings-overview-tour";
@@ -22,7 +23,6 @@ import { invoiceSteps } from "./invoice-tour";
 import { editProfileSteps } from "./edit-profile-tour";
 import { feedbackSteps } from "./feedback-tour";
 import { changePasswordSteps } from "./change-password-tour";
-import type { DriveStep } from "driver.js";
 
 // ---------------------------------------------------------------------------
 // TourDefinition type
@@ -36,11 +36,26 @@ export interface TourDefinition {
   icon: LucideIcon;
   /** Navigate to this path before starting the tour (when not already there) */
   targetPath: string;
-  steps: DriveStep[];
+  /**
+   * Either a static array of steps, or a factory function that is called at
+   * tour-start time.  Use a factory when the steps depend on runtime state
+   * (e.g. viewport width for mobile vs desktop branching).
+   */
+  steps: ExtendedDriveStep[] | (() => ExtendedDriveStep[]);
   /** Only show this tour when the customer has at least one confirmed booking */
   requiresConfirmedBookings?: boolean;
   /** Only show this tour when the customer has at least one completed booking */
   requiresCompletedBookings?: boolean;
+}
+
+/**
+ * Resolves a tour's steps at call time.
+ * Always call this immediately before passing steps to `startTour` so that
+ * factory functions (e.g. `getDashboardSteps`) can inspect the current
+ * viewport / DOM state rather than a stale snapshot from module load time.
+ */
+export function resolveSteps(tour: TourDefinition): ExtendedDriveStep[] {
+  return typeof tour.steps === "function" ? tour.steps() : tour.steps;
 }
 
 // ---------------------------------------------------------------------------
@@ -54,7 +69,9 @@ export const ALL_TOURS: TourDefinition[] = [
     description: "Learn about your dashboard stats and navigation",
     icon: LayoutDashboard,
     targetPath: "/customer",
-    steps: dashboardSteps,
+    // Factory function — evaluated fresh at tour-start time so mobile vs
+    // desktop branching always reflects the current viewport width.
+    steps: getDashboardSteps,
   },
   {
     id: "browse-services",
