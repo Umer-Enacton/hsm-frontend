@@ -380,7 +380,6 @@ export function CustomerTour({ userId }: CustomerTourProps) {
       popoverClass: "driver-popover-custom",
       onHighlighted: (element, step, options) => {
         console.log("=== STEP CHANGED ===");
-        console.log("Step index:", step?.index);
         console.log("Step element selector:", step?.element);
         console.log("Actual element:", element?.tagName, element?.className);
         
