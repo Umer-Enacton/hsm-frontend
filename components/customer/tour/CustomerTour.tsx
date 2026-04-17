@@ -169,7 +169,7 @@ export function CustomerTour({ userId }: CustomerTourProps) {
     console.log("isCityStep:", isCityStep);
     console.log("isStateOptionsStep:", isStateOptionsStep);
     console.log("isCityOptionsStep:", isCityOptionsStep);
-    console.log("Clicked element:", e.target?.tagName);
+    console.log("Clicked element:", (e.target as HTMLElement)?.tagName);
     
     // Step 6: State dropdown - advance when clicking on the dropdown (any part of it)
     if (isStateStep) {
