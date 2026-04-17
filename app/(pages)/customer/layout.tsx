@@ -3,6 +3,7 @@
 // app/(pages)/customer/layout.tsx
 import { CustomerHeader } from "@/components/customer";
 import { Footer } from "@/components/common";
+import { CustomerTour } from "@/components/customer/tour/CustomerTour";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -111,33 +112,36 @@ export default function CustomerLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <CustomerHeader
-        user={
-          user
-            ? {
-                name: user.name,
-                email: user.email,
-                avatarUrl: user.avatar || undefined,
-                role: "Customer",
-                hasAddresses,
-              }
-            : undefined
-        }
-        onProfileClick={onProfileClick}
-        onLogout={onLogout}
-        showSearch={true}
-      />
-      <main className="container max-w-7xl mx-auto px-4 py-8 flex-1">
-        <div className="pb-24">{children}</div>
-      </main>
-      <Footer
-        appName="HomeFixCare"
-        links={[
-          { label: "Privacy Policy", href: "/customer/privacy" },
-          { label: "Terms & Conditions", href: "/customer/terms" },
-        ]}
-      />
-    </div>
+    <>
+      <CustomerTour userId={user?.id} />
+      <div className="min-h-screen bg-background flex flex-col">
+        <CustomerHeader
+          user={
+            user
+              ? {
+                  name: user.name,
+                  email: user.email,
+                  avatarUrl: user.avatar || undefined,
+                  role: "Customer",
+                  hasAddresses,
+                }
+              : undefined
+          }
+          onProfileClick={onProfileClick}
+          onLogout={onLogout}
+          showSearch={true}
+        />
+        <main className="container max-w-7xl mx-auto px-4 py-8 flex-1">
+          <div className="pb-24">{children}</div>
+        </main>
+        <Footer
+          appName="HomeFixCare"
+          links={[
+            { label: "Privacy Policy", href: "/customer/privacy" },
+            { label: "Terms & Conditions", href: "/customer/terms" },
+          ]}
+        />
+      </div>
+    </>
   );
 }

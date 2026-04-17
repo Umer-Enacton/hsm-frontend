@@ -586,6 +586,11 @@ export default function AdminCronJobsPage() {
   const [editingJob, setEditingJob] = useState<CronJob | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
+  // Pagination & Filtering state for logs
+  const [logsPage, setLogsPage] = useState(1);
+  const [logsStatusFilter, setLogsStatusFilter] = useState("all");
+  const [logsJobFilter, setLogsJobFilter] = useState("all");
+
   // Fetch all jobs
   const {
     data: jobs,
@@ -624,38 +629,62 @@ export default function AdminCronJobsPage() {
   });
 
   // Fetch all logs for the logs tab
-  const { data: allLogs, isLoading: isLoadingLogs } = useQuery<CronLog[]>({
-    queryKey: ["admin", "cron-logs-all"],
+  const { data: logsData, isLoading: isLoadingLogs } = useQuery<{
+    data: CronLog[];
+    pagination: {
+      total: number;
+      limit: number;
+      offset: number;
+      hasMore: boolean;
+    };
+  }>({
+    queryKey: [
+      "admin",
+      "cron-logs-all",
+      logsPage,
+      logsStatusFilter,
+      logsJobFilter,
+    ],
     queryFn: async () => {
-      if (!jobs) return [];
-      const logsByJob = await Promise.all(
-        jobs.map((job) =>
-          api
-            .get<{
-              success: boolean;
-              data: CronLog[];
-            }>(API_ENDPOINTS.ADMIN_CRON_JOB_LOGS(job.id) + "?limit=50")
-            .then((r) =>
-              (r.data || []).map((log: CronLog) => ({
-                ...log,
-                jobId: job.id,
-                jobName: job.displayName,
-                jobCategory: job.category,
-              })),
-            ),
-        ),
-      );
-      return logsByJob
-        .flat()
-        .sort(
-          (a, b) =>
-            new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
-        );
+      const limit = 20;
+      const offset = (logsPage - 1) * limit;
+      let url = `${API_ENDPOINTS.ADMIN_CRON_LOGS_ALL}?limit=${limit}&offset=${offset}`;
+
+      if (logsStatusFilter !== "all") {
+        url += `&status=${logsStatusFilter}`;
+      }
+      if (logsJobFilter !== "all") {
+        url += `&jobId=${logsJobFilter}`;
+      }
+
+      const res = await api.get<{
+        success: boolean;
+        data: CronLog[];
+        pagination: {
+          total: number;
+          limit: number;
+          offset: number;
+          hasMore: boolean;
+        };
+      }>(url);
+
+      return {
+        data: (res.data || []).map((log: any) => ({
+          ...log,
+          jobId: log.job?.id || log.jobId,
+          jobName: log.job?.displayName || "Unknown",
+          jobCategory: log.job?.category || "system",
+        })),
+        pagination: res.pagination,
+      };
     },
-    enabled: !!jobs && activeTab === "logs",
+    enabled: activeTab === "logs",
     staleTime: 10000,
     refetchInterval: 30000,
   });
+
+  const allLogs = logsData?.data || [];
+  const logsPagination = logsData?.pagination;
 
   // Trigger job mutation
   const triggerMutation = useMutation({
@@ -740,7 +769,10 @@ export default function AdminCronJobsPage() {
   // Sync single job mutation
   const syncJobMutation = useMutation({
     mutationFn: async (jobId: number) => {
-      return api.post<{ data: { success: boolean; error?: string } }>(API_ENDPOINTS.ADMIN_CRON_JOB_SYNC(jobId), {});
+      return api.post<{ data: { success: boolean; error?: string } }>(
+        API_ENDPOINTS.ADMIN_CRON_JOB_SYNC(jobId),
+        {},
+      );
     },
     onSuccess: (data, variables) => {
       const job = jobs?.find((j) => j.id === variables);
@@ -766,7 +798,10 @@ export default function AdminCronJobsPage() {
   // Sync all jobs mutation
   const syncAllMutation = useMutation({
     mutationFn: async () => {
-      return api.post<{ data: { synced: number; failed: number } }>(API_ENDPOINTS.ADMIN_CRON_JOBS_SYNC_ALL, {});
+      return api.post<{ data: { synced: number; failed: number } }>(
+        API_ENDPOINTS.ADMIN_CRON_JOBS_SYNC_ALL,
+        {},
+      );
     },
     onSuccess: (data) => {
       const result = data.data;
@@ -1276,50 +1311,126 @@ export default function AdminCronJobsPage() {
         {/* Logs Tab */}
         <TabsContent value="logs">
           <Card>
-            <CardHeader>
-              <CardTitle>Execution Logs</CardTitle>
-              <CardDescription>
-                Detailed execution history for all scheduled jobs (most recent
-                first)
-              </CardDescription>
+            <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <CardTitle>Execution Logs</CardTitle>
+                <CardDescription>
+                  Detailed execution history for all scheduled jobs (most recent
+                  first)
+                </CardDescription>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Select
+                  value={logsJobFilter}
+                  onValueChange={(v) => {
+                    setLogsJobFilter(v);
+                    setLogsPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Jobs" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Jobs</SelectItem>
+                    {jobs?.map((j) => (
+                      <SelectItem key={j.id} value={j.id.toString()}>
+                        {j.displayName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={logsStatusFilter}
+                  onValueChange={(v) => {
+                    setLogsStatusFilter(v);
+                    setLogsPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="success">Success</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="running">Running</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {isLoadingLogs ? (
                 <LoadingState message="Loading logs..." />
-              ) : allLogs && allLogs.length > 0 ? (
-                <div className="border rounded-md overflow-hidden bg-card shadow-sm">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50 hover:bg-muted/50">
-                        <TableHead className="py-4 px-4">Job</TableHead>
-                        <TableHead className="py-4 px-4">Trigger</TableHead>
-                        <TableHead className="py-4 px-4">Started</TableHead>
-                        <TableHead className="py-4 px-4">Status</TableHead>
-                        <TableHead className="py-4 px-4">Duration</TableHead>
-                        <TableHead className="py-4 px-4">Result</TableHead>
-                        <TableHead className="py-4 px-4"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {allLogs.map((log: any) => {
-                        const job = getJobById(log.jobId);
-                        return (
-                          <LogRow
-                            key={log.id}
-                            log={log}
-                            jobName={job?.displayName || "Unknown"}
-                          />
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
               ) : (
-                <EmptyState
-                  icon={FileText}
-                  title="No Execution Logs"
-                  description="No execution logs available yet. Logs will appear here after jobs run."
-                />
+                <div className="border rounded-md overflow-hidden bg-card shadow-sm flex flex-col min-h-[400px]">
+                  {allLogs.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableHead className="py-4 px-4">Job</TableHead>
+                          <TableHead className="py-4 px-4">Trigger</TableHead>
+                          <TableHead className="py-4 px-4">Started</TableHead>
+                          <TableHead className="py-4 px-4">Status</TableHead>
+                          <TableHead className="py-4 px-4">Duration</TableHead>
+                          <TableHead className="py-4 px-4">Result</TableHead>
+                          <TableHead className="py-4 px-4"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {allLogs.map((log: any) => {
+                          return (
+                            <LogRow
+                              key={log.id}
+                              log={log}
+                              jobName={log.jobName || "Unknown"}
+                            />
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="py-12 flex-1 items-center justify-center flex">
+                      <EmptyState
+                        icon={FileText}
+                        title="No Execution Logs Found"
+                        description="Try adjusting your filters or wait for jobs to run."
+                      />
+                    </div>
+                  )}
+                  {logsPagination && logsPagination.total > 0 && (
+                    <div className="border-t mt-auto p-4 flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground whitespace-nowrap hidden sm:block">
+                        Showing {logsPagination.offset + 1} -{" "}
+                        {Math.min(
+                          logsPagination.offset + logsPagination.limit,
+                          logsPagination.total,
+                        )}{" "}
+                        of {logsPagination.total} logs
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setLogsPage((p) => Math.max(1, p - 1))}
+                          disabled={logsPage === 1}
+                        >
+                          Previous
+                        </Button>
+                        <div className="text-sm border px-3 py-1.5 rounded-md min-w-[5ch] text-center font-medium bg-muted/30">
+                          {logsPage}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setLogsPage((p) => p + 1)}
+                          disabled={!logsPagination.hasMore}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>

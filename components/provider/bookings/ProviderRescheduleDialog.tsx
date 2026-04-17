@@ -14,6 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +34,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { invalidateAfterBookingAction } from "@/lib/queries/query-invalidation";
 import type { Slot } from "@/types/customer";
+import { cn } from "@/lib/utils";
 
 // Preset reschedule reasons for provider
 const PROVIDER_RESCHEDULE_REASONS = [
@@ -63,7 +70,8 @@ export function ProviderRescheduleDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [slots, setSlots] = useState<Slot[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [otherReason, setOtherReason] = useState("");
@@ -88,25 +96,51 @@ export function ProviderRescheduleDialog({
     open,
   ]);
 
-  // Auto-select first date when dialog opens
+  // Helper to get date string in local timezone
+  const getLocalDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  // Handle date change from calendar
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      setSelectedSlot(null);
+    }
+  };
+
+  // Initialize selectedDate with current booking date when modal opens
   useEffect(() => {
-    console.log("📅 [ProviderRescheduleDialog] Dialog open check:", {
-      open,
-      selectedDate,
-    });
-    if (open && !selectedDate) {
-      const days = getNext3Days();
-      console.log("📅 [ProviderRescheduleDialog] Available days:", days);
-      if (days.length > 0) {
-        console.log(
-          "📅 [ProviderRescheduleDialog] Auto-selecting first date:",
-          days[0].value,
-        );
-        setSelectedDate(days[0].value);
-        setSelectedSlot(null);
+    if (open && currentBookingDate && !selectedDate) {
+      const bookingDate = new Date(currentBookingDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (bookingDate >= today) {
+        setSelectedDate(bookingDate);
       }
     }
-  }, [open]);
+  }, [open, currentBookingDate]);
+
+  // Load slots when selectedDate is set
+  useEffect(() => {
+    if (open && selectedDate) {
+      const dateStr = getLocalDateString(selectedDate);
+      loadSlotsForDate(dateStr);
+    }
+  }, [open, selectedDate]);
+
+  // Get display slots
+  const getDisplaySlots = () => slots;
+
+  // Check if slot is disabled
+  const isSlotDisabled = (slot: Slot) => {
+    const isBooked = slot.status === "booked" || slot.isAvailable === false;
+    const isPast = slot.status === "past";
+    return isBooked || isPast;
+  };
 
   // Get next 3 days (Today, Tomorrow, Overmorrow) - same as customer
   const getNext3Days = () => {
@@ -183,7 +217,7 @@ export function ProviderRescheduleDialog({
       console.log(
         "✅ [ProviderRescheduleDialog] All conditions met, loading slots...",
       );
-      loadSlotsForDate(selectedDate);
+      loadSlotsForDate(getLocalDateString(selectedDate));
     } else {
       console.log(
         "⚠️ [ProviderRescheduleDialog] Skipping slot load - missing:",
@@ -295,7 +329,7 @@ export function ProviderRescheduleDialog({
 
       await api.put(API_ENDPOINTS.PROVIDER_RESCHEDULE(bookingId), {
         slotId: selectedSlot.id,
-        bookingDate: new Date(selectedDate).toISOString(),
+        bookingDate: getLocalDateString(selectedDate),
         reason: reasonString,
       });
 
@@ -308,7 +342,7 @@ export function ProviderRescheduleDialog({
       onRescheduled?.();
 
       // Reset form
-      setSelectedDate("");
+      setSelectedDate(undefined);
       setSelectedSlot(null);
       setSelectedReasons([]);
       setOtherReason("");
@@ -328,17 +362,14 @@ export function ProviderRescheduleDialog({
     return `${displayHours}:${displayMinutes} ${period}`;
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+    return dateObj.toLocaleDateString("en-US", {
       weekday: "long",
       month: "long",
       day: "numeric",
     });
   };
-
-  const availableDates = getNext3Days();
-  const today = new Date().toISOString().split("T")[0];
 
   const SlotLegend = () => (
     <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground py-2 flex-wrap">
@@ -385,25 +416,44 @@ export function ProviderRescheduleDialog({
               <label className="text-sm font-medium mb-3 block">
                 Select New Date
               </label>
-              <div className="grid grid-cols-3 gap-3">
-                {availableDates.map((day) => (
-                  <button
-                    key={day.value}
-                    type="button"
-                    onClick={() => {
-                      setSelectedDate(day.value);
-                      setSelectedSlot(null);
-                    }}
-                    className={`p-1 rounded-sm border-2 text-center transition-all ${
-                      selectedDate === day.value
-                        ? "border-black dark:border-white bg-black dark:bg-white text-white dark:text-black"
-                        : "border-border hover:border-gray-400 dark:hover:border-gray-600 hover:bg-muted/50"
-                    }`}
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !selectedDate && "text-muted-foreground",
+                    )}
                   >
-                    <div className="text-sm font-medium">{day.displayDate}</div>
-                  </button>
-                ))}
-              </div>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate
+                      ? selectedDate.toLocaleDateString("en-IN", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarPicker
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      handleDateChange(date);
+                      setCalendarOpen(false);
+                    }}
+                    disabled={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      if (date < today) return true;
+                      return false;
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Time Slot Selection */}
@@ -437,9 +487,7 @@ export function ProviderRescheduleDialog({
                 </div>
               ) : (
                 (() => {
-                  const displaySlots = selectedDate
-                    ? getAvailableSlotsForDate(selectedDate)
-                    : [];
+                  const displaySlots = getDisplaySlots();
 
                   if (displaySlots.length === 0) {
                     return (
@@ -455,18 +503,16 @@ export function ProviderRescheduleDialog({
                   return (
                     <div className="grid grid-cols-3 gap-2 mt-3">
                       {displaySlots.map((slot) => {
+                        const isPast = slot.status === "past";
                         const booked = isSlotBooked(slot);
                         const isSelected = selectedSlot?.id === slot.id;
-                        // Normalize both dates to YYYY-MM-DD for comparison
                         const normalizedCurrentDate = currentBookingDate
-                          ? new Date(currentBookingDate)
-                              .toISOString()
-                              .split("T")[0]
+                          ? getLocalDateString(new Date(currentBookingDate))
                           : "";
                         const isCurrent =
                           slot.id === currentSlotId &&
-                          selectedDate === normalizedCurrentDate;
-                        const isDisabled = booked || isCurrent;
+                          (selectedDate ? getLocalDateString(selectedDate) : "") === normalizedCurrentDate;
+                        const isDisabled = isSlotDisabled(slot) || isCurrent;
 
                         return (
                           <button
@@ -479,9 +525,11 @@ export function ProviderRescheduleDialog({
                                 ? "bg-black dark:bg-white text-white dark:text-black shadow-lg"
                                 : isCurrent
                                   ? "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/50 opacity-60 cursor-not-allowed"
-                                  : booked
-                                    ? "border-border bg-muted opacity-50 cursor-not-allowed"
-                                    : "bg-green-100 dark:bg-green-950 border-2 border-green-500 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-900"
+                                  : isPast
+                                    ? "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 opacity-40 cursor-not-allowed"
+                                    : booked
+                                      ? "border-border bg-muted opacity-50 cursor-not-allowed"
+                                      : "bg-green-100 dark:bg-green-950 border-2 border-green-500 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-900"
                             }`}
                             title={
                               isCurrent
@@ -596,7 +644,7 @@ export function ProviderRescheduleDialog({
               variant="outline"
               onClick={() => {
                 onOpenChange(false);
-                setSelectedDate("");
+                setSelectedDate(undefined);
                 setSelectedSlot(null);
                 setSelectedReasons([]);
                 setOtherReason("");

@@ -162,7 +162,7 @@ export interface Slot {
   startTime: string; // Format: "HH:mm:ss"
   businessProfileId: number;
   isAvailable?: boolean; // Whether slot is available for booking
-  status?: "available" | "booked"; // Slot status
+  status?: "available" | "booked" | "past"; // Slot status
 }
 
 /**

@@ -32,7 +32,11 @@ export function ProfileTabs({
         className
       )}>
         <TabsTrigger value="overview">Overview</TabsTrigger>
-        {showAddresses && <TabsTrigger value="addresses">Addresses</TabsTrigger>}
+        {showAddresses && (
+          <TabsTrigger value="addresses" data-tour-address-tab>
+            Addresses
+          </TabsTrigger>
+        )}
         <TabsTrigger value="security">Security</TabsTrigger>
       </TabsList>
     </Tabs>

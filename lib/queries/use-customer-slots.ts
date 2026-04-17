@@ -43,7 +43,7 @@ export function useBusinessSlots(
   return useQuery<Slot[]>({
     queryKey: [QUERY_KEYS.SLOTS, "business", businessId, date, serviceId],
     queryFn: async () => {
-      if (!businessId) return [];
+      if (!businessId || !date) return [];
 
       const params = new URLSearchParams();
       if (date) params.append("date", date);
@@ -61,9 +61,9 @@ export function useBusinessSlots(
       }
       return Array.isArray(response) ? response : [];
     },
-    enabled: !!businessId,
-    staleTime: 60 * 1000, // 2 minutes - slot availability changes
-    gcTime: 5 * 60 * 1000,
+    enabled: !!businessId && !!date,
+    staleTime: 0,
+    gcTime: 30 * 1000,
   });
 }
 
@@ -92,7 +92,7 @@ export function useServiceFeedback(serviceId?: number, limit = 10) {
       return feedbackData.slice(0, limit);
     },
     enabled: !!serviceId,
-    staleTime: 10 * 60 * 1000, // 10 minutes - feedback changes moderately
+    staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 }

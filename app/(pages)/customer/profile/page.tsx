@@ -85,10 +85,14 @@ export default function CustomerProfilePage() {
   });
   const [addressErrors, setAddressErrors] = useState({
     street: "",
+    city: "",
+    state: "",
     zipCode: "",
   });
   const [addressTouched, setAddressTouched] = useState({
     street: false,
+    city: false,
+    state: false,
     zipCode: false,
   });
 
@@ -165,8 +169,8 @@ export default function CustomerProfilePage() {
       });
     }
     // Reset errors and touched states
-    setAddressErrors({ street: "", zipCode: "" });
-    setAddressTouched({ street: false, zipCode: false });
+    setAddressErrors({ street: "", city: "", state: "", zipCode: "" });
+    setAddressTouched({ street: false, city: false, state: false, zipCode: false });
     setIsAddressDialogOpen(true);
   };
 
@@ -180,17 +184,21 @@ export default function CustomerProfilePage() {
       state: "",
       zipCode: "",
     });
+    setAddressErrors({ street: "", city: "", state: "", zipCode: "" });
+    setAddressTouched({ street: false, city: false, state: false, zipCode: false });
   };
 
   const handleSaveAddress = (e: React.FormEvent) => {
     e.preventDefault();
 
     // Mark all fields as touched
-    setAddressTouched({ street: true, zipCode: true });
+    setAddressTouched({ street: true, city: true, state: true, zipCode: true });
 
     // Validate
     const errors = {
       street: "",
+      city: "",
+      state: "",
       zipCode: "",
     };
 
@@ -199,6 +207,16 @@ export default function CustomerProfilePage() {
       errors.street = "Street address is required";
     } else if (addressForm.street.trim().length > 200) {
       errors.street = "Street address cannot exceed 200 characters";
+    }
+
+    // Validate state
+    if (!addressForm.state) {
+      errors.state = "State is required";
+    }
+
+    // Validate city
+    if (!addressForm.city) {
+      errors.city = "City is required";
     }
 
     // Validate zip code (India PIN code: 6 digits)
@@ -210,7 +228,7 @@ export default function CustomerProfilePage() {
 
     setAddressErrors(errors);
 
-    if (errors.street || errors.zipCode) {
+    if (errors.street || errors.city || errors.state || errors.zipCode) {
       return;
     }
 
@@ -353,7 +371,7 @@ export default function CustomerProfilePage() {
                     <Grid3x3 className="h-4 w-4" />
                   </Button>
                 </div>
-                <Button onClick={() => handleOpenAddressDialog()}>
+                <Button onClick={() => handleOpenAddressDialog()} data-tour-add-address>
                   <Plus className="h-4 w-4 mr-2" />
                   Add New Address
                 </Button>
@@ -582,7 +600,7 @@ export default function CustomerProfilePage() {
               {editingAddress ? "Edit Address" : "Add New Address"}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSaveAddress}>
+          <form onSubmit={handleSaveAddress} data-tour-address-form>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Address Type *</Label>
@@ -610,6 +628,7 @@ export default function CustomerProfilePage() {
                 <Input
                   placeholder="House no., building, street area"
                   value={addressForm.street}
+                  data-tour-street
                   onChange={(e) => {
                     setAddressForm({ ...addressForm, street: e.target.value });
                     if (addressTouched.street) {
@@ -658,14 +677,16 @@ export default function CustomerProfilePage() {
                 <Select
                   value={addressForm.state}
                   onValueChange={(value) => {
-                    setAddressForm({ ...addressForm, state: value, city: "" }); // Clear city when state changes
+                    setAddressForm({ ...addressForm, state: value, city: "" });
+                    setAddressTouched((prev) => ({ ...prev, state: true }));
+                    setAddressErrors((prev) => ({ ...prev, state: "" }));
                   }}
                   required
                 >
-                  <SelectTrigger>
+<SelectTrigger data-tour-state className={addressTouched.state && addressErrors.state ? "border-destructive" : ""}>
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent data-tour-state-options>
                     {getAllStates().map((state: string) => (
                       <SelectItem key={state} value={state}>
                         {state}
@@ -673,26 +694,31 @@ export default function CustomerProfilePage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {addressTouched.state && addressErrors.state && (
+                  <p className="text-xs text-destructive">{addressErrors.state}</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label>City *</Label>
                 <Select
                   value={addressForm.city}
-                  onValueChange={(value) =>
-                    setAddressForm({ ...addressForm, city: value })
-                  }
+                  onValueChange={(value) => {
+                    setAddressForm({ ...addressForm, city: value });
+                    setAddressTouched((prev) => ({ ...prev, city: true }));
+                    setAddressErrors((prev) => ({ ...prev, city: "" }));
+                  }}
                   disabled={!addressForm.state}
                   required
                 >
-                  <SelectTrigger>
+                  <SelectTrigger data-tour-city className={addressTouched.city && addressErrors.city ? "border-destructive" : ""}>
                     <SelectValue
                       placeholder={
                         addressForm.state ? "Select city" : "Select state first"
                       }
                     />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent data-tour-city-options>
                     {availableCities.map((city: string) => (
                       <SelectItem key={city} value={city}>
                         {city}
@@ -700,6 +726,9 @@ export default function CustomerProfilePage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {addressTouched.city && addressErrors.city && (
+                  <p className="text-xs text-destructive">{addressErrors.city}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -707,6 +736,7 @@ export default function CustomerProfilePage() {
                 <Input
                   placeholder="Enter 6-digit zip code"
                   value={addressForm.zipCode}
+                  data-tour-zip
                   onChange={(e) => {
                     // Only digits allowed, max 6
                     const value = e.target.value
@@ -759,7 +789,7 @@ export default function CustomerProfilePage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmittingAddress}>
+              <Button type="submit" disabled={isSubmittingAddress} data-tour-submit-address>
                 {isSubmittingAddress
                   ? "Saving..."
                   : editingAddress

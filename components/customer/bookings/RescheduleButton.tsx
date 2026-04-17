@@ -15,6 +15,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -40,12 +46,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { invalidateAfterBookingAction } from "@/lib/queries/query-invalidation";
 import { useRazorpayScript } from "@/components/customer/payment/RazorpayCheckout";
 import { useTheme } from "next-themes";
+import { cn } from "@/lib/utils";
 
 interface Slot {
   id: number;
   startTime: string;
   endTime?: string;
-  status?: "available" | "booked";
+  status?: "available" | "booked" | "past";
   isAvailable?: boolean;
 }
 
@@ -99,39 +106,51 @@ export function RescheduleButton({
   const queryClient = useQueryClient();
   const scriptLoaded = useRazorpayScript();
   const { theme } = useTheme();
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [paymentOrderData, setPaymentOrderData] =
     useState<PaymentOrderResponse | null>(null);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [otherReason, setOtherReason] = useState("");
 
+  // Initialize selectedDate with current booking date when modal opens
+  useEffect(() => {
+    if (showModal && currentBookingDate && !selectedDate) {
+      const bookingDate = new Date(currentBookingDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (bookingDate >= today) {
+        setSelectedDate(bookingDate);
+      }
+    }
+  }, [showModal, currentBookingDate]);
+
+  // Load slots when selectedDate is set from booking date
+  useEffect(() => {
+    if (showModal && selectedDate && slots.length === 0) {
+      const dateStr = getLocalDateString(selectedDate);
+      loadSlotsForDate(dateStr);
+    }
+  }, [showModal, selectedDate]);
+
   // Flat ₹100 reschedule fee
   const RESCHEDULE_FEE = 100;
 
-  // Get next 3 days (Today, Tomorrow, Overmorrow)
-  const getNext3Days = () => {
-    const days = [];
-    const today = new Date();
-
-    for (let i = 0; i < 3; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-
-      const dateStr = date.toISOString().split("T")[0];
-
-      days.push({
-        value: dateStr,
-        label: i === 0 ? "Today" : i === 1 ? "Tomorrow" : "Overmorrow",
-        displayDate: date.toLocaleDateString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-        }),
-      });
+  // Handle date change from calendar
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      setSelectedSlot(null);
     }
+  };
 
-    return days;
+// Helper to get date string in local timezone (not UTC)
+  const getLocalDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
   // Check if slot is booked - check both status field and isAvailable boolean
@@ -144,28 +163,17 @@ export function RescheduleButton({
     return statusBooked || availableFalse;
   };
 
-  // Smart slot filtering - exclude past slots for today and current slot
-  const getAvailableSlotsForDate = (dateStr: string) => {
-    const today = new Date().toISOString().split("T")[0];
+  // Get display slots - show all slots from backend, don't filter
+  const getDisplaySlots = (dateStr: string) => {
+    // Just return all slots from backend - they already have isAvailable and status set
+    return slots;
+  };
 
-    // If not today, show all slots
-    if (dateStr !== today) {
-      return slots;
-    }
-
-    // If today, filter out past slots and slots less than 1 hour away
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const bufferMinutes = 60; // 1 hour buffer
-
-    return slots.filter((slot) => {
-      const slotTime = slot.startTime; // "HH:mm:ss"
-      const [hours, minutes] = slotTime.split(":").map(Number);
-      const slotMinutes = hours * 60 + minutes;
-
-      // Only show slots at least 1 hour in future
-      return slotMinutes > currentMinutes + bufferMinutes;
-    });
+  // Check if slot is booked or past
+  const isSlotDisabled = (slot: Slot) => {
+    const isBooked = slot.status === "booked" || slot.isAvailable === false;
+    const isPast = slot.status === "past";
+    return isBooked || isPast;
   };
 
   // Load slots when modal opens
@@ -180,7 +188,7 @@ export function RescheduleButton({
       setIsLoading(true);
       // Pass date and serviceId to get availability status
       const queryParams = new URLSearchParams();
-      const today = new Date().toISOString().split("T")[0];
+      const today = getLocalDateString(new Date());
       queryParams.append("date", today);
       queryParams.append("serviceId", serviceId.toString());
 
@@ -210,9 +218,10 @@ export function RescheduleButton({
   // Reload slots when date changes
   useEffect(() => {
     if (selectedDate && showModal) {
-      loadSlotsForDate(selectedDate);
+      const dateStr = getLocalDateString(selectedDate);
+      loadSlotsForDate(dateStr);
     }
-  }, [selectedDate]);
+  }, [selectedDate, showModal]);
 
   const loadSlotsForDate = async (dateStr: string) => {
     try {
@@ -302,7 +311,7 @@ export function RescheduleButton({
       const bookingData = {
         serviceId,
         slotId: selectedSlot.id,
-        bookingDate: new Date(selectedDate).toISOString(),
+        bookingDate: getLocalDateString(selectedDate),
         reschedule: true,
         bookingId,
         reason: reasonString, // Send reason to backend
@@ -444,7 +453,7 @@ export function RescheduleButton({
   const handlePaymentSuccess = () => {
     console.log("✅ Reschedule payment successful");
     setPaymentOrderData(null);
-    setSelectedDate("");
+    setSelectedDate(undefined);
     setSelectedSlot(null);
     onRescheduled?.();
   };
@@ -462,16 +471,14 @@ export function RescheduleButton({
     return `${displayHours}:${displayMinutes} ${period}`;
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+    return dateObj.toLocaleDateString("en-US", {
       weekday: "long",
       month: "long",
       day: "numeric",
     });
   };
-
-  const availableDates = getNext3Days();
 
   const SlotLegend = () => (
     <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground py-2 flex-wrap">
@@ -491,6 +498,10 @@ export function RescheduleButton({
         <div className="w-4 h-4 rounded border border-border bg-muted opacity-50" />
         <span>Booked</span>
       </div>
+      <div className="flex items-center gap-1.5">
+        <div className="w-4 h-4 rounded bg-red-100 dark:bg-red-950 border-2 border-red-300 dark:border-red-700 opacity-50" />
+        <span>Past</span>
+      </div>
     </div>
   );
 
@@ -507,25 +518,48 @@ export function RescheduleButton({
         {/* Date Selection */}
         <div>
           <label className="text-sm font-medium mb-3 block">Select Date</label>
-          <div className="grid grid-cols-3 gap-3">
-            {availableDates.map((day) => (
-              <button
-                key={day.value}
-                type="button"
-                onClick={() => {
-                  setSelectedDate(day.value);
-                  setSelectedSlot(null);
-                }}
-                className={`p-1 rounded-sm border-2 text-center transition-all ${
-                  selectedDate === day.value
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border hover:border-primary/50 hover:bg-muted/50"
-                }`}
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !selectedDate && "text-muted-foreground",
+                )}
               >
-                <div className="text-sm font-medium">{day.displayDate}</div>
-              </button>
-            ))}
-          </div>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate
+                  ? selectedDate.toLocaleDateString("en-IN", {
+                      weekday: "short",
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <CalendarPicker
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  handleDateChange(date);
+                  setCalendarOpen(false);
+                }}
+                disabled={(date) => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  if (date < today) return true;
+                  if (date.toDateString() === today.toDateString()) {
+                    const now = new Date();
+                    if (now.getHours() >= 17) return true;
+                  }
+                  return false;
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Time Slot Selection */}
@@ -555,7 +589,8 @@ export function RescheduleButton({
             </div>
           ) : (
             (() => {
-              const displaySlots = getAvailableSlotsForDate(selectedDate);
+              const dateStr = selectedDate ? getLocalDateString(selectedDate) : "";
+              const displaySlots = getDisplaySlots(dateStr);
 
               if (displaySlots.length === 0) {
                 return (
@@ -571,16 +606,16 @@ export function RescheduleButton({
               return (
                 <div className="grid grid-cols-3 gap-2 mt-3">
                   {displaySlots.map((slot) => {
+                    const isPast = slot.status === "past";
                     const booked = isSlotBooked(slot);
                     const isSelected = selectedSlot?.id === slot.id;
-                    // Normalize both dates to YYYY-MM-DD for comparison
                     const normalizedCurrentDate = currentBookingDate
-                      ? new Date(currentBookingDate).toISOString().split("T")[0]
+                      ? getLocalDateString(new Date(currentBookingDate))
                       : "";
                     const isCurrent =
                       slot.id === currentSlotId &&
-                      selectedDate === normalizedCurrentDate;
-                    const isDisabled = booked || isCurrent;
+                      dateStr === normalizedCurrentDate;
+                    const isDisabled = isSlotDisabled(slot) || isCurrent;
 
                     return (
                       <button
@@ -593,9 +628,11 @@ export function RescheduleButton({
                             ? "bg-black dark:bg-white text-white dark:text-black shadow-lg"
                             : isCurrent
                               ? "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/50 opacity-60 cursor-not-allowed"
-                              : booked
-                                ? "border-border bg-muted opacity-50 cursor-not-allowed"
-                                : "bg-green-100 dark:bg-green-950 border-2 border-green-500 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-900"
+                              : isPast
+                                ? "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 opacity-40 cursor-not-allowed"
+                                : booked
+                                  ? "border-border bg-muted opacity-50 cursor-not-allowed"
+                                  : "bg-green-100 dark:bg-green-950 border-2 border-green-500 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-900"
                         }`}
                       >
                         {formatTime(slot.startTime)}
@@ -688,7 +725,7 @@ export function RescheduleButton({
           variant="outline"
           onClick={() => {
             setShowModal(false);
-            setSelectedDate("");
+            setSelectedDate(undefined);
             setSelectedSlot(null);
             setSelectedReasons([]);
             setOtherReason("");

@@ -269,6 +269,7 @@ export const API_ENDPOINTS = {
   ADMIN_CRON_JOB_BY_ID: (id: string | number) => `/admin/cron-jobs/jobs/${id}`,
   ADMIN_CRON_JOB_TRIGGER: (id: string | number) => `/admin/cron-jobs/jobs/${id}/trigger`,
   ADMIN_CRON_JOB_LOGS: (id: string | number) => `/admin/cron-jobs/jobs/${id}/logs`,
+  ADMIN_CRON_LOGS_ALL: "/admin/cron-jobs/logs/all",
   ADMIN_CRON_STATS: "/admin/cron-jobs/stats",
   ADMIN_CRON_JOB_SYNC: (id: string | number) => `/admin/cron-jobs/jobs/${id}/sync`,
   ADMIN_CRON_JOBS_SYNC_ALL: "/admin/cron-jobs/jobs/sync-all",

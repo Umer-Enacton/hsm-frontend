@@ -302,6 +302,7 @@ export function CustomerHeader({
                       <Button
                         variant="ghost"
                         className="flex items-center gap-2 px-2"
+                        data-tour-user-menu
                       >
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={user.avatarUrl} alt={user.name} />
@@ -335,7 +336,7 @@ export function CustomerHeader({
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={onProfileClick}>
+                      <DropdownMenuItem onClick={onProfileClick} data-tour-profile>
                         <User className="mr-2 h-4 w-4" />
                         Profile
                       </DropdownMenuItem>
@@ -418,7 +419,10 @@ export function CustomerHeader({
           <div className="mt-auto border-t p-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-3 rounded-md p-2 hover:bg-accent cursor-pointer transition-colors text-left w-full">
+                <div 
+                  className="flex items-center gap-3 rounded-md p-2 hover:bg-accent cursor-pointer transition-colors text-left w-full"
+                  data-tour-mobile-profile-trigger
+                >
                   <Avatar className="h-9 w-9 border shrink-0">
                     <AvatarImage src={user.avatarUrl} alt={user.name} />
                     <AvatarFallback>
@@ -455,6 +459,7 @@ export function CustomerHeader({
                     onProfileClick?.();
                     setMobileMenuOpen(false);
                   }}
+                  data-tour-profile
                 >
                   <User className="mr-2 h-4 w-4" />
                   Profile
@@ -491,6 +496,7 @@ export function CustomerHeader({
           onClick={() => setMobileMenuOpen(true)}
           className="fixed bottom-6 left-6 z-40 h-14 w-14 rounded-lg shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 md:hidden transition-all hover:scale-105 active:scale-95 border-2 border-background"
           aria-label="Open sidebar"
+          data-tour-mobile-menu
         >
           <Menu className="h-6 w-6" />
         </Button>

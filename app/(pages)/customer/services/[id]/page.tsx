@@ -23,6 +23,11 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -34,6 +39,7 @@ import {
   useBusinessSlots,
   useServiceFeedback,
 } from "@/lib/queries";
+import { QUERY_KEYS } from "@/lib/queries/query-keys";
 import type { ServiceDetails, Slot, Address } from "@/types/customer";
 import type {
   PaymentOrderRequest,
@@ -48,6 +54,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { invalidateAfterBookingAction } from "@/lib/queries/query-invalidation";
 import { useRazorpayScript } from "@/components/customer/payment/RazorpayCheckout";
 import { useTheme } from "next-themes";
+import { Calendar } from "@/components/ui/calendar";
 
 interface Feedback {
   id: number;
@@ -84,25 +91,24 @@ export default function ServiceDetailsPage({
     error: serviceError,
   } = useCustomerService(parseInt(id));
 
-  const { data: addresses = [], isLoading: isLoadingAddresses } = useAddresses();
+  const { data: addresses = [], isLoading: isLoadingAddresses } =
+    useAddresses();
 
-  const { data: feedbacks = [], isLoading: isLoadingFeedback } = useServiceFeedback(parseInt(id), 10);
+  const { data: feedbacks = [], isLoading: isLoadingFeedback } =
+    useServiceFeedback(parseInt(id), 10);
 
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+    new Date(),
+  );
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [isBooking, setIsBooking] = useState(false);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
-  // Use TanStack query hook for slots based on current selections
-  const { data: allSlots = [], isLoading: isLoadingSlots } = useBusinessSlots(
-    service?.provider?.id,
-    selectedDate,
-    service?.id
-  );
-
-  // Payment order data (created when slot is available)
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  // Local state for slots (like RescheduleButton)
+  const [allSlots, setAllSlots] = useState<Slot[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
   // Carousel state
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
@@ -110,67 +116,61 @@ export default function ServiceDetailsPage({
   const carouselRef = useRef<HTMLDivElement>(null);
   const [reviewsPerView, setReviewsPerView] = useState(3);
 
-  // Initialize selected address when addresses load
+  // Initial fetch when service loads
   useEffect(() => {
-    if (addresses.length > 0 && !selectedAddress) {
-      setSelectedAddress(addresses[0]);
+    if (service?.provider?.id && selectedDate) {
+      fetchSlotsForDate(selectedDate);
     }
-  }, [addresses]);
+  }, [service?.provider?.id]);
 
-  // Initialize today's date when service is loaded
-  useEffect(() => {
-    if (service?.provider?.id) {
-      if (!selectedDate) {
-        const today = new Date().toISOString().split("T")[0];
-        setSelectedDate(today);
-      }
-      setHasLoadedOnce(true);
-    }
-  }, [service]);
-
-  // Update reviews per view based on screen size
-  useEffect(() => {
-    const updateReviewsPerView = () => {
-      if (window.innerWidth >= 1024) {
-        setReviewsPerView(3);
-      } else if (window.innerWidth >= 640) {
-        setReviewsPerView(2);
-      } else {
-        setReviewsPerView(1);
-      }
-    };
-
-    updateReviewsPerView();
-    window.addEventListener("resize", updateReviewsPerView);
-    return () => window.removeEventListener("resize", updateReviewsPerView);
-  }, []);
-
-  // Auto-scroll carousel
-  useEffect(() => {
-    if (feedbacks.length <= reviewsPerView) return;
-
-    const interval = setInterval(() => {
-      if (!autoScrollPausedRef.current) {
-        setCurrentReviewIndex((prev) => {
-          const maxIndex = feedbacks.length - reviewsPerView;
-          return prev >= maxIndex ? 0 : prev + 1;
-        });
-      }
-    }, 4000); // Auto-scroll every 4 seconds
-
-    return () => clearInterval(interval);
-  }, [feedbacks.length, reviewsPerView]);
-
-  // Carousel handlers
-  const handleNextReview = () => {
-    const maxIndex = feedbacks.length - reviewsPerView;
-    setCurrentReviewIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+  // Handlers
+  const handleDateChange = (date: Date | undefined) => {
+    if (!date) return;
+    
+    // Create date in local timezone to avoid UTC issues
+    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    console.log(`📅 Date selected: ${localDate.toDateString()}`);
+    
+    setSelectedDate(localDate);
+    setSelectedSlot(null);
+    
+    // Fetch slots immediately for selected date
+    fetchSlotsForDate(localDate);
   };
 
-  const handlePreviousReview = () => {
-    setCurrentReviewIndex((prev) =>
-      prev <= 0 ? feedbacks.length - reviewsPerView : prev - 1,
-    );
+  const fetchSlotsForDate = async (date: Date) => {
+    if (!service?.provider?.id) return;
+    
+    try {
+      setIsLoadingSlots(true);
+      // Use local date string to avoid timezone issues
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      console.log(`🔄 Fetching slots for: ${dateStr} (input: ${date.toISOString()})`);
+      
+      const params = new URLSearchParams();
+      params.append("date", dateStr);
+      params.append("serviceId", service.id.toString());
+      
+      const response = await api.get<{ slots: Slot[] }>(
+        `${API_ENDPOINTS.SLOTS_PUBLIC(service.provider.id)}?${params.toString()}`
+      );
+      
+      const slotsArray = response.slots || [];
+      setAllSlots(slotsArray.map(slot => ({
+        ...slot,
+        isAvailable: slot.isAvailable ?? true,
+        status: slot.status ?? "available"
+      })));
+      console.log(`✅ Loaded ${slotsArray.length} slots for ${dateStr}`);
+    } catch (error) {
+      console.error("Error loading slots:", error);
+      setAllSlots([]);
+    } finally {
+      setIsLoadingSlots(false);
+    }
   };
 
   const handleMouseEnter = () => {
@@ -181,60 +181,12 @@ export default function ServiceDetailsPage({
     autoScrollPausedRef.current = false;
   };
 
-  // Get next 3 days only (Today, Tomorrow, Overmorrow)
-  const getNext3Days = () => {
-    const days = [];
-    const today = new Date();
-
-    for (let i = 0; i < 3; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-
-      const dateStr = date.toISOString().split("T")[0];
-
-      days.push({
-        value: dateStr,
-        label: i === 0 ? "Today" : i === 1 ? "Tomorrow" : "Overmorrow",
-        displayDate: date.toLocaleDateString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-        }),
-      });
-    }
-
-    return days;
+  const handlePreviousReview = () => {
+    setCurrentReviewIndex((prev) => Math.max(0, prev - 1));
   };
 
-  // Smart slot filtering - exclude past slots for today
-  const getAvailableSlotsForDate = (dateStr: string) => {
-    const today = new Date().toISOString().split("T")[0];
-
-    // If not today, show all slots
-    if (dateStr !== today) {
-      return allSlots;
-    }
-
-    // If today, filter out past slots and slots less than 30 min away
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const bufferMinutes = 30; // 30 minute buffer for provider arrival
-
-    return allSlots.filter((slot) => {
-      const slotTime = slot.startTime; // "HH:mm:ss"
-      const [hours, minutes] = slotTime.split(":").map(Number);
-      const slotMinutes = hours * 60 + minutes;
-
-      // Only show slots at least 30 minutes in future
-      return slotMinutes > currentMinutes + bufferMinutes;
-    });
-  };
-
-  // Handlers
-  const handleDateChange = (date: string) => {
-    console.log(`📅 Date changed to: ${date}`);
-    setSelectedDate(date);
-    setSelectedSlot(null);
+  const handleNextReview = () => {
+    setCurrentReviewIndex((prev) => Math.min(feedbacks.length - reviewsPerView, prev + 1));
   };
 
   const handleSlotSelect = (slot: Slot) => {
@@ -273,9 +225,20 @@ export default function ServiceDetailsPage({
         response.paymentIntentId,
       );
 
+      // Invalidate slots cache - will refresh when user navigates away or on next visit
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.SLOTS],
+      });
+
       // Verify Razorpay is loaded
-      if (!scriptLoaded || typeof window === "undefined" || !(window as any).Razorpay) {
-        toast.error("Payment gateway is loading. Please wait a moment and try again.");
+      if (
+        !scriptLoaded ||
+        typeof window === "undefined" ||
+        !(window as any).Razorpay
+      ) {
+        toast.error(
+          "Payment gateway is loading. Please wait a moment and try again.",
+        );
         setIsCheckingAvailability(false);
         return;
       }
@@ -298,17 +261,23 @@ export default function ServiceDetailsPage({
           payment_intent_id: response.paymentIntentId.toString(),
           service_name: service.name,
         },
-        timeout: 60, // Enforce 1-minute expiration directly in Razorpay SDK
+        timeout: 90, // Enforce 90-second expiration directly in Razorpay SDK
         theme: {
           color: isDark ? "#334155" : "#000000",
         },
         modal: {
           ondismiss: async () => {
-            console.log("ℹ️ Razorpay modal closed by user - cancelling payment intent");
+            console.log(
+              "ℹ️ Razorpay modal closed by user - cancelling payment intent",
+            );
             setIsCheckingAvailability(false);
             try {
               await api.post(API_ENDPOINTS.PAYMENT.CANCEL_INTENT, {
                 paymentIntentId: response.paymentIntentId,
+              });
+              // Invalidate slots cache - lock released
+              queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.SLOTS],
               });
             } catch (err) {
               console.warn("⚠️ Failed to cancel payment intent:", err);
@@ -328,9 +297,9 @@ export default function ServiceDetailsPage({
             rzpResponse.payload?.payment?.id ||
             rzpResponse.payload?.payment?.razorpay_payment_id ||
             rzpResponse.razorpay_payment_id;
-          
+
           const razorpayOrderId = response.razorpayOrderId;
-          
+
           const razorpaySignature =
             rzpResponse.payload?.payment?.razorpay_signature ||
             rzpResponse.razorpay_signature ||
@@ -359,16 +328,18 @@ export default function ServiceDetailsPage({
 
       rzp.on("payment.failed", async function (error: any) {
         console.error("❌ Razorpay payment.failed event:", error);
-        
+
         let errorCode, errorDescription;
         if (error.payload && error.payload.error) {
           errorCode = error.payload.error.code;
           errorDescription = error.payload.error.description;
         } else if (error.error) {
           errorCode = error.error.code;
-          errorDescription = error.error.description || error.error.metadata?.reason;
+          errorDescription =
+            error.error.description || error.error.metadata?.reason;
         } else {
-          errorDescription = error.description || error.reason || "Payment failed";
+          errorDescription =
+            error.description || error.reason || "Payment failed";
         }
 
         try {
@@ -445,7 +416,7 @@ export default function ServiceDetailsPage({
     });
   };
 
-  const showSkeleton = !hasLoadedOnce || isLoadingService;
+  const showSkeleton = isLoadingService;
 
   // Handle error
   if (serviceError) {
@@ -463,13 +434,14 @@ export default function ServiceDetailsPage({
     );
   }
 
-  // Set default date
+  // Set default date to today if not set
   useEffect(() => {
-    const days = getNext3Days();
-    if (!selectedDate && days.length > 0) {
-      setSelectedDate(days[0].value);
+    if (!selectedDate) {
+      const today = new Date();
+      setSelectedDate(today);
+      fetchSlotsForDate(today);
     }
-  }, [allSlots]);
+  }, []);
 
   // Check if all selections are complete
   const canBook = service && selectedDate && selectedSlot && selectedAddress;
@@ -586,7 +558,8 @@ export default function ServiceDetailsPage({
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
                             <span>
-                              {service.provider?.city}, {service.provider?.state}
+                              {service.provider?.city},{" "}
+                              {service.provider?.state}
                             </span>
                           </div>
                         </div>
@@ -654,7 +627,8 @@ export default function ServiceDetailsPage({
                           <div>
                             <p className="font-medium text-sm">Service Area</p>
                             <p className="text-sm text-muted-foreground">
-                              {service.provider?.city}, {service.provider?.state}
+                              {service.provider?.city},{" "}
+                              {service.provider?.state}
                             </p>
                           </div>
                         </div>
@@ -901,23 +875,57 @@ export default function ServiceDetailsPage({
                         <h3 className="text-sm font-semibold mb-4">
                           Select Date
                         </h3>
-                        <div className="grid grid-cols-3 gap-3">
-                          {getNext3Days().map((day) => (
-                            <button
-                              key={day.value}
-                              onClick={() => handleDateChange(day.value)}
-                              className={`p-1 rounded-sm border-2 text-center transition-all ${
-                                selectedDate === day.value
-                                  ? "border-primary bg-primary text-primary-foreground"
-                                  : "border-border hover:border-primary/50 hover:bg-muted/50"
-                              }`}
+                        <Popover
+                          open={calendarOpen}
+                          onOpenChange={setCalendarOpen}
+                        >
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !selectedDate && "text-muted-foreground",
+                              )}
                             >
-                              <div className="text-sm font-medium">
-                                {day.displayDate}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {selectedDate
+                                ? selectedDate.toLocaleDateString("en-IN", {
+                                    weekday: "short",
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })
+                                : "Pick a date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={selectedDate}
+                              onSelect={(date) => {
+                                handleDateChange(date);
+                                setCalendarOpen(false);
+                              }}
+                              disabled={(date) => {
+                                // Disable dates before today
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                if (date < today) return true;
+                                
+                                // For today's date, also check if all slots have passed
+                                if (date.toDateString() === today.toDateString()) {
+                                  const now = new Date();
+                                  const currentHour = now.getHours();
+                                  const currentMinutes = now.getMinutes();
+                                  // If current time is after 5:30 PM (17:00), disable today
+                                  if (currentHour >= 17) return true;
+                                }
+                                return false;
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
                       </div>
 
                       <Separator />
@@ -930,7 +938,7 @@ export default function ServiceDetailsPage({
                         <div className="mb-3">
                           <p className="text-xs text-muted-foreground">
                             {selectedDate
-                              ? formatDate(selectedDate)
+                              ? formatDate(selectedDate.toISOString())
                               : "Select a date first"}
                           </p>
                         </div>
@@ -962,9 +970,8 @@ export default function ServiceDetailsPage({
                         )}
 
                         {(() => {
-                          const availableSlots = selectedDate
-                            ? getAvailableSlotsForDate(selectedDate)
-                            : [];
+                          // Use allSlots directly - it's already filtered by date
+                          const availableSlots = allSlots;
 
                           if (!selectedDate) {
                             return (
@@ -1003,28 +1010,34 @@ export default function ServiceDetailsPage({
 
                           return (
                             <div className="grid grid-cols-3 sm:grid-cols-3 gap-2">
-                                {availableSlots.map((slot) => {
-                                  const isBooked = slot.isAvailable === false;
+                              {availableSlots.map((slot) => {
+                                const isBooked = slot.isAvailable === false;
+                                const isPast = slot.status === "past";
+                                const isDisabled = isBooked || isPast;
                                 const isSelected = selectedSlot?.id === slot.id;
 
                                 return (
                                   <button
                                     key={slot.id}
                                     onClick={() =>
-                                      !isBooked && handleSlotSelect(slot)
+                                      !isDisabled && handleSlotSelect(slot)
                                     }
-                                    disabled={isBooked}
+                                    disabled={isDisabled}
                                     className={`px-3 py-2 rounded-md border text-sm font-medium transition-all ${
                                       isSelected
                                         ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
                                         : isBooked
                                           ? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 border-gray-300 dark:border-gray-700 cursor-not-allowed opacity-60"
-                                          : "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400 border-green-500 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-900 hover:border-green-600 dark:hover:border-green-600"
+                                          : isPast
+                                            ? "bg-red-100 dark:bg-red-950 text-red-400 dark:text-red-600 border-red-500 dark:border-red-700 cursor-not-allowed opacity-50"
+                                            : "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400 border-green-500 dark:border-green-700 hover:bg-green-200 dark:hover:bg-green-900 hover:border-green-600 dark:hover:border-green-600"
                                     }`}
                                     title={
                                       isBooked
                                         ? "This slot is already booked"
-                                        : "Available for booking"
+                                        : isPast
+                                          ? "This slot has passed"
+                                          : "Available for booking"
                                     }
                                   >
                                     {formatTime(slot.startTime)}
@@ -1158,7 +1171,6 @@ export default function ServiceDetailsPage({
           )
         )}
       </div>
-
     </div>
   );
 }

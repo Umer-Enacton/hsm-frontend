@@ -518,13 +518,13 @@ export default function CustomerServicesPage() {
                     {services.map((service) => (
                       <Card
                         key={service.id}
-                        className="group hover:border-primary/50 hover:shadow-md transition-all cursor-pointer overflow-hidden"
+                        className="group hover:border-primary/50 p-0 hover:shadow-md transition-all cursor-pointer overflow-hidden"
                         onClick={() =>
                           router.push(`/customer/services/${service.id}`)
                         }
                       >
                         {/* Service Image */}
-
+                        <img src={service.image} alt={service.name} />
                         {/* Verified Badge overlay */}
                         {service.provider?.isVerified && (
                           <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow-sm">
