@@ -56,34 +56,41 @@ export function CustomerTour({ userId }: CustomerTourProps) {
   useEffect(() => {
     if (isTourActiveRef.current && driverRef.current) {
       const stepIndex = driverRef.current.getActiveIndex();
+      const activeStep = driverRef.current.getActiveStep();
+      const stepSelector = activeStep?.element as string || '';
       
-      // Step 3 and beyond require the user to be on the Profile page.
-      if (stepIndex !== undefined && stepIndex >= 3) {
-        if (!pathname.includes('/profile')) {
-          console.log(">> Navigated away from profile during tour. Redirecting back to resume...");
-          
-          // Clean up broken tour
-          if (clickListenerRef.current) {
-            document.removeEventListener("pointerdown", clickListenerRef.current, true);
-            document.removeEventListener("pointerup", clickListenerRef.current, true);
-            clickListenerRef.current = null;
-          }
-          if (resizeIntervalRef.current) {
-            clearInterval(resizeIntervalRef.current);
-            resizeIntervalRef.current = null;
-          }
-          
-          driverRef.current.destroy();
-          driverRef.current = null;
-          
-          isTourActiveRef.current = false;
-          
-          // Bookmark to resume at Step 3 (Address Tab) 
-          resumeStepRef.current = 3;
-          
-          // Redirect them right back
-          router.push('/customer/profile');
+      // These selectors only exist on the Profile page
+      const profilePageSelectors = [
+        'data-tour-address-tab', 'data-tour-add-address', 'data-tour-street',
+        'data-tour-state', 'data-tour-state-options', 'data-tour-city',
+        'data-tour-city-options', 'data-tour-zip', 'data-tour-submit-address'
+      ];
+      const isOnProfileStep = profilePageSelectors.some(sel => stepSelector.includes(sel));
+      
+      if (isOnProfileStep && !pathname.includes('/profile')) {
+        console.log(">> Navigated away from profile during tour. Redirecting back to resume...");
+        
+        // Clean up broken tour
+        if (clickListenerRef.current) {
+          document.removeEventListener("pointerdown", clickListenerRef.current, true);
+          document.removeEventListener("pointerup", clickListenerRef.current, true);
+          clickListenerRef.current = null;
         }
+        if (resizeIntervalRef.current) {
+          clearInterval(resizeIntervalRef.current);
+          resizeIntervalRef.current = null;
+        }
+        
+        driverRef.current.destroy();
+        driverRef.current = null;
+        
+        isTourActiveRef.current = false;
+        
+        // Bookmark to resume at Address Tab (index 1 on the profile-initialized tour)
+        sessionStorage.setItem('hsm_tour_resume_step', '1');
+        
+        // Redirect them right back
+        router.push('/customer/profile');
       }
     }
     
@@ -163,6 +170,7 @@ export function CustomerTour({ userId }: CustomerTourProps) {
     const isStateOptionsStep = targetEl.hasAttribute('data-tour-state-options');
     const isCityOptionsStep = targetEl.hasAttribute('data-tour-city-options');
     const isProfileStep = targetEl.hasAttribute('data-tour-profile');
+    const isAddressTabStep = targetEl.hasAttribute('data-tour-address-tab');
 
     console.log("=== CLICK DEBUG ===");
     console.log("isStateStep:", isStateStep);
@@ -283,6 +291,32 @@ export function CustomerTour({ userId }: CustomerTourProps) {
       return;
     }
 
+    // Address Tab click - wait for the tab content to render before advancing
+    if (isAddressTabStep) {
+      if (!isPointerDown) return;
+      const clickedElement = e.target as HTMLElement;
+      if (targetEl.contains(clickedElement)) {
+        console.log(">> Address tab clicked. Waiting for Add Address button...");
+        const waitForAddAddress = (attempts = 0) => {
+          if (attempts > 20) {
+            console.error(">> Add Address button never appeared");
+            return;
+          }
+          const addBtn = document.querySelector('[data-tour-add-address]');
+          if (!addBtn) {
+            setTimeout(() => waitForAddAddress(attempts + 1), 300);
+            return;
+          }
+          console.log(">> Add Address button found! Advancing...");
+          if (driverRef.current && driverRef.current.hasNextStep()) {
+            driverRef.current.moveNext();
+          }
+        };
+        waitForAddAddress();
+      }
+      return;
+    }
+
     // Step 2: Go to Profile - Bridge the cross-page navigation gracefully
     if (isProfileStep) {
       if (!isPointerDown) return;
@@ -292,9 +326,24 @@ export function CustomerTour({ userId }: CustomerTourProps) {
       if (clickedElement.closest('[data-tour-profile]')) {
         console.log(">> Profile clicked. Bridging navigation...");
         
+        // CRITICAL: Clean up event listeners BEFORE destroying driver
+        // Otherwise the old listeners persist and double-fire on the resumed tour
+        if (clickListenerRef.current) {
+          document.removeEventListener("pointerdown", clickListenerRef.current, true);
+          document.removeEventListener("pointerup", clickListenerRef.current, true);
+          clickListenerRef.current = null;
+        }
+        if (resizeIntervalRef.current) {
+          clearInterval(resizeIntervalRef.current);
+          resizeIntervalRef.current = null;
+        }
+        
         if (driverRef.current) {
           driverRef.current.destroy();
+          driverRef.current = null;
         }
+        
+        isTourActiveRef.current = false;
 
         // Give the page time to route or remount if they are already there
         if (typeof window !== "undefined") {
@@ -391,6 +440,21 @@ export function CustomerTour({ userId }: CustomerTourProps) {
 
         // Store current target element
         currentTargetRef.current = element as HTMLElement | null;
+        
+        // On mobile, when highlighting the profile trigger at the bottom of the sidebar,
+        // scroll the sidebar container so that the element is visible.
+        if (step?.element === '[data-tour-mobile-profile-trigger]' && element) {
+          const sidebar = element.closest('aside');
+          if (sidebar) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Refresh the highlight position after scroll completes
+            setTimeout(() => {
+              if (driverRef.current) {
+                driverRef.current.refresh();
+              }
+            }, 400);
+          }
+        }
         
         // Driver.js determines the overlay hole size on mount. Radix Select dropdowns 
         // animate in and aggressively shift position during scrolling in 'item-aligned' mode.
