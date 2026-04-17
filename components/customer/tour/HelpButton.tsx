@@ -366,11 +366,6 @@ export function HelpButton() {
               "relative h-12 w-12 rounded-full shadow-lg",
               "bg-primary text-primary-foreground",
               "hover:bg-primary/90 active:scale-95 transition-all duration-200",
-              // Attention pulse shown once to first-time visitors
-              isFirstVisit && [
-                "before:absolute before:inset-0 before:rounded-full",
-                "before:animate-ping before:bg-primary/60 before:opacity-75",
-              ],
             )}
           >
             {open ? (
