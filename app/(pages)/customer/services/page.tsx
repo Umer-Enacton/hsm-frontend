@@ -216,7 +216,7 @@ export default function CustomerServicesPage() {
 
         {/* Search Bar - ALWAYS VISIBLE */}
         <div className="mb-6">
-          <div className="flex gap-3">
+          <div className="flex gap-3" data-tour-search-bar="">
             <div className="relative flex-1 max-w-7xl">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -333,7 +333,10 @@ export default function CustomerServicesPage() {
               </div>
 
               {/* Location */}
-              <div className="space-y-3 rounded-md border p-4">
+              <div
+                className="space-y-3 rounded-md border p-4"
+                data-tour-state-filter=""
+              >
                 <span className="text-xs font-semibold uppercase text-muted-foreground">
                   Location
                 </span>
@@ -378,7 +381,10 @@ export default function CustomerServicesPage() {
               </div>
 
               {/* Category */}
-              <div className="space-y-3 rounded-md border p-4">
+              <div
+                className="space-y-3 rounded-md border p-4"
+                data-tour-category-filter=""
+              >
                 <span className="text-xs font-semibold uppercase text-muted-foreground">
                   Category
                 </span>
@@ -514,7 +520,10 @@ export default function CustomerServicesPage() {
               <>
                 {/* Grid View */}
                 {viewMode === "grid" && (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div
+                    className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                    data-tour-services-grid=""
+                  >
                     {services.map((service) => (
                       <Card
                         key={service.id}

@@ -54,6 +54,7 @@ function ThemeToggle() {
       type="button"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"
+      data-tour-theme-toggle=""
     >
       <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
       <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -95,7 +96,10 @@ export function CustomerHeader({
         <div className="max-w-7xl mx-auto flex h-16 items-center gap-4 px-4">
           <div className="flex flex-1 items-center gap-4">
             {/* Logo - Desktop */}
-            <Link href="/customer" className="hidden md:flex items-center space-x-2">
+            <Link
+              href="/customer"
+              className="hidden md:flex items-center space-x-2"
+            >
               <div className="flex h-8 w-8 items-center justify-center overflow-hidden">
                 <Image
                   src="/homefixcareicon-removebg-preview-removebg-preview.png"
@@ -105,15 +109,13 @@ export function CustomerHeader({
                   className="h-8 w-8 object-cover"
                 />
               </div>
-              <span className="font-bold">
-                HomeFixCare
-              </span>
+              <span className="font-bold">HomeFixCare</span>
             </Link>
 
             {/* Logo - Mobile */}
-            <button 
+            <button
               className="flex md:hidden items-center space-x-2 cursor-pointer p-0 bg-transparent border-none"
-              onClick={() => setMobileMenuOpen(prev => !prev)}
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
               type="button"
             >
               <div className="flex h-8 w-8 items-center justify-center overflow-hidden">
@@ -142,6 +144,12 @@ export function CustomerHeader({
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
+                  {...(item.href === "/customer/services"
+                    ? { "data-tour-nav-browse": "" }
+                    : {})}
+                  {...(item.href === "/customer/bookings"
+                    ? { "data-tour-nav-bookings": "" }
+                    : {})}
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
@@ -218,7 +226,14 @@ export function CustomerHeader({
 
                             // Get user role for role-based redirects
                             const roleId = getUserRole();
-                            const rolePrefix = roleId === 1 ? "/customer" : roleId === 2 ? "/provider" : roleId === 3 ? "/admin" : "/staff";
+                            const rolePrefix =
+                              roleId === 1
+                                ? "/customer"
+                                : roleId === 2
+                                  ? "/provider"
+                                  : roleId === 3
+                                    ? "/admin"
+                                    : "/staff";
 
                             // Fallback for policy update notifications - use role-based paths
                             let finalActionUrl = actionUrl;
@@ -226,7 +241,10 @@ export function CustomerHeader({
                               finalActionUrl = `${rolePrefix}/privacy`;
                             } else if (!actionUrl && policyType === "terms") {
                               finalActionUrl = `${rolePrefix}/terms`;
-                            } else if (!actionUrl && policyType === "cancellation") {
+                            } else if (
+                              !actionUrl &&
+                              policyType === "cancellation"
+                            ) {
                               finalActionUrl = `${rolePrefix}/terms`;
                             }
 
@@ -336,7 +354,10 @@ export function CustomerHeader({
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={onProfileClick} data-tour-profile>
+                      <DropdownMenuItem
+                        onClick={onProfileClick}
+                        data-tour-profile
+                      >
                         <User className="mr-2 h-4 w-4" />
                         Profile
                       </DropdownMenuItem>
@@ -419,7 +440,7 @@ export function CustomerHeader({
           <div className="mt-auto border-t p-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div 
+                <div
                   className="flex items-center gap-3 rounded-md p-2 hover:bg-accent cursor-pointer transition-colors text-left w-full"
                   data-tour-mobile-profile-trigger
                 >
@@ -440,11 +461,7 @@ export function CustomerHeader({
                   <ChevronUp className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                side="top"
-                className="w-56 mb-2"
-              >
+              <DropdownMenuContent align="end" side="top" className="w-56 mb-2">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium">{user.name}</p>
@@ -504,4 +521,3 @@ export function CustomerHeader({
     </>
   );
 }
-

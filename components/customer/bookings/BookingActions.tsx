@@ -40,8 +40,6 @@ export function BookingActions({
           👁 View Details
         </button>
 
-
-
         {status === "confirmed" && (
           <>
             <RescheduleButton
@@ -61,14 +59,15 @@ export function BookingActions({
               status={status}
               totalPrice={booking.service?.price || 0}
               bookingDate={booking.bookingDate}
-              bookingTime={booking.slot?.startTime || (booking as { startTime?: string }).startTime}
+              bookingTime={
+                booking.slot?.startTime ||
+                (booking as { startTime?: string }).startTime
+              }
               onCancel={onActionComplete}
               variant="dropdown"
             />
           </>
         )}
-
-
 
         {status === "completed" && (
           <>
@@ -84,10 +83,7 @@ export function BookingActions({
         )}
 
         {status === "cancelled" && (
-          <RebookButton
-            serviceId={serviceId}
-            variant="dropdown"
-          />
+          <RebookButton serviceId={serviceId} variant="dropdown" />
         )}
 
         {/* Common Actions */}
@@ -101,46 +97,55 @@ export function BookingActions({
   // Expanded row variant - shows buttons inline
   return (
     <div className={`flex flex-wrap gap-2 ${className}`}>
-
       {/* CONFIRMED: Reschedule + Cancel + View Invoice + Download Invoice */}
       {status === "confirmed" && (
         <>
-          <RescheduleButton
-            bookingId={id}
-            businessId={businessId}
-            serviceId={serviceId}
-            servicePrice={booking.service?.price || 0}
-            serviceName={booking.service?.name || serviceName || "Service"}
-            currentSlotId={booking.slotId}
-            currentBookingDate={booking.bookingDate}
-            rescheduleCount={booking.rescheduleCount || 0}
-            onRescheduled={onActionComplete}
-          />
-          <CancelBookingButton
-            bookingId={id}
-            status={status}
-            totalPrice={booking.service?.price || 0}
-            bookingDate={booking.bookingDate}
-            bookingTime={booking.slot?.startTime || (booking as any).startTime}
-            onCancel={onActionComplete}
-          />
-          <ViewInvoiceButton bookingId={id} />
-          <DownloadInvoiceButton bookingId={id} />
+          <span data-tour-reschedule-btn="">
+            <RescheduleButton
+              bookingId={id}
+              businessId={businessId}
+              serviceId={serviceId}
+              servicePrice={booking.service?.price || 0}
+              serviceName={booking.service?.name || serviceName || "Service"}
+              currentSlotId={booking.slotId}
+              currentBookingDate={booking.bookingDate}
+              rescheduleCount={booking.rescheduleCount || 0}
+              onRescheduled={onActionComplete}
+            />
+          </span>
+          <span data-tour-cancel-btn="">
+            <CancelBookingButton
+              bookingId={id}
+              status={status}
+              totalPrice={booking.service?.price || 0}
+              bookingDate={booking.bookingDate}
+              bookingTime={
+                booking.slot?.startTime || (booking as any).startTime
+              }
+              onCancel={onActionComplete}
+            />
+          </span>
+          <span data-tour-view-invoice-btn="">
+            <ViewInvoiceButton bookingId={id} />
+          </span>
+          <span data-tour-download-invoice-btn="">
+            <DownloadInvoiceButton bookingId={id} />
+          </span>
         </>
       )}
-
-
 
       {/* COMPLETED: Review + View Invoice + Download Invoice + Rebook */}
       {status === "completed" && (
         <>
-          <ReviewButton
-            serviceId={serviceId}
-            bookingId={id}
-            serviceName={serviceName}
-            onReviewSubmitted={onActionComplete}
-            existingReview={hasReviewed}
-          />
+          <span data-tour-review-btn="">
+            <ReviewButton
+              serviceId={serviceId}
+              bookingId={id}
+              serviceName={serviceName}
+              onReviewSubmitted={onActionComplete}
+              existingReview={hasReviewed}
+            />
+          </span>
           <ViewInvoiceButton bookingId={id} />
           <DownloadInvoiceButton bookingId={id} />
           <RebookButton serviceId={serviceId} />
@@ -156,12 +161,8 @@ export function BookingActions({
         </>
       )}
 
-
-
       {/* Default fallback */}
-      {!["confirmed", "completed", "cancelled"].includes(
-        status
-      ) && (
+      {!["confirmed", "completed", "cancelled"].includes(status) && (
         <>
           <ViewInvoiceButton bookingId={id} />
           <DownloadInvoiceButton bookingId={id} />

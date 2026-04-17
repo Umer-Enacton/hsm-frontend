@@ -81,9 +81,15 @@ export function PasswordChangeForm({
       confirmPassword: true,
     });
 
-    const isCurrentValid = validateField("currentPassword", formData.currentPassword);
+    const isCurrentValid = validateField(
+      "currentPassword",
+      formData.currentPassword,
+    );
     const isNewValid = validateField("newPassword", formData.newPassword);
-    const isConfirmValid = validateField("confirmPassword", formData.confirmPassword);
+    const isConfirmValid = validateField(
+      "confirmPassword",
+      formData.confirmPassword,
+    );
 
     if (!isCurrentValid || !isNewValid || !isConfirmValid) {
       return;
@@ -112,7 +118,10 @@ export function PasswordChangeForm({
       const errorMessage = error?.message || "Failed to change password";
       toast.error(errorMessage);
       // Set error on current password if it was incorrect
-      if (errorMessage.includes("incorrect") || errorMessage.includes("wrong")) {
+      if (
+        errorMessage.includes("incorrect") ||
+        errorMessage.includes("wrong")
+      ) {
         setErrors({ currentPassword: "Current password is incorrect" });
       }
     } finally {
@@ -142,11 +151,16 @@ export function PasswordChangeForm({
   const passwordStrength = getPasswordStrength(formData.newPassword);
 
   return (
-    <form onSubmit={handleSubmit} className={className}>
+    <form
+      onSubmit={handleSubmit}
+      className={className}
+      data-tour-password-form=""
+    >
       <div className="space-y-6 max-w-md">
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            Enter your current password and a new password to change your password.
+            Enter your current password and a new password to change your
+            password.
           </p>
         </div>
 
@@ -228,7 +242,9 @@ export function PasswordChangeForm({
                 <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
                   <div
                     className={`h-full ${passwordStrength.color} transition-all`}
-                    style={{ width: `${(passwordStrength.strength + 1) * 25}%` }}
+                    style={{
+                      width: `${(passwordStrength.strength + 1) * 25}%`,
+                    }}
                   />
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -278,10 +294,7 @@ export function PasswordChangeForm({
 
         {/* Submit */}
         <div className="flex gap-3 pt-4">
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-          >
+          <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

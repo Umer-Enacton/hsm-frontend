@@ -236,7 +236,7 @@ export default function CustomerDashboardPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4" data-tour-stats-grid="">
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-400">
@@ -303,7 +303,7 @@ export default function CustomerDashboardPage() {
       {/* Analytics Section */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Service Activity Card */}
-        <Card>
+        <Card data-tour-service-activity="">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-blue-600" />
@@ -472,7 +472,7 @@ export default function CustomerDashboardPage() {
       </div>
 
       {/* Recent Bookings */}
-      <div>
+      <div data-tour-recent-bookings="">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Recent Bookings</h2>
           <Link href="/customer/bookings">
@@ -551,7 +551,7 @@ export default function CustomerDashboardPage() {
       </div>
 
       {/* Featured Services */}
-      <div>
+      <div data-tour-featured-services="">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Featured Services</h2>
           <Link href="/customer/services">

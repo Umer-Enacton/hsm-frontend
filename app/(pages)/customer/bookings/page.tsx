@@ -358,9 +358,7 @@ export default function CustomerBookingsPage() {
 
     // Show reschedule fee badge for bookings with reschedule outcome
     if (booking.rescheduleOutcome) {
-      if (
-        booking.rescheduleOutcome === "cancelled"
-      ) {
+      if (booking.rescheduleOutcome === "cancelled") {
         return (
           <div className="flex flex-col gap-1">
             {baseBadge}
@@ -500,7 +498,7 @@ export default function CustomerBookingsPage() {
       </div>
 
       {/* Statistics */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4" data-tour-booking-stats="">
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -575,99 +573,131 @@ export default function CustomerBookingsPage() {
       </div>
 
       {/* Status Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => updateTab(v)}>
-        {/* Mobile: Horizontal scrollable tabs */}
-        <div className="md:hidden overflow-x-auto pb-2 -mb-2">
-          <TabsList className="inline-flex w-full min-w-max gap-1 h-10">
-            <TabsTrigger value="all" className="whitespace-nowrap">
-              All
-              {stats.total > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.total}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="confirmed" className="whitespace-nowrap">
-              Confirmed
-              {stats.confirmed > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.confirmed}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="whitespace-nowrap">
-              Completed
-              {stats.completed > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.completed}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="cancelled" className="whitespace-nowrap">
-              Cancelled
-              {stats.cancelled > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.cancelled}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="missed" className="whitespace-nowrap">
-              Delayed
-              {stats.missed > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.missed}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-        </div>
+      <div data-tour-status-tabs="">
+        <Tabs value={activeTab} onValueChange={(v) => updateTab(v)}>
+          {/* Mobile: Horizontal scrollable tabs */}
+          <div className="md:hidden overflow-x-auto pb-2 -mb-2">
+            <TabsList className="inline-flex w-full min-w-max gap-1 h-10">
+              <TabsTrigger value="all" className="whitespace-nowrap">
+                All
+                {stats.total > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 px-1.5 text-xs"
+                  >
+                    {stats.total}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="confirmed" className="whitespace-nowrap">
+                Confirmed
+                {stats.confirmed > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 px-1.5 text-xs"
+                  >
+                    {stats.confirmed}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="completed" className="whitespace-nowrap">
+                Completed
+                {stats.completed > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 px-1.5 text-xs"
+                  >
+                    {stats.completed}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="cancelled" className="whitespace-nowrap">
+                Cancelled
+                {stats.cancelled > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 px-1.5 text-xs"
+                  >
+                    {stats.cancelled}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="missed" className="whitespace-nowrap">
+                Delayed
+                {stats.missed > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 px-1.5 text-xs"
+                  >
+                    {stats.missed}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        {/* Desktop: Grid layout tabs */}
-        <div className="hidden md:block">
-          <TabsList className="grid w-full max-w-2xl grid-cols-5 h-10">
-            <TabsTrigger value="all">
-              All
-              {stats.total > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.total}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="confirmed">
-              Confirmed
-              {stats.confirmed > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.confirmed}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="completed">
-              Completed
-              {stats.completed > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.completed}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="cancelled">
-              Cancelled
-              {stats.cancelled > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.cancelled}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="missed">
-              Delayed
-              {stats.missed > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {stats.missed}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-        </div>
-      </Tabs>
+          {/* Desktop: Grid layout tabs */}
+          <div className="hidden md:block">
+            <TabsList className="grid w-full max-w-2xl grid-cols-5 h-10">
+              <TabsTrigger value="all">
+                All
+                {stats.total > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 px-1.5 text-xs"
+                  >
+                    {stats.total}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="confirmed" data-tour-confirmed-tab="">
+                Confirmed
+                {stats.confirmed > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 px-1.5 text-xs"
+                  >
+                    {stats.confirmed}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="completed" data-tour-completed-tab="">
+                Completed
+                {stats.completed > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 px-1.5 text-xs"
+                  >
+                    {stats.completed}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="cancelled">
+                Cancelled
+                {stats.cancelled > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 px-1.5 text-xs"
+                  >
+                    {stats.cancelled}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="missed">
+                Delayed
+                {stats.missed > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 px-1.5 text-xs"
+                  >
+                    {stats.missed}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </Tabs>
+      </div>
 
       {/* Results count */}
       <div className="text-sm text-muted-foreground">
@@ -700,7 +730,10 @@ export default function CustomerBookingsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="border rounded-md overflow-hidden bg-card shadow-sm">
+        <div
+          className="border rounded-md overflow-hidden bg-card shadow-sm"
+          data-tour-booking-table=""
+        >
           <Table>
             <TableHeader>
               <TableRow className="bg-primary/5 hover:bg-primary/5 dark:bg-primary/10 dark:hover:bg-primary/10">

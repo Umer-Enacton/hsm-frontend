@@ -21,7 +21,7 @@ export function ProfileOverview({
   return (
     <div className={cn("space-y-6", className)}>
       {/* Account Details Card */}
-      <Card>
+      <Card data-tour-profile-info="">
         <div className="p-6 py-2">
           <h3 className="text-lg font-semibold">Account Details</h3>
           <div className="space-y-3">
@@ -48,7 +48,12 @@ export function ProfileOverview({
               </span>
             </div>
           </div>
-          <Button onClick={onEditClick} className="w-full" variant="outline">
+          <Button
+            onClick={onEditClick}
+            className="w-full"
+            variant="outline"
+            data-tour-edit-profile-btn=""
+          >
             <Settings className="h-4 w-4 mr-2" />
             Edit Profile
           </Button>

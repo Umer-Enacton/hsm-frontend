@@ -4,6 +4,7 @@
 import { CustomerHeader } from "@/components/customer";
 import { Footer } from "@/components/common";
 import { CustomerTour } from "@/components/customer/tour/CustomerTour";
+import { HelpButton } from "@/components/customer/tour/HelpButton";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -114,6 +115,7 @@ export default function CustomerLayout({
   return (
     <>
       <CustomerTour userId={user?.id} />
+      <HelpButton />
       <div className="min-h-screen bg-background flex flex-col">
         <CustomerHeader
           user={

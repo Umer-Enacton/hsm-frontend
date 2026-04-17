@@ -21,23 +21,29 @@ export function ProfileTabs({
 }: ProfileTabsProps) {
   // Admin and Provider don't need addresses tab
   const tabs = showAddresses
-    ? ["overview", "addresses", "security"] as ProfileTab[]
-    : ["overview", "security"] as ProfileTab[];
+    ? (["overview", "addresses", "security"] as ProfileTab[])
+    : (["overview", "security"] as ProfileTab[]);
 
   return (
     <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as ProfileTab)}>
-      <TabsList className={cn(
-        "grid w-full max-w-md h-10",
-        showAddresses ? "grid-cols-3" : "grid-cols-2",
-        className
-      )}>
-        <TabsTrigger value="overview">Overview</TabsTrigger>
+      <TabsList
+        className={cn(
+          "grid w-full max-w-md h-10",
+          showAddresses ? "grid-cols-3" : "grid-cols-2",
+          className,
+        )}
+      >
+        <TabsTrigger value="overview" data-tour-overview-tab="">
+          Overview
+        </TabsTrigger>
         {showAddresses && (
           <TabsTrigger value="addresses" data-tour-address-tab>
             Addresses
           </TabsTrigger>
         )}
-        <TabsTrigger value="security">Security</TabsTrigger>
+        <TabsTrigger value="security" data-tour-security-tab="">
+          Security
+        </TabsTrigger>
       </TabsList>
     </Tabs>
   );

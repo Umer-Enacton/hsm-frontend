@@ -126,44 +126,52 @@ export default function ServiceDetailsPage({
   // Handlers
   const handleDateChange = (date: Date | undefined) => {
     if (!date) return;
-    
+
     // Create date in local timezone to avoid UTC issues
-    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const localDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
     console.log(`📅 Date selected: ${localDate.toDateString()}`);
-    
+
     setSelectedDate(localDate);
     setSelectedSlot(null);
-    
+
     // Fetch slots immediately for selected date
     fetchSlotsForDate(localDate);
   };
 
   const fetchSlotsForDate = async (date: Date) => {
     if (!service?.provider?.id) return;
-    
+
     try {
       setIsLoadingSlots(true);
       // Use local date string to avoid timezone issues
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
       const dateStr = `${year}-${month}-${day}`;
-      console.log(`🔄 Fetching slots for: ${dateStr} (input: ${date.toISOString()})`);
-      
+      console.log(
+        `🔄 Fetching slots for: ${dateStr} (input: ${date.toISOString()})`,
+      );
+
       const params = new URLSearchParams();
       params.append("date", dateStr);
       params.append("serviceId", service.id.toString());
-      
+
       const response = await api.get<{ slots: Slot[] }>(
-        `${API_ENDPOINTS.SLOTS_PUBLIC(service.provider.id)}?${params.toString()}`
+        `${API_ENDPOINTS.SLOTS_PUBLIC(service.provider.id)}?${params.toString()}`,
       );
-      
+
       const slotsArray = response.slots || [];
-      setAllSlots(slotsArray.map(slot => ({
-        ...slot,
-        isAvailable: slot.isAvailable ?? true,
-        status: slot.status ?? "available"
-      })));
+      setAllSlots(
+        slotsArray.map((slot) => ({
+          ...slot,
+          isAvailable: slot.isAvailable ?? true,
+          status: slot.status ?? "available",
+        })),
+      );
       console.log(`✅ Loaded ${slotsArray.length} slots for ${dateStr}`);
     } catch (error) {
       console.error("Error loading slots:", error);
@@ -186,7 +194,9 @@ export default function ServiceDetailsPage({
   };
 
   const handleNextReview = () => {
-    setCurrentReviewIndex((prev) => Math.min(feedbacks.length - reviewsPerView, prev + 1));
+    setCurrentReviewIndex((prev) =>
+      Math.min(feedbacks.length - reviewsPerView, prev + 1),
+    );
   };
 
   const handleSlotSelect = (slot: Slot) => {
@@ -871,7 +881,7 @@ export default function ServiceDetailsPage({
                     </CardHeader>
                     <CardContent className="space-y-0">
                       {/* Date Selection */}
-                      <div className="p-1 pb-4 pt-6">
+                      <div className="p-1 pb-4 pt-6" data-tour-date-picker="">
                         <h3 className="text-sm font-semibold mb-4">
                           Select Date
                         </h3>
@@ -911,9 +921,11 @@ export default function ServiceDetailsPage({
                                 const today = new Date();
                                 today.setHours(0, 0, 0, 0);
                                 if (date < today) return true;
-                                
+
                                 // For today's date, also check if all slots have passed
-                                if (date.toDateString() === today.toDateString()) {
+                                if (
+                                  date.toDateString() === today.toDateString()
+                                ) {
                                   const now = new Date();
                                   const currentHour = now.getHours();
                                   const currentMinutes = now.getMinutes();
@@ -931,7 +943,7 @@ export default function ServiceDetailsPage({
                       <Separator />
 
                       {/* Time Selection */}
-                      <div className="p-1 pb-4 pt-6">
+                      <div className="p-1 pb-4 pt-6" data-tour-slots-section="">
                         <h3 className="text-sm font-semibold mb-4">
                           Select Time
                         </h3>
@@ -1052,7 +1064,10 @@ export default function ServiceDetailsPage({
                       <Separator />
 
                       {/* Address Selection */}
-                      <div className="p-1 pb-4 pt-6">
+                      <div
+                        className="p-1 pb-4 pt-6"
+                        data-tour-address-selector=""
+                      >
                         <h3 className="text-sm font-semibold mb-4">
                           Select Address
                         </h3>
@@ -1104,7 +1119,7 @@ export default function ServiceDetailsPage({
                       <Separator />
 
                       {/* Book Now Button */}
-                      <div className="p-6 pt-6">
+                      <div className="p-6 pt-6" data-tour-book-now="">
                         <Button
                           size="lg"
                           onClick={handleBookNow}
